@@ -1014,29 +1014,6 @@ deploy_up() {
   read -r -p "press enter to continue..."
 }
 
-menu_deploy() {
-  while true; do
-    echo ""
-    log "=== deployment ==="
-    printf "  status: %s\n" "$(check_deployment_status)"
-    echo ""
-    echo "1) deploy (build & start)"
-    echo "2) stop"
-    echo "3) restart"
-    echo "4) view logs"
-    echo "5) back to main menu"
-    read -r -p "select: " opt
-    case $opt in
-      1) deploy_up ;;
-      2) "${SCRIPT_DIR}/evictl" down ;;
-      3) "${SCRIPT_DIR}/evictl" restart ;;
-      4) "${SCRIPT_DIR}/evictl" logs ;;
-      5) break ;;
-      *) warn "invalid option" ;;
-    esac
-  done
-}
-
 # --- Manage (evictl) ---
 
 menu_manage() {
@@ -1085,7 +1062,7 @@ main_menu() {
     case $opt in
       1) menu_prerequisites ;;
       2) menu_env_config ;;
-      3) menu_deploy ;;
+      3) deploy_up ;;
       4) menu_manage ;;
       5) log "bye!"; exit 0 ;;
       *) warn "invalid option" ;;
