@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 #
-# Version: 1.5.2
+# Version: 1.5.3
 # Purpose: evi production deployment controller (rootless Podman + Quadlet).
 # Deployment file: evictl
 # Logic:
 # - Provides CLI subcommands (init/up/down/restart/status/logs/update/doctor/health/cert/build/cleanup)
 # - Provides interactive menu mode when run without args
 # - Renders Quadlet units from templates, renders Caddyfile, and manages secrets
+#
+# Changes in v1.5.3:
+# - Fixed pgAdmin not starting: added load_env_files() call to cmd_up()
+# - Added pgAdmin support to cmd_down(), cmd_restart(), cmd_status()
 #
 # Changes in v1.5.2:
 # - Fixed unbound variable error for EVI_PGADMIN_ENABLED
@@ -503,6 +507,8 @@ cmd_build() {
 
 cmd_up() {
   require_cmd systemctl
+  load_env_files
+  
   systemctl --user start evi-network.service evi-db-volume.service || true
   # Explicitly start services (autostart is handled by [Install] via generator)
   systemctl --user start evi-db evi-be evi-fe evi-proxy
@@ -549,19 +555,40 @@ cmd_up() {
 
 cmd_down() {
   require_cmd systemctl
+  load_env_files
+  
+  # Stop pgAdmin first if enabled
+  if [[ "${EVI_PGADMIN_ENABLED:-false}" == "true" ]]; then
+    systemctl --user stop evi-pgadmin || true
+  fi
+  
   systemctl --user stop evi-proxy evi-fe evi-be evi-db || true
   log "OK: stopped services."
 }
 
 cmd_restart() {
   require_cmd systemctl
+  load_env_files
+  
   systemctl --user restart evi-db evi-be evi-fe evi-proxy
+  
+  if [[ "${EVI_PGADMIN_ENABLED:-false}" == "true" ]]; then
+    systemctl --user restart evi-pgadmin
+  fi
+  
   log "OK: restarted services."
 }
 
 cmd_status() {
   require_cmd systemctl
-  systemctl --user status evi-proxy evi-fe evi-be evi-db --no-pager || true
+  load_env_files
+  
+  local services="evi-proxy evi-fe evi-be evi-db"
+  if [[ "${EVI_PGADMIN_ENABLED:-false}" == "true" ]]; then
+    services="${services} evi-pgadmin"
+  fi
+  
+  systemctl --user status ${services} --no-pager || true
 }
 
 cmd_logs() {
