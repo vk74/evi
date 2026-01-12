@@ -13,7 +13,7 @@
 # - Optional cleanup of source files after successful deployment
 #
 # Changes in v1.5.0:
-# - Added optional cleanup prompt after successful deployment
+# - Cleanup prompt moved to evictl (appears after successful deployment)
 # - Cleanup removes source code files (back/, front/, db/, docs/, README.md, etc.)
 # - Cleanup can be run immediately after deployment or later via evictl cleanup
 #
@@ -1011,34 +1011,6 @@ deploy_up() {
   
   echo ""
   info "deployment complete!"
-  echo ""
-  
-  # Offer cleanup option
-  log "cleanup option:"
-  echo ""
-  echo "source code files (back/, front/, db/, docs/, README.md, etc.) are no longer"
-  echo "needed after successful deployment. you can remove them to save disk space."
-  echo ""
-  echo "files that will be kept:"
-  echo "  - deployment/ (install.sh, evictl, configs, scripts, templates)"
-  echo ""
-  echo "files that will be removed:"
-  echo "  - back/ (backend source code)"
-  echo "  - front/ (frontend source code)"
-  echo "  - db/ (database source code)"
-  echo "  - docs/ (developer documentation)"
-  echo "  - README.md (installation guide)"
-  echo "  - package.json, package-lock.json"
-  echo "  - .git/ (if exists)"
-  echo ""
-  
-  if confirm "do you want to remove source code files now?" "n"; then
-    log "running cleanup..."
-    "${SCRIPT_DIR}/evictl" cleanup
-  else
-    info "cleanup skipped. you can run cleanup later using: ./evictl cleanup"
-  fi
-  
   read -r -p "press enter to continue..."
 }
 

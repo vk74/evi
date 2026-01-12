@@ -10,6 +10,7 @@
 #
 # Changes in v1.5.0:
 # - Added cleanup command to remove source code files after successful deployment
+# - Cleanup prompt appears automatically after successful evictl up (interactive mode)
 # - Cleanup verifies deployment is running before removing files
 # - Cleanup removes: back/, front/, db/, docs/, README.md, package.json, package-lock.json, .git/
 #
@@ -488,6 +489,39 @@ cmd_up() {
   fi
   
   log "OK: started services."
+  
+  # Offer cleanup option after successful deployment (only in interactive mode)
+  if [[ -t 0 ]]; then
+    echo ""
+    log "deployment successful!"
+    echo ""
+    log "cleanup option:"
+    echo ""
+    echo "source code files (back/, front/, db/, docs/, README.md, etc.) are no longer"
+    echo "needed after successful deployment. you can remove them to save disk space."
+    echo ""
+    echo "files that will be kept:"
+    echo "  - deployment/ (install.sh, evictl, configs, scripts, templates)"
+    echo ""
+    echo "files that will be removed:"
+    echo "  - back/ (backend source code)"
+    echo "  - front/ (frontend source code)"
+    echo "  - db/ (database source code)"
+    echo "  - docs/ (developer documentation)"
+    echo "  - README.md (installation guide)"
+    echo "  - package.json, package-lock.json"
+    echo "  - .git/ (if exists)"
+    echo ""
+    
+    local reply
+    read -r -p "do you want to remove source code files now? [y/N]: " reply
+    if [[ "${reply}" =~ ^[Yy]$ ]]; then
+      echo ""
+      cmd_cleanup
+    else
+      log "cleanup skipped. you can run cleanup later using: evictl cleanup"
+    fi
+  fi
 }
 
 cmd_down() {
