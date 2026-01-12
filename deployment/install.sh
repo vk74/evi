@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.4.0
+# Version: 1.5.0
 # Purpose: Interactive installer and manager for evi production deployment.
 # Deployment file: install.sh
 # Logic:
@@ -10,13 +10,18 @@
 # - Secrets management with auto-generation
 # - TLS certificate management (auto-generate or user-provided)
 # - Deployment orchestration and status display
+# - Optional cleanup of source files after successful deployment
+#
+# Changes in v1.5.0:
+# - Added optional cleanup prompt after successful deployment
+# - Cleanup removes source code files (back/, front/, db/, docs/, README.md, etc.)
+# - Cleanup can be run immediately after deployment or later via evictl cleanup
 #
 # Changes in v1.4.0:
-# - Improved guided setup: clearer option names (a/b/c) without parentheses
+# - Improved guided setup: clearer option names (a/b/c) 
 # - Added option for public domain to use own certificates (not just Let's Encrypt)
 # - Added comprehensive certificate validation (format, key match, expiry, domain match)
 # - Certificate validation shows errors in red with detailed reasons
-# - Updated question text: "how will users connect to your evi?"
 #
 # Changes in v1.3.0:
 # - Complete menu restructure: prerequisites, env config (guided/manual), deploy, manage
@@ -1006,6 +1011,34 @@ deploy_up() {
   
   echo ""
   info "deployment complete!"
+  echo ""
+  
+  # Offer cleanup option
+  log "cleanup option:"
+  echo ""
+  echo "source code files (back/, front/, db/, docs/, README.md, etc.) are no longer"
+  echo "needed after successful deployment. you can remove them to save disk space."
+  echo ""
+  echo "files that will be kept:"
+  echo "  - deployment/ (install.sh, evictl, configs, scripts, templates)"
+  echo ""
+  echo "files that will be removed:"
+  echo "  - back/ (backend source code)"
+  echo "  - front/ (frontend source code)"
+  echo "  - db/ (database source code)"
+  echo "  - docs/ (developer documentation)"
+  echo "  - README.md (installation guide)"
+  echo "  - package.json, package-lock.json"
+  echo "  - .git/ (if exists)"
+  echo ""
+  
+  if confirm "do you want to remove source code files now?" "n"; then
+    log "running cleanup..."
+    "${SCRIPT_DIR}/evictl" cleanup
+  else
+    info "cleanup skipped. you can run cleanup later using: ./evictl cleanup"
+  fi
+  
   read -r -p "press enter to continue..."
 }
 

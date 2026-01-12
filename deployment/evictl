@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
 #
-# Version: 1.4.0
+# Version: 1.5.0
 # Purpose: evi production deployment controller (rootless Podman + Quadlet).
 # Deployment file: evictl
 # Logic:
-# - Provides CLI subcommands (init/up/down/restart/status/logs/update/doctor/health/cert/build)
+# - Provides CLI subcommands (init/up/down/restart/status/logs/update/doctor/health/cert/build/cleanup)
 # - Provides interactive menu mode when run without args
 # - Renders Quadlet units from templates, renders Caddyfile, and manages secrets
+#
+# Changes in v1.5.0:
+# - Added cleanup command to remove source code files after successful deployment
+# - Cleanup verifies deployment is running before removing files
+# - Cleanup removes: back/, front/, db/, docs/, README.md, package.json, package-lock.json, .git/
 #
 # Changes in v1.4.0:
 # - Added health command for comprehensive service health checks
@@ -68,6 +73,12 @@ EVI_QUADLET_DIR_DEFAULT="${HOME}/.config/containers/systemd"
 
 EVI_ENV_FILE_DEFAULT="${ENV_DIR}/evi.env"
 EVI_SECRETS_FILE_DEFAULT="${ENV_DIR}/evi.secrets.env"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m' # No Color
 
 log() { printf "%s\n" "$*"; }
 warn() { printf "WARN: %s\n" "$*" >&2; }
@@ -725,6 +736,105 @@ cmd_cert() {
   esac
 }
 
+cmd_cleanup() {
+  require_cmd podman
+  
+  log "== cleanup source files =="
+  echo ""
+  
+  # Check deployment status - verify containers are running
+  local containers=("evi-db" "evi-be" "evi-fe" "evi-proxy")
+  local all_running=true
+  
+  log "checking deployment status..."
+  for c in "${containers[@]}"; do
+    local status
+    status=$(podman ps --filter "name=^${c}$" --format "{{.Status}}" 2>/dev/null || echo "")
+    if [[ -z "${status}" ]]; then
+      all_running=false
+      break
+    fi
+  done
+  
+  if [[ "${all_running}" != "true" ]]; then
+    warn "deployment is not running. cleanup is only safe when containers are operational."
+    warn "please ensure all services are running before cleanup."
+    return 1
+  fi
+  
+  log "deployment is running. proceeding with cleanup check..."
+  echo ""
+  
+  # Define files and directories to remove
+  local items_to_remove=(
+    "back"
+    "front"
+    "db"
+    "docs"
+    "README.md"
+    "package.json"
+    "package-lock.json"
+    ".git"
+  )
+  
+  # Check what actually exists
+  local existing_items=()
+  for item in "${items_to_remove[@]}"; do
+    if [[ -e "${PROJECT_ROOT}/${item}" ]]; then
+      existing_items+=("${item}")
+    fi
+  done
+  
+  if [[ ${#existing_items[@]} -eq 0 ]]; then
+    log "no source files found to clean up."
+    return 0
+  fi
+  
+  # Show what will be removed
+  log "the following files/directories will be removed:"
+  echo ""
+  for item in "${existing_items[@]}"; do
+    printf "  - %s\n" "${item}"
+  done
+  echo ""
+  warn "this operation is irreversible!"
+  echo ""
+  
+  # Ask for confirmation
+  local reply
+  read -r -p "do you want to proceed with cleanup? [y/N]: " reply
+  if [[ ! "${reply}" =~ ^[Yy]$ ]]; then
+    log "cleanup cancelled."
+    return 0
+  fi
+  
+  # Perform cleanup
+  log "removing source files..."
+  local removed_count=0
+  local failed_count=0
+  
+  for item in "${existing_items[@]}"; do
+    local item_path="${PROJECT_ROOT}/${item}"
+    if [[ -e "${item_path}" ]]; then
+      if rm -rf "${item_path}" 2>/dev/null; then
+        log "removed: ${item}"
+        removed_count=$((removed_count + 1))
+      else
+        warn "failed to remove: ${item}"
+        failed_count=$((failed_count + 1))
+      fi
+    fi
+  done
+  
+  echo ""
+  if [[ ${failed_count} -eq 0 ]]; then
+    log "cleanup completed successfully. ${removed_count} item(s) removed."
+  else
+    warn "cleanup completed with errors. ${removed_count} item(s) removed, ${failed_count} failed."
+    return 1
+  fi
+}
+
 usage() {
   cat <<'EOF'
 evictl - evi production deployment controller
@@ -748,6 +858,7 @@ Commands:
                     check   - Check certificate expiry
                     regen   - Regenerate certificates (manual mode)
                     install - Show client installation instructions
+  cleanup         Remove source code files after deployment (back/, front/, db/, docs/, etc.)
   doctor          Validate host prerequisites
   self-update     Update evictl (not implemented yet)
 EOF
@@ -769,8 +880,9 @@ evi prod manager (evictl)
 8) update (pull)
 9) health
 10) cert info
-11) doctor
-12) exit
+11) cleanup
+12) doctor
+13) exit
 EOF
     read -r -p "select option: " choice
     case "${choice}" in
@@ -784,8 +896,9 @@ EOF
       8) cmd_update ;;
       9) cmd_health ;;
       10) cmd_cert info ;;
-      11) cmd_doctor ;;
-      12) exit 0 ;;
+      11) cmd_cleanup ;;
+      12) cmd_doctor ;;
+      13) exit 0 ;;
       *) warn "invalid option." ;;
     esac
   done
@@ -809,6 +922,7 @@ main() {
     update) cmd_update "$@" ;;
     health) cmd_health "$@" ;;
     cert) cmd_cert "$@" ;;
+    cleanup) cmd_cleanup "$@" ;;
     doctor) cmd_doctor "$@" ;;
     self-update) cmd_self_update "$@" ;;
     -h|--help|help) usage ;;

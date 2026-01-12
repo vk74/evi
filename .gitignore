@@ -2,10 +2,8 @@
 /back/EdDSA/*
 /back/src/keys/*
 /back/node_modules/*
-/docs/other/*
-/docs/logo/*
-/docs/temp/*
-/docs/*
+# Exclude entire docs directory (local only, not synced to GitHub)
+/docs/
 /front/node_modules/*
 
 # Environment files
