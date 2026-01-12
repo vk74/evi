@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 #
-# Version: 1.5.1
+# Version: 1.5.2
 # Purpose: evi production deployment controller (rootless Podman + Quadlet).
 # Deployment file: evictl
 # Logic:
 # - Provides CLI subcommands (init/up/down/restart/status/logs/update/doctor/health/cert/build/cleanup)
 # - Provides interactive menu mode when run without args
 # - Renders Quadlet units from templates, renders Caddyfile, and manages secrets
+#
+# Changes in v1.5.2:
+# - Fixed unbound variable error for EVI_PGADMIN_ENABLED
+# - Added default values for all EVI_PGADMIN_* variables in load_env_files
 #
 # Changes in v1.5.1:
 # - Updated pgAdmin rendering: removed auth credentials, added localhost-only binding
@@ -119,6 +123,12 @@ load_env_files() {
   
   # Default admin username if not set
   export EVI_ADMIN_DB_USERNAME="${EVI_ADMIN_DB_USERNAME:-evidba}"
+  
+  # Default pgAdmin settings (disabled by default)
+  export EVI_PGADMIN_ENABLED="${EVI_PGADMIN_ENABLED:-false}"
+  export EVI_PGADMIN_IMAGE="${EVI_PGADMIN_IMAGE:-docker.io/dpage/pgadmin4:8}"
+  export EVI_PGADMIN_HOST="${EVI_PGADMIN_HOST:-127.0.0.1}"
+  export EVI_PGADMIN_PORT="${EVI_PGADMIN_PORT:-5050}"
 
   # Validation
   [[ -n "${EVI_DOMAIN:-}" ]] || die "EVI_DOMAIN is not set in evi.env"
@@ -497,7 +507,7 @@ cmd_up() {
   # Explicitly start services (autostart is handled by [Install] via generator)
   systemctl --user start evi-db evi-be evi-fe evi-proxy
   
-  if [[ "${EVI_PGADMIN_ENABLED}" == "true" ]]; then
+  if [[ "${EVI_PGADMIN_ENABLED:-false}" == "true" ]]; then
     systemctl --user start evi-pgadmin
   fi
   
