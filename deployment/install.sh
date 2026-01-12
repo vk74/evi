@@ -596,14 +596,6 @@ guided_setup() {
     info "passwords will be auto-generated."
   fi
   
-  # Step 4: GUI tools
-  echo ""
-  echo "step 4: administration tools"
-  local install_gui="no"
-  if confirm "would you like to install gui tools (cockpit)?"; then
-    install_gui="yes"
-  fi
-  
   # Summary
   echo ""
   log "=== configuration summary ==="
@@ -614,7 +606,6 @@ guided_setup() {
     printf "  certificates:  %s\n" "${generate_certs}"
   fi
   printf "  db passwords:  %s\n" "${pass_choice}"
-  printf "  gui tools:     %s\n" "${install_gui}"
   echo ""
   
   if ! confirm "save this configuration?"; then
@@ -646,11 +637,6 @@ guided_setup() {
     else
       err "certificate generation failed!"
     fi
-  fi
-  
-  # Install GUI tools if requested
-  if [[ "${install_gui}" == "yes" ]]; then
-    install_gui_tools
   fi
   
   echo ""
