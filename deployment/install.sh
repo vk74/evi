@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 2.0.0
+# Version: 1.4.0
 # Purpose: Interactive installer and manager for evi production deployment.
 # Deployment file: install.sh
 # Logic:
@@ -11,7 +11,14 @@
 # - TLS certificate management (auto-generate or user-provided)
 # - Deployment orchestration and status display
 #
-# Changes in v2.0.0:
+# Changes in v1.4.0:
+# - Improved guided setup: clearer option names (a/b/c) without parentheses
+# - Added option for public domain to use own certificates (not just Let's Encrypt)
+# - Added comprehensive certificate validation (format, key match, expiry, domain match)
+# - Certificate validation shows errors in red with detailed reasons
+# - Updated question text: "how will users connect to your evi?"
+#
+# Changes in v1.3.0:
 # - Complete menu restructure: prerequisites, env config (guided/manual), deploy, manage
 # - Added deployment readiness status display in main menu
 # - Added guided setup questionnaire (access type, TLS, passwords)
@@ -114,6 +121,98 @@ validate_password() {
 is_private_ip() {
   local ip="$1"
   [[ "$ip" =~ ^10\. ]] || [[ "$ip" =~ ^172\.(1[6-9]|2[0-9]|3[0-1])\. ]] || [[ "$ip" =~ ^192\.168\. ]] || [[ "$ip" =~ ^127\. ]]
+}
+
+validate_user_certificate() {
+  local cert_file="$1"
+  local key_file="$2"
+  local domain="$3"
+  local validation_errors=0
+  local error_messages=()
+  
+  # Check certificate file format
+  if ! openssl x509 -in "${cert_file}" -noout >/dev/null 2>&1; then
+    error_messages+=("certificate file is not a valid x509 certificate")
+    validation_errors=$((validation_errors + 1))
+  fi
+  
+  # Check key file format
+  if ! openssl rsa -in "${key_file}" -noout >/dev/null 2>&1 && ! openssl ec -in "${key_file}" -noout >/dev/null 2>&1; then
+    error_messages+=("key file is not a valid RSA or EC private key")
+    validation_errors=$((validation_errors + 1))
+  fi
+  
+  # If certificate format is valid, check key match
+  if [[ $validation_errors -eq 0 ]] && openssl x509 -in "${cert_file}" -noout >/dev/null 2>&1; then
+    # Check if key matches certificate
+    if openssl rsa -in "${key_file}" -noout >/dev/null 2>&1; then
+      # RSA key - compare modulus
+      local cert_modulus
+      local key_modulus
+      cert_modulus=$(openssl x509 -noout -modulus -in "${cert_file}" 2>/dev/null | openssl md5 2>/dev/null | cut -d' ' -f2)
+      key_modulus=$(openssl rsa -noout -modulus -in "${key_file}" 2>/dev/null | openssl md5 2>/dev/null | cut -d' ' -f2)
+      if [[ -z "${cert_modulus}" ]] || [[ -z "${key_modulus}" ]] || [[ "${cert_modulus}" != "${key_modulus}" ]]; then
+        error_messages+=("private key does not match the certificate")
+        validation_errors=$((validation_errors + 1))
+      fi
+    elif openssl ec -in "${key_file}" -noout >/dev/null 2>&1; then
+      # EC key - compare public key
+      local cert_pub
+      local key_pub
+      cert_pub=$(openssl x509 -pubkey -noout -in "${cert_file}" 2>/dev/null | openssl md5 2>/dev/null | cut -d' ' -f2)
+      key_pub=$(openssl ec -pubout -in "${key_file}" 2>/dev/null | openssl md5 2>/dev/null | cut -d' ' -f2)
+      if [[ -z "${cert_pub}" ]] || [[ -z "${key_pub}" ]] || [[ "${cert_pub}" != "${key_pub}" ]]; then
+        error_messages+=("private key does not match the certificate")
+        validation_errors=$((validation_errors + 1))
+      fi
+    fi
+  fi
+  
+  # Check certificate expiry
+  if [[ $validation_errors -eq 0 ]] && openssl x509 -in "${cert_file}" -noout >/dev/null 2>&1; then
+    local expiry
+    expiry=$(openssl x509 -enddate -noout -in "${cert_file}" 2>/dev/null | cut -d= -f2)
+    if [[ -n "${expiry}" ]]; then
+      local expiry_epoch
+      local now_epoch
+      expiry_epoch=$(date -d "${expiry}" +%s 2>/dev/null || date -j -f "%b %d %T %Y %Z" "${expiry}" +%s 2>/dev/null || echo "0")
+      now_epoch=$(date +%s)
+      if [[ "${expiry_epoch}" != "0" ]] && [[ ${expiry_epoch} -lt ${now_epoch} ]]; then
+        error_messages+=("certificate has expired (expired on: ${expiry})")
+        validation_errors=$((validation_errors + 1))
+      fi
+    fi
+  fi
+  
+  # Check domain match (only for public domains, not IP addresses)
+  if [[ -n "${domain}" ]] && ! validate_ip "${domain}" && [[ $validation_errors -eq 0 ]] && openssl x509 -in "${cert_file}" -noout >/dev/null 2>&1; then
+    local cert_domains
+    cert_domains=$(openssl x509 -in "${cert_file}" -noout -text 2>/dev/null | grep -A1 "Subject Alternative Name" | tail -1 | grep -oE "DNS:[^, ]+" | sed 's/DNS://' || echo "")
+    local cert_cn
+    cert_cn=$(openssl x509 -in "${cert_file}" -noout -subject 2>/dev/null | sed -n 's/.*CN=\([^,]*\).*/\1/p' || echo "")
+    
+    local domain_match=false
+    # Check SAN entries
+    if echo "${cert_domains}" | grep -q "^${domain}$" || echo "${cert_domains}" | grep -q "^\*\.${domain#*.}$"; then
+      domain_match=true
+    # Check CN
+    elif [[ "${cert_cn}" == "${domain}" ]] || [[ "${cert_cn}" == "*.${domain#*.}" ]]; then
+      domain_match=true
+    fi
+    
+    if [[ "${domain_match}" == "false" ]] && [[ -n "${cert_domains}" ]] && [[ -n "${cert_cn}" ]]; then
+      error_messages+=("certificate does not match domain '${domain}' (certificate is for: ${cert_cn} or ${cert_domains})")
+      validation_errors=$((validation_errors + 1))
+    fi
+  fi
+  
+  # Return results
+  if [[ $validation_errors -gt 0 ]]; then
+    printf "%s\n" "${error_messages[@]}"
+    return 1
+  fi
+  
+  return 0
 }
 
 # --- Status Check Functions ---
@@ -435,11 +534,11 @@ guided_setup() {
   ensure_config_files
   
   # Step 1: Access type
-  echo "step 1: how will users connect to evi?"
+  echo "step 1: how will users connect to your evi?"
   echo ""
-  echo "  a) internal use (private ip or intranet domain)"
-  echo "  b) public domain with automatic tls (let's encrypt)"
-  echo "  c) public ip address (self-signed certificate)"
+  echo "  a) private ip or intranet dns name"
+  echo "  b) public dns domain"
+  echo "  c) public ip address"
   echo ""
   
   local access_type=""
@@ -447,7 +546,7 @@ guided_setup() {
     read -r -p "select [a-c]: " access_type
     case "${access_type}" in
       a|A) access_type="internal" ;;
-      b|B) access_type="letsencrypt" ;;
+      b|B) access_type="public_domain" ;;
       c|C) access_type="public_ip" ;;
       *) access_type=""; warn "please select a, b, or c" ;;
     esac
@@ -457,8 +556,9 @@ guided_setup() {
   echo ""
   local domain=""
   local tls_mode=""
+  local acme_email=""
   
-  if [[ "${access_type}" == "letsencrypt" ]]; then
+  if [[ "${access_type}" == "public_domain" ]]; then
     while [[ -z "${domain}" ]]; do
       read -r -p "enter your public domain name (e.g., evi.example.com): " domain
       if ! validate_domain "${domain}"; then
@@ -466,20 +566,41 @@ guided_setup() {
         domain=""
       fi
     done
-    tls_mode="letsencrypt"
     
-    # Get ACME email
-    local acme_email=""
-    while [[ -z "${acme_email}" ]]; do
-      read -r -p "enter email for let's encrypt notifications: " acme_email
-      if [[ ! "${acme_email}" =~ ^[^@]+@[^@]+\.[^@]+$ ]]; then
-        warn "invalid email format"
-        acme_email=""
-      fi
+    # Step 2: TLS certificate choice for public domain
+    echo ""
+    echo "step 2: tls certificate configuration"
+    echo ""
+    echo "  a) let's encrypt (automatic)"
+    echo "  b) use my own certificates"
+    echo ""
+    
+    local cert_choice=""
+    while [[ -z "${cert_choice}" ]]; do
+      read -r -p "select [a-b]: " cert_choice
+      case "${cert_choice}" in
+        a|A) 
+          tls_mode="letsencrypt"
+          cert_choice="letsencrypt"
+          ;;
+        b|B) 
+          tls_mode="manual"
+          cert_choice="own"
+          ;;
+        *) cert_choice=""; warn "please select a or b" ;;
+      esac
     done
     
-    # Save ACME email
-    sed -i "s|^EVI_ACME_EMAIL=.*|EVI_ACME_EMAIL=${acme_email}|" "${TARGET_ENV}"
+    if [[ "${tls_mode}" == "letsencrypt" ]]; then
+      # Get ACME email
+      while [[ -z "${acme_email}" ]]; do
+        read -r -p "enter email for let's encrypt account operations: " acme_email
+        if [[ ! "${acme_email}" =~ ^[^@]+@[^@]+\.[^@]+$ ]]; then
+          warn "invalid email format"
+          acme_email=""
+        fi
+      done
+    fi
     
   elif [[ "${access_type}" == "public_ip" ]]; then
     while [[ -z "${domain}" ]]; do
@@ -502,26 +623,34 @@ guided_setup() {
     tls_mode="manual"
   fi
   
-  # Step 2: TLS certificates (only for manual mode)
+  # Step 2: TLS certificates (for manual mode, except public_domain with own cert which is already handled)
   local generate_certs="yes"
+  local cert_choice_manual=""
+  
   if [[ "${tls_mode}" == "manual" ]]; then
-    echo ""
-    echo "step 2: tls certificate configuration"
-    echo ""
-    echo "  a) auto-generate self-signed certificate (recommended)"
-    echo "  b) use my own certificates"
-    echo ""
+    # For public_domain with own cert, we already handled it above
+    if [[ "${access_type}" == "public_domain" ]] && [[ "${cert_choice}" == "own" ]]; then
+      generate_certs="no"
+    else
+      # For internal and public_ip, ask about certificate choice
+      echo ""
+      echo "step 2: tls certificate configuration"
+      echo ""
+      echo "  a) auto-generate self-signed certificate (recommended)"
+      echo "  b) use my own certificates"
+      echo ""
+      
+      while [[ -z "${cert_choice_manual}" ]]; do
+        read -r -p "select [a-b]: " cert_choice_manual
+        case "${cert_choice_manual}" in
+          a|A) generate_certs="yes" ;;
+          b|B) generate_certs="no" ;;
+          *) cert_choice_manual=""; warn "please select a or b" ;;
+        esac
+      done
+    fi
     
-    local cert_choice=""
-    while [[ -z "${cert_choice}" ]]; do
-      read -r -p "select [a-b]: " cert_choice
-      case "${cert_choice}" in
-        a|A) generate_certs="yes" ;;
-        b|B) generate_certs="no" ;;
-        *) cert_choice=""; warn "please select a or b" ;;
-      esac
-    done
-    
+    # Handle own certificates (for all manual modes with own cert)
     if [[ "${generate_certs}" == "no" ]]; then
       echo ""
       echo "please place your certificates in: ${TLS_DIR}/"
@@ -533,13 +662,32 @@ guided_setup() {
       if [[ ! -f "${TLS_DIR}/cert.pem" ]] || [[ ! -f "${TLS_DIR}/key.pem" ]]; then
         err "certificates not found in ${TLS_DIR}/"
         warn "you can add them later and run deployment again."
+      else
+        # Validate certificates
+        echo ""
+        log "validating certificates..."
+        local validation_errors
+        validation_errors=$(validate_user_certificate "${TLS_DIR}/cert.pem" "${TLS_DIR}/key.pem" "${domain}" 2>&1)
+        local validation_result=$?
+        
+        if [[ $validation_result -ne 0 ]]; then
+          echo ""
+          err "certificate validation failed!"
+          while IFS= read -r error_msg; do
+            [[ -n "${error_msg}" ]] && info "  ${error_msg}"
+          done <<< "${validation_errors}"
+          echo ""
+          warn "deployment may fail if certificates are invalid."
+          warn "you can fix certificates later and run deployment again."
+          if ! confirm "continue anyway?"; then
+            warn "configuration cancelled."
+            return
+          fi
+        else
+          info "certificates validated successfully."
+        fi
       fi
     fi
-  else
-    echo ""
-    echo "step 2: tls certificates"
-    echo "let's encrypt will automatically manage tls certificates."
-    echo ""
   fi
   
   # Step 3: Database passwords
@@ -603,7 +751,13 @@ guided_setup() {
   printf "  domain/ip:     %s\n" "${domain}"
   printf "  tls mode:      %s\n" "${tls_mode}"
   if [[ "${tls_mode}" == "manual" ]]; then
-    printf "  certificates:  %s\n" "${generate_certs}"
+    if [[ "${generate_certs}" == "yes" ]]; then
+      printf "  certificates:  auto-generate\n"
+    else
+      printf "  certificates:  use my own\n"
+    fi
+  elif [[ "${tls_mode}" == "letsencrypt" ]]; then
+    printf "  certificates:  let's encrypt (automatic)\n"
   fi
   printf "  db passwords:  %s\n" "${pass_choice}"
   echo ""
@@ -619,6 +773,14 @@ guided_setup() {
   # Update evi.env
   sed -i "s|^EVI_DOMAIN=.*|EVI_DOMAIN=${domain}|" "${TARGET_ENV}"
   sed -i "s|^EVI_TLS_MODE=.*|EVI_TLS_MODE=${tls_mode}|" "${TARGET_ENV}"
+  
+  # Handle ACME email based on TLS mode
+  if [[ "${tls_mode}" == "letsencrypt" ]]; then
+    sed -i "s|^EVI_ACME_EMAIL=.*|EVI_ACME_EMAIL=${acme_email}|" "${TARGET_ENV}"
+  else
+    # Clear ACME email for manual mode
+    sed -i "s|^EVI_ACME_EMAIL=.*|EVI_ACME_EMAIL=|" "${TARGET_ENV}"
+  fi
   
   # Update evi.secrets.env
   sed -i "s|^EVI_POSTGRES_PASSWORD=.*|EVI_POSTGRES_PASSWORD=${pg_password}|" "${TARGET_SECRETS}"
