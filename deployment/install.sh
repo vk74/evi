@@ -395,15 +395,15 @@ install_gui_tools() {
 menu_prerequisites() {
   while true; do
     echo ""
-    log "=== prerequisites ==="
+    log "=== prerequisites, to be installed on host server ==="
     echo ""
     check_os || true
     check_resources || true
     check_podman || true
     check_ports || true
     echo ""
-    echo "1) install core prerequisites (requires sudo)"
-    echo "2) install gui tools (cockpit, optional)"
+    echo "1) install core prerequisites (mandatory, requires sudo)"
+    echo "2) install admin and gui tools (optional, cockpit and other, requires sudo)"
     echo "3) back to main menu"
     read -r -p "select: " opt
     case $opt in
@@ -802,7 +802,7 @@ menu_manual_config() {
 menu_env_config() {
   while true; do
     echo ""
-    log "=== environment configuration ==="
+    log "=== containers environment configuration ==="
     echo ""
     echo "  a) guided setup (recommended for first-time setup)"
     echo "  b) manual configuration (advanced)"
@@ -911,9 +911,9 @@ main_menu() {
   ensure_executable
   while true; do
     echo ""
-    echo "┌──────────────────────────────────────────────────────────────┐"
-    echo "│                    evi installation manager                   │"
-    echo "└──────────────────────────────────────────────────────────────┘"
+    echo "+--------------------------------------------------------------+"
+    echo "|                    evi installation manager                  |"
+    echo "+--------------------------------------------------------------+"
     
     display_status
     
