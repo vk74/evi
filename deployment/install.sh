@@ -197,7 +197,12 @@ check_deployment_status() {
   fi
   
   local running
-  running=$(podman ps --format "{{.Names}}" 2>/dev/null | grep -c "^evi-" || echo "0")
+  running=$(podman ps --format "{{.Names}}" 2>/dev/null | grep -c "^evi-" 2>/dev/null || echo "0")
+  
+  # Ensure running is a number
+  if [[ -z "${running}" ]] || ! [[ "${running}" =~ ^[0-9]+$ ]]; then
+    running="0"
+  fi
   
   if [[ "$running" -ge 4 ]]; then
     echo "running:${running}"
@@ -403,7 +408,7 @@ menu_prerequisites() {
     check_ports || true
     echo ""
     echo "1) install core prerequisites (mandatory, requires sudo)"
-    echo "2) install admin and gui tools (optional, cockpit and other, requires sudo)"
+    echo "2) install admin and gui tools (optional, cockpit and others, requires sudo)"
     echo "3) back to main menu"
     read -r -p "select: " opt
     case $opt in
@@ -912,7 +917,7 @@ main_menu() {
   while true; do
     echo ""
     echo "+--------------------------------------------------------------+"
-    echo "|                    evi installation manager                  |"
+    echo "|           evi installation manager, main menu                |"
     echo "+--------------------------------------------------------------+"
     
     display_status
