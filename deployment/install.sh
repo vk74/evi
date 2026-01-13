@@ -548,7 +548,7 @@ install_gui_tools() {
   echo ""
   local pgadmin_email=""
   while [[ -z "${pgadmin_email}" ]]; do
-    read -r -p "enter administrator email for pgadmin (e.g., admin@example.com): " pgadmin_email
+    read -r -p "enter valid e-mail for pgadmin user account (don't use .local or similar domains): " pgadmin_email
     if ! validate_email "${pgadmin_email}"; then
       warn "invalid email format. email must be valid (e.g., user@domain.com) and cannot use .local or localhost domain"
       pgadmin_email=""
