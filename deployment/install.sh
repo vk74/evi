@@ -19,7 +19,7 @@
 # Changes in v1.5.1:
 # - Added pgAdmin configuration to install_gui_tools()
 # - pgAdmin runs as container alongside other evi services
-# - pgAdmin accessible only from localhost (127.0.0.1:5050)
+# - pgAdmin accessible only from localhost (127.0.0.1:5445)
 # - Pre-configured connection to evi-db with admin user
 #
 # Changes in v1.5.0:
@@ -491,7 +491,7 @@ install_gui_tools() {
   echo ""
   echo "this will install:"
   echo "  - cockpit: web-based server management (https://localhost:9090)"
-  echo "  - pgadmin: database administration tool (http://localhost:5050)"
+  echo "  - pgadmin: database administration tool (http://localhost:5445)"
   echo ""
   echo "pgadmin runs as a container and will be started with evi deployment."
   echo "it is accessible ONLY from localhost for security."
@@ -538,7 +538,7 @@ install_gui_tools() {
   log "=== admin tools configured ==="
   echo ""
   echo "  cockpit:  https://localhost:9090 (available now)"
-  echo "  pgadmin:  http://localhost:5050 (available after deployment)"
+  echo "  pgadmin:  http://localhost:5445 (available after deployment)"
   echo ""
   echo "pgadmin login credentials:"
   echo "  - email: admin@evi.local (fixed)"

@@ -138,7 +138,7 @@ load_env_files() {
   export EVI_PGADMIN_ENABLED="${EVI_PGADMIN_ENABLED:-false}"
   export EVI_PGADMIN_IMAGE="${EVI_PGADMIN_IMAGE:-docker.io/dpage/pgadmin4:8}"
   export EVI_PGADMIN_HOST="${EVI_PGADMIN_HOST:-127.0.0.1}"
-  export EVI_PGADMIN_PORT="${EVI_PGADMIN_PORT:-5050}"
+  export EVI_PGADMIN_PORT="${EVI_PGADMIN_PORT:-5445}"
   export EVI_PGADMIN_EMAIL="${EVI_PGADMIN_EMAIL:-admin@evi.local}"
 
   # Validation
