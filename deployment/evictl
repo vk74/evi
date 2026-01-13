@@ -139,7 +139,7 @@ load_env_files() {
   export EVI_PGADMIN_IMAGE="${EVI_PGADMIN_IMAGE:-docker.io/dpage/pgadmin4:8}"
   export EVI_PGADMIN_HOST="${EVI_PGADMIN_HOST:-127.0.0.1}"
   export EVI_PGADMIN_PORT="${EVI_PGADMIN_PORT:-5445}"
-  export EVI_PGADMIN_EMAIL="${EVI_PGADMIN_EMAIL:-admin@evi.local}"
+  export EVI_PGADMIN_EMAIL="${EVI_PGADMIN_EMAIL:-}"
 
   # Validation
   [[ -n "${EVI_DOMAIN:-}" ]] || die "EVI_DOMAIN is not set in evi.env"
@@ -457,6 +457,17 @@ cmd_init() {
   [[ -n "${EVI_FE_IMAGE}" ]] || die "EVI_FE_IMAGE is required"
   [[ -n "${EVI_BE_IMAGE}" ]] || die "EVI_BE_IMAGE is required"
   [[ -n "${EVI_DB_IMAGE}" ]] || die "EVI_DB_IMAGE is required"
+  
+  # Validate pgAdmin email if enabled
+  if [[ "${EVI_PGADMIN_ENABLED:-false}" == "true" ]]; then
+    if [[ -z "${EVI_PGADMIN_EMAIL}" ]]; then
+      die "EVI_PGADMIN_EMAIL is required when EVI_PGADMIN_ENABLED=true. Set it in evi.env or use install.sh to configure pgAdmin"
+    fi
+    # Basic email format validation (reject .local and localhost)
+    if [[ "${EVI_PGADMIN_EMAIL}" =~ \.local$ ]] || [[ "${EVI_PGADMIN_EMAIL}" =~ @localhost$ ]] || [[ ! "${EVI_PGADMIN_EMAIL}" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+      die "EVI_PGADMIN_EMAIL must be a valid email address (e.g., admin@example.com). Cannot use .local or localhost domain"
+    fi
+  fi
 
   # Secrets
   prepare_jwt_secret
@@ -524,12 +535,23 @@ cmd_up() {
   require_cmd systemctl
   load_env_files
   
+  # Reload systemd units in case they were changed
+  systemctl --user daemon-reload
+  
   systemctl --user start evi-network.service evi-db-volume.service || true
   # Explicitly start services (autostart is handled by [Install] via generator)
   systemctl --user start evi-db evi-be evi-fe evi-proxy
   
   if [[ "${EVI_PGADMIN_ENABLED:-false}" == "true" ]]; then
-    systemctl --user start evi-pgadmin
+    if ! systemctl --user start evi-pgadmin; then
+      warn "Failed to start evi-pgadmin service. Check logs with: journalctl --user -u evi-pgadmin"
+      return 1
+    fi
+    # Give it a moment to start and check if it's running
+    sleep 2
+    if ! systemctl --user is-active --quiet evi-pgadmin; then
+      warn "evi-pgadmin service started but is not active. Check logs with: journalctl --user -u evi-pgadmin"
+    fi
   fi
   
   log "OK: started services."

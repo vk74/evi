@@ -14,7 +14,7 @@
 #
 # Changes in v1.5.2:
 # - Updated pgAdmin instructions with correct login credentials
-# - pgAdmin uses email: admin@evi.local, password: EVI_ADMIN_DB_PASSWORD
+# - pgAdmin email is requested during GUI tools installation (validated, no .local domains)
 #
 # Changes in v1.5.1:
 # - Added pgAdmin configuration to install_gui_tools()
@@ -131,6 +131,23 @@ validate_domain() {
 validate_password() {
   local pass="$1"
   [[ ${#pass} -ge ${MIN_PASSWORD_LENGTH} ]]
+}
+
+validate_email() {
+  local email="$1"
+  # Basic format: user@domain.tld
+  if [[ ! "${email}" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+    return 1
+  fi
+  # Reject .local domains (not valid for email)
+  if [[ "${email}" =~ \.local$ ]]; then
+    return 1
+  fi
+  # Reject localhost domain
+  if [[ "${email}" =~ @localhost$ ]]; then
+    return 1
+  fi
+  return 0
 }
 
 is_private_ip() {
@@ -524,6 +541,20 @@ install_gui_tools() {
   log "configuring pgadmin..."
   ensure_config_files
   
+  # Request administrator email for pgAdmin
+  echo ""
+  echo "pgadmin requires an email address for the administrator account."
+  echo "this email will be used to log in to pgadmin."
+  echo ""
+  local pgadmin_email=""
+  while [[ -z "${pgadmin_email}" ]]; do
+    read -r -p "enter administrator email for pgadmin (e.g., admin@example.com): " pgadmin_email
+    if ! validate_email "${pgadmin_email}"; then
+      warn "invalid email format. email must be valid (e.g., user@domain.com) and cannot use .local or localhost domain"
+      pgadmin_email=""
+    fi
+  done
+  
   # Enable pgAdmin in evi.env
   if [[ -f "${TARGET_ENV}" ]]; then
     if grep -q "^EVI_PGADMIN_ENABLED=" "${TARGET_ENV}"; then
@@ -531,7 +562,16 @@ install_gui_tools() {
     else
       echo "EVI_PGADMIN_ENABLED=true" >> "${TARGET_ENV}"
     fi
+    
+    # Set pgAdmin email
+    if grep -q "^EVI_PGADMIN_EMAIL=" "${TARGET_ENV}"; then
+      sed -i "s|^EVI_PGADMIN_EMAIL=.*|EVI_PGADMIN_EMAIL=${pgadmin_email}|" "${TARGET_ENV}"
+    else
+      echo "EVI_PGADMIN_EMAIL=${pgadmin_email}" >> "${TARGET_ENV}"
+    fi
+    
     info "pgadmin enabled in evi.env"
+    info "pgadmin email set to: ${pgadmin_email}"
   fi
   
   echo ""
@@ -541,7 +581,7 @@ install_gui_tools() {
   echo "  pgadmin:  http://localhost:5445 (available after deployment)"
   echo ""
   echo "pgadmin login credentials:"
-  echo "  - email: admin@evi.local (fixed)"
+  echo "  - email: ${pgadmin_email}"
   echo "  - password: same as EVI_ADMIN_DB_PASSWORD from evi.secrets.env"
   echo ""
   echo "pgadmin notes:"
