@@ -1,14 +1,18 @@
-# Version: 1.1.0
+# Version: 1.2.0
 # Purpose: Podman Quadlet container unit for pgAdmin 4.
 # Deployment file: evi-pgadmin.container
 # Logic: Runs pgAdmin web interface, connected to internal network.
 #        Enabled only if EVI_PGADMIN_ENABLED=true.
 #        Accessible ONLY from localhost (127.0.0.1) for security.
 #
+# Changes in v1.2.0:
+# - Added required PGADMIN_DEFAULT_EMAIL and PGADMIN_DEFAULT_PASSWORD
+# - Added persistent volume for pgAdmin data (/var/lib/pgadmin)
+# - Removed SERVER_MODE=False (not supported in container mode)
+# - Added PGADMIN_LISTEN_PORT to match internal port
+#
 # Changes in v1.1.0:
 # - Port bound to localhost only (127.0.0.1) for security
-# - Disabled pgAdmin authentication (SERVER_MODE=False) - safe for localhost-only access
-# - Removed PGADMIN_DEFAULT_EMAIL and PGADMIN_DEFAULT_PASSWORD
 # - Added servers.json mount for pre-configured evi-db connection
 #
 # Changes in v1.0.0:
@@ -33,14 +37,21 @@ Network={{EVI_NETWORK}}
 # Publish port to localhost ONLY (security: no external access)
 PublishPort={{EVI_PGADMIN_HOST}}:{{EVI_PGADMIN_PORT}}:80
 
-# Environment - Desktop mode (no login required, safe for localhost-only)
-Environment=PGADMIN_CONFIG_SERVER_MODE=False
+# Required credentials for pgAdmin web interface
+# Email is fixed, password reuses EVI_ADMIN_DB_PASSWORD for simplicity
+Environment=PGADMIN_DEFAULT_EMAIL={{EVI_PGADMIN_EMAIL}}
+Environment=PGADMIN_DEFAULT_PASSWORD={{EVI_ADMIN_DB_PASSWORD}}
+
+# Disable master password requirement for easier access to pre-configured servers
 Environment=PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED=False
 
-# Mount pre-configured servers.json for evi-db connection
+# Mount pre-configured servers.json for evi-db connection (loaded on first launch only)
 Volume={{EVI_STATE_DIR}}/pgadmin/servers.json:/pgadmin4/servers.json:ro,Z
 
-# Resource limits (optional - keep minimal)
+# Persistent storage for pgAdmin data (sessions, config db, user files)
+Volume={{EVI_STATE_DIR}}/pgadmin/data:/var/lib/pgadmin:Z
+
+# Resource limits
 PodmanArgs=--memory=512m
 
 [Service]

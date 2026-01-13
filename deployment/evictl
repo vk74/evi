@@ -11,6 +11,8 @@
 # Changes in v1.5.3:
 # - Fixed pgAdmin not starting: added load_env_files() call to cmd_up()
 # - Added pgAdmin support to cmd_down(), cmd_restart(), cmd_status()
+# - Added EVI_PGADMIN_EMAIL to template rendering keys
+# - Added pgadmin/data directory creation for persistent storage
 #
 # Changes in v1.5.2:
 # - Fixed unbound variable error for EVI_PGADMIN_ENABLED
@@ -133,6 +135,7 @@ load_env_files() {
   export EVI_PGADMIN_IMAGE="${EVI_PGADMIN_IMAGE:-docker.io/dpage/pgadmin4:8}"
   export EVI_PGADMIN_HOST="${EVI_PGADMIN_HOST:-127.0.0.1}"
   export EVI_PGADMIN_PORT="${EVI_PGADMIN_PORT:-5050}"
+  export EVI_PGADMIN_EMAIL="${EVI_PGADMIN_EMAIL:-admin@evi.local}"
 
   # Validation
   [[ -n "${EVI_DOMAIN:-}" ]] || die "EVI_DOMAIN is not set in evi.env"
@@ -144,7 +147,8 @@ load_env_files() {
 }
 
 ensure_dirs() {
-  mkdir -p "${EVI_STATE_DIR}/proxy" "${EVI_STATE_DIR}/tls" "${EVI_STATE_DIR}/secrets" "${EVI_STATE_DIR}/pgadmin"
+  mkdir -p "${EVI_STATE_DIR}/proxy" "${EVI_STATE_DIR}/tls" "${EVI_STATE_DIR}/secrets"
+  mkdir -p "${EVI_STATE_DIR}/pgadmin" "${EVI_STATE_DIR}/pgadmin/data"
   mkdir -p "${EVI_CONFIG_DIR}"
   mkdir -p "${EVI_QUADLET_DIR}"
 }
@@ -167,7 +171,7 @@ render_template_file() {
     EVI_NODE_ENV EVI_CORS_ORIGINS
     EVI_POSTGRES_DB EVI_POSTGRES_USER EVI_POSTGRES_PASSWORD EVI_APP_DB_PASSWORD EVI_ADMIN_DB_USERNAME EVI_ADMIN_DB_PASSWORD EVI_SEED_DEMO_DATA
     EVI_STATE_DIR EVI_JWT_SECRET_NAME
-    EVI_PGADMIN_IMAGE EVI_PGADMIN_HOST EVI_PGADMIN_PORT
+    EVI_PGADMIN_IMAGE EVI_PGADMIN_HOST EVI_PGADMIN_PORT EVI_PGADMIN_EMAIL
   )
 
   local k v

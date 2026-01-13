@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.5.1
+# Version: 1.5.2
 # Purpose: Interactive installer and manager for evi production deployment.
 # Deployment file: install.sh
 # Logic:
@@ -11,6 +11,10 @@
 # - TLS certificate management (auto-generate or user-provided)
 # - Deployment orchestration and status display
 # - Optional cleanup of source files after successful deployment
+#
+# Changes in v1.5.2:
+# - Updated pgAdmin instructions with correct login credentials
+# - pgAdmin uses email: admin@evi.local, password: EVI_ADMIN_DB_PASSWORD
 #
 # Changes in v1.5.1:
 # - Added pgAdmin configuration to install_gui_tools()
@@ -536,10 +540,14 @@ install_gui_tools() {
   echo "  cockpit:  https://localhost:9090 (available now)"
   echo "  pgadmin:  http://localhost:5050 (available after deployment)"
   echo ""
+  echo "pgadmin login credentials:"
+  echo "  - email: admin@evi.local (fixed)"
+  echo "  - password: same as EVI_ADMIN_DB_PASSWORD from evi.secrets.env"
+  echo ""
   echo "pgadmin notes:"
-  echo "  - no login required (localhost-only access)"
+  echo "  - accessible ONLY from localhost (secure)"
   echo "  - evi-db connection is pre-configured"
-  echo "  - use EVI_ADMIN_DB_USERNAME password to connect to database"
+  echo "  - use database username/password to connect to database"
   echo ""
   
   read -r -p "press enter to continue..."
