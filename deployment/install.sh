@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.5.2
+# Version: 1.5.3
 # Purpose: Interactive installer and manager for evi production deployment.
 # Deployment file: install.sh
 # Logic:
@@ -11,6 +11,13 @@
 # - TLS certificate management (auto-generate or user-provided)
 # - Deployment orchestration and status display
 # - Optional cleanup of source files after successful deployment
+#
+# Changes in v1.5.3:
+# - Added deployment summary after deploy option (option 3)
+# - Summary displays: overall result, step statistics, critical errors, container status
+# - Color-coded output (green for success, red for errors, yellow for warnings)
+# - Tracks execution time for each step (build/init/up)
+# - Shows container health status and uptime
 #
 # Changes in v1.5.2:
 # - Updated pgAdmin instructions with correct login credentials
@@ -1068,6 +1075,301 @@ menu_env_config() {
   done
 }
 
+# --- Deployment Summary Helper Functions ---
+
+get_project_containers() {
+  local containers=("evi-db" "evi-be" "evi-fe" "evi-proxy")
+  
+  # Check if pgAdmin is enabled
+  if [[ -f "${TARGET_ENV}" ]]; then
+    local pgadmin_enabled
+    pgadmin_enabled=$(grep "^EVI_PGADMIN_ENABLED=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | tr -d "'" | tr '[:upper:]' '[:lower:]' || echo "false")
+    if [[ "${pgadmin_enabled}" == "true" ]]; then
+      containers+=("evi-pgadmin")
+    fi
+  fi
+  
+  printf "%s\n" "${containers[@]}"
+}
+
+get_container_status() {
+  local container_name="$1"
+  local status
+  status=$(podman ps --filter "name=^${container_name}$" --format "{{.Status}}" 2>/dev/null || echo "")
+  
+  if [[ -z "${status}" ]]; then
+    # Check if container exists but is stopped
+    if podman ps -a --filter "name=^${container_name}$" --format "{{.Names}}" 2>/dev/null | grep -q "^${container_name}$"; then
+      echo "stopped"
+    else
+      echo "not_found"
+    fi
+  else
+    # Extract status from podman ps output (format: "Up X minutes" or "Restarting")
+    if echo "${status}" | grep -q "Up"; then
+      echo "running"
+    elif echo "${status}" | grep -q "Restarting"; then
+      echo "restarting"
+    elif echo "${status}" | grep -q "Starting"; then
+      echo "starting"
+    else
+      echo "stopped"
+    fi
+  fi
+}
+
+get_container_health() {
+  local container_name="$1"
+  local health
+  health=$(podman inspect --format "{{.State.Health.Status}}" "${container_name}" 2>/dev/null || echo "none")
+  
+  if [[ -z "${health}" ]] || [[ "${health}" == "<no value>" ]]; then
+    echo "none"
+  else
+    echo "${health}"
+  fi
+}
+
+get_container_uptime() {
+  local container_name="$1"
+  local uptime
+  uptime=$(podman inspect --format "{{.State.StartedAt}}" "${container_name}" 2>/dev/null || echo "")
+  
+  if [[ -z "${uptime}" ]] || [[ "${uptime}" == "<no value>" ]]; then
+    echo ""
+    return
+  fi
+  
+  # Calculate uptime from started time
+  local started_epoch
+  started_epoch=$(date -d "${uptime}" +%s 2>/dev/null || date -j -f "%Y-%m-%dT%H:%M:%S" "${uptime}" +%s 2>/dev/null || echo "0")
+  local now_epoch
+  now_epoch=$(date +%s)
+  
+  if [[ "${started_epoch}" == "0" ]] || [[ "${started_epoch}" -eq 0 ]]; then
+    echo ""
+    return
+  fi
+  
+  local diff=$((now_epoch - started_epoch))
+  local minutes=$((diff / 60))
+  local hours=$((minutes / 60))
+  local days=$((hours / 24))
+  
+  if [[ ${days} -gt 0 ]]; then
+    echo "${days}d ${hours}h"
+  elif [[ ${hours} -gt 0 ]]; then
+    echo "${hours}h ${minutes}m"
+  else
+    echo "${minutes}m"
+  fi
+}
+
+get_container_ports() {
+  local container_name="$1"
+  podman ps --filter "name=^${container_name}$" --format "{{.Ports}}" 2>/dev/null | head -1 || echo ""
+}
+
+display_deployment_summary() {
+  local build_status="$1"
+  local build_time="$2"
+  local build_skipped="$3"
+  local build_errors="$4"
+  local init_status="$5"
+  local init_time="$6"
+  local init_errors="$7"
+  local up_status="$8"
+  local up_time="$9"
+  local up_errors="${10}"
+  local total_time="${11}"
+  
+  echo ""
+  echo "+--------------------------------------------------------------+"
+  printf "|           ${CYAN}deployment summary${NC}                           |\n"
+  echo "+--------------------------------------------------------------+"
+  echo ""
+  
+  # 1. Overall result
+  printf "  ${CYAN}overall result:${NC}\n"
+  local overall_status="success"
+  local success_count=0
+  local failed_count=0
+  
+  if [[ "${build_skipped}" == "false" ]] && [[ "${build_status}" != "success" ]]; then
+    failed_count=$((failed_count + 1))
+  fi
+  if [[ "${init_status}" != "success" ]]; then
+    failed_count=$((failed_count + 1))
+  fi
+  if [[ "${up_status}" != "success" ]]; then
+    failed_count=$((failed_count + 1))
+  fi
+  
+  if [[ "${build_skipped}" == "false" ]] && [[ "${build_status}" == "success" ]]; then
+    success_count=$((success_count + 1))
+  fi
+  if [[ "${init_status}" == "success" ]]; then
+    success_count=$((success_count + 1))
+  fi
+  if [[ "${up_status}" == "success" ]]; then
+    success_count=$((success_count + 1))
+  fi
+  
+  if [[ ${failed_count} -eq 0 ]]; then
+    printf "    ${SYM_OK} ${GREEN}SUCCESS${NC} - all steps completed successfully\n"
+    overall_status="success"
+  elif [[ ${success_count} -eq 0 ]]; then
+    printf "    ${SYM_FAIL} ${RED}FAILED${NC} - all steps failed\n"
+    overall_status="failed"
+  else
+    printf "    ${SYM_WARN} ${YELLOW}PARTIAL${NC} - some steps completed, some failed\n"
+    overall_status="partial"
+  fi
+  
+  printf "    total time: ${CYAN}%s${NC} seconds\n" "${total_time}"
+  echo ""
+  
+  # 2. Step statistics
+  printf "  ${CYAN}step statistics:${NC}\n"
+  
+  # Build step
+  if [[ "${build_skipped}" == "true" ]]; then
+    printf "    ${SYM_PENDING} build: skipped\n"
+  elif [[ "${build_status}" == "success" ]]; then
+    printf "    ${SYM_OK} build: ${GREEN}success${NC} (${build_time}s)\n"
+  else
+    printf "    ${SYM_FAIL} build: ${RED}failed${NC} (${build_time}s)\n"
+  fi
+  
+  # Init step
+  if [[ "${init_status}" == "success" ]]; then
+    printf "    ${SYM_OK} init: ${GREEN}success${NC} (${init_time}s)\n"
+  else
+    printf "    ${SYM_FAIL} init: ${RED}failed${NC} (${init_time}s)\n"
+  fi
+  
+  # Up step
+  if [[ "${up_status}" == "success" ]]; then
+    printf "    ${SYM_OK} up: ${GREEN}success${NC} (${up_time}s)\n"
+  else
+    printf "    ${SYM_FAIL} up: ${RED}failed${NC} (${up_time}s)\n"
+  fi
+  
+  echo ""
+  
+  # 3. Critical errors
+  printf "  ${CYAN}critical errors:${NC}\n"
+  local has_errors=false
+  
+  if [[ "${build_skipped}" == "false" ]] && [[ -n "${build_errors}" ]]; then
+    has_errors=true
+    printf "    ${SYM_FAIL} ${RED}build${NC}: %s\n" "${build_errors}"
+  fi
+  
+  if [[ -n "${init_errors}" ]]; then
+    has_errors=true
+    printf "    ${SYM_FAIL} ${RED}init${NC}: %s\n" "${init_errors}"
+  fi
+  
+  if [[ -n "${up_errors}" ]]; then
+    has_errors=true
+    printf "    ${SYM_FAIL} ${RED}up${NC}: %s\n" "${up_errors}"
+  fi
+  
+  if [[ "${has_errors}" == "false" ]]; then
+    printf "    ${SYM_OK} no critical errors\n"
+  fi
+  
+  echo ""
+  
+  # 4. Container status
+  printf "  ${CYAN}container status:${NC}\n"
+  
+  local containers
+  containers=$(get_project_containers)
+  local running_count=0
+  local total_count=0
+  
+  while IFS= read -r container; do
+    [[ -z "${container}" ]] && continue
+    total_count=$((total_count + 1))
+    
+    local status
+    status=$(get_container_status "${container}")
+    local health
+    health=$(get_container_health "${container}")
+    local uptime
+    uptime=$(get_container_uptime "${container}")
+    local ports
+    ports=$(get_container_ports "${container}")
+    
+    # Status display
+    case "${status}" in
+      running)
+        printf "    ${SYM_OK} ${GREEN}%-15s${NC}" "${container}:"
+        running_count=$((running_count + 1))
+        ;;
+      restarting|starting)
+        printf "    ${SYM_WARN} ${YELLOW}%-15s${NC}" "${container}:"
+        ;;
+      stopped|not_found)
+        printf "    ${SYM_FAIL} ${RED}%-15s${NC}" "${container}:"
+        ;;
+      *)
+        printf "    ${SYM_PENDING} %-15s" "${container}:"
+        ;;
+    esac
+    
+    # Status text
+    case "${status}" in
+      running)
+        printf " ${GREEN}running${NC}"
+        ;;
+      restarting)
+        printf " ${YELLOW}restarting${NC}"
+        ;;
+      starting)
+        printf " ${YELLOW}starting${NC}"
+        ;;
+      stopped)
+        printf " ${RED}stopped${NC}"
+        ;;
+      *)
+        printf " ${GRAY}unknown${NC}"
+        ;;
+    esac
+    
+    # Health status
+    if [[ "${status}" == "running" ]]; then
+      case "${health}" in
+        healthy)
+          printf " ${GREEN}(healthy)${NC}"
+          ;;
+        unhealthy)
+          printf " ${YELLOW}(unhealthy)${NC}"
+          ;;
+        starting)
+          printf " ${YELLOW}(healthcheck starting)${NC}"
+          ;;
+        *)
+          printf " ${GRAY}(no healthcheck)${NC}"
+          ;;
+      esac
+      
+      # Uptime
+      if [[ -n "${uptime}" ]]; then
+        printf " uptime: ${CYAN}%s${NC}" "${uptime}"
+      fi
+    fi
+    
+    echo ""
+  done <<< "${containers}"
+  
+  # Summary stats
+  printf "    ${CYAN}summary:${NC} ${running_count}/${total_count} containers running\n"
+  echo ""
+}
+
 # --- Deployment ---
 
 deploy_up() {
@@ -1089,17 +1391,111 @@ deploy_up() {
     return
   fi
   
+  # Initialize tracking variables
+  local build_status="skipped"
+  local build_time=0
+  local build_skipped=true
+  local build_errors=""
+  local init_status=""
+  local init_time=0
+  local init_errors=""
+  local up_status=""
+  local up_time=0
+  local up_errors=""
+  local deployment_start
+  deployment_start=$(date +%s)
+  
+  # Build step (optional)
   if confirm "do you want to build container images from source?"; then
-    "${SCRIPT_DIR}/evictl" build
+    build_skipped=false
+    local build_start
+    build_start=$(date +%s)
+    log "building container images..."
+    
+    # Capture stderr for error messages
+    local build_stderr
+    build_stderr=$(mktemp)
+    if "${SCRIPT_DIR}/evictl" build 2>"${build_stderr}"; then
+      build_status="success"
+      local build_end
+      build_end=$(date +%s)
+      build_time=$((build_end - build_start))
+    else
+      build_status="failed"
+      local build_end
+      build_end=$(date +%s)
+      build_time=$((build_end - build_start))
+      # Extract error message from stderr (last non-empty line or generic message)
+      build_errors=$(tail -1 "${build_stderr}" 2>/dev/null | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' || echo "build command failed")
+      if [[ -z "${build_errors}" ]]; then
+        build_errors="build command failed with exit code $?"
+      fi
+    fi
+    rm -f "${build_stderr}"
   else
     info "skipping build (will pull images if needed)."
   fi
   
+  # Init step
+  local init_start
+  init_start=$(date +%s)
   log "initializing services..."
-  "${SCRIPT_DIR}/evictl" init
   
+  local init_stderr
+  init_stderr=$(mktemp)
+  if "${SCRIPT_DIR}/evictl" init 2>"${init_stderr}"; then
+    init_status="success"
+    local init_end
+    init_end=$(date +%s)
+    init_time=$((init_end - init_start))
+  else
+    init_status="failed"
+    local init_end
+    init_end=$(date +%s)
+    init_time=$((init_end - init_start))
+    # Extract error message from stderr
+    init_errors=$(tail -1 "${init_stderr}" 2>/dev/null | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' || echo "init command failed")
+    if [[ -z "${init_errors}" ]]; then
+      init_errors="init command failed with exit code $?"
+    fi
+  fi
+  rm -f "${init_stderr}"
+  
+  # Up step
+  local up_start
+  up_start=$(date +%s)
   log "starting services..."
-  "${SCRIPT_DIR}/evictl" up
+  
+  local up_stderr
+  up_stderr=$(mktemp)
+  if "${SCRIPT_DIR}/evictl" up 2>"${up_stderr}"; then
+    up_status="success"
+    local up_end
+    up_end=$(date +%s)
+    up_time=$((up_end - up_start))
+  else
+    up_status="failed"
+    local up_end
+    up_end=$(date +%s)
+    up_time=$((up_end - up_start))
+    # Extract error message from stderr
+    up_errors=$(tail -1 "${up_stderr}" 2>/dev/null | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' || echo "up command failed")
+    if [[ -z "${up_errors}" ]]; then
+      up_errors="up command failed with exit code $?"
+    fi
+  fi
+  rm -f "${up_stderr}"
+  
+  # Calculate total time
+  local deployment_end
+  deployment_end=$(date +%s)
+  local total_time=$((deployment_end - deployment_start))
+  
+  # Display summary
+  display_deployment_summary "${build_status}" "${build_time}" "${build_skipped}" "${build_errors}" \
+                            "${init_status}" "${init_time}" "${init_errors}" \
+                            "${up_status}" "${up_time}" "${up_errors}" \
+                            "${total_time}"
   
   echo ""
   info "deployment complete!"
