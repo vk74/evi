@@ -34,7 +34,9 @@ cd ~
 git clone <YOUR_REPO_URL> evi
 cd evi/deployment
 ```
-example clone command with token: git clone https://vk74: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@github.com/vk74/evi.git ~/evi
+example clone command with token: git clone https://vk74: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@github.com/vk74/evi.git ~/evi
+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
+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
 
 #### Step 2: Run the Installer
 Launch the interactive installer wizard.

@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 #
-# Version: 1.5.4
+# Version: 1.5.5
 # Purpose: evi production deployment controller (rootless Podman + Quadlet).
 # Deployment file: evictl
 # Logic:
 # - Provides CLI subcommands (init/up/down/restart/status/logs/update/doctor/health/cert/build/cleanup)
 # - Provides interactive menu mode when run without args
 # - Renders Quadlet units from templates, renders Caddyfile, and manages secrets
+#
+# Changes in v1.5.5:
+# - Fixed frontend-backend connection in production: added --build-arg VUE_APP_API_URL=/api to frontend build
+# - Frontend now uses relative path /api for API calls (works with Caddy reverse proxy)
 #
 # Changes in v1.5.4:
 # - Fixed pgAdmin permission error: set ownership of data directory to UID 5050
@@ -510,14 +514,9 @@ cmd_build() {
   # Build Frontend
   if [[ -d "${PROJECT_ROOT}/front" ]]; then
     log "Building Frontend image: ${EVI_FE_IMAGE}"
-    # Pass build args if needed, typically API URL might be needed at build time for some stacks
-    # But usually we inject it at runtime or Caddy handles it.
-    # Checking Containerfile for ARGS...
-    # FRONTEND_API_URL is an ARG.
-    # We should pass it if we want it hardcoded, but for prod with relative paths (/api) it might be fine.
-    # However, let's pass generic defaults or what is in env if applicable.
-    # For now, simplistic build.
-    podman build -t "${EVI_FE_IMAGE}" "${PROJECT_ROOT}/front" &
+    # Pass build arg for API URL: use relative path /api for reverse proxy
+    # Frontend and backend are on the same domain via Caddy, so relative path works
+    podman build --build-arg VUE_APP_API_URL="${EVI_FE_API_URL:-/api}" -t "${EVI_FE_IMAGE}" "${PROJECT_ROOT}/front" &
     pids[2]=$!
   else
     warn "Frontend source directory not found at ${PROJECT_ROOT}/front"
