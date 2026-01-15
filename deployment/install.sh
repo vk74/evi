@@ -1468,7 +1468,9 @@ deploy_up() {
   
   local up_stderr
   up_stderr=$(mktemp)
-  if "${SCRIPT_DIR}/evictl" up 2>"${up_stderr}"; then
+  # Redirect stdin to /dev/null to suppress interactive cleanup prompt in evictl
+  # Cleanup question should only appear when evictl is run directly, not from install.sh
+  if "${SCRIPT_DIR}/evictl" up < /dev/null 2>"${up_stderr}"; then
     up_status="success"
     local up_end
     up_end=$(date +%s)
