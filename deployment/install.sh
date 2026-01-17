@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.5.3
+# Version: 1.5.4
 # Purpose: Interactive installer and manager for evi production deployment.
 # Deployment file: install.sh
 # Logic:
@@ -11,6 +11,12 @@
 # - TLS certificate management (auto-generate or user-provided)
 # - Deployment orchestration and status display
 # - Optional cleanup of source files after successful deployment
+#
+# Changes in v1.5.4:
+# - Unified numbering: replaced letters with numbers in option 2 (environment configuration) for consistency with option 1
+# - Added step 4 in guided setup: "deploy sample catalog and data?" question (yes/no)
+# - EVI_SEED_DEMO_DATA variable now set based on user choice during guided setup
+# - All guided setup questions now use numeric options (1/2/3) instead of letters for better consistency
 #
 # Changes in v1.5.3:
 # - Added deployment summary after deploy option (option 3)
@@ -645,19 +651,19 @@ guided_setup() {
   # Step 1: Access type
   echo "step 1: how will users connect to your evi?"
   echo ""
-  echo "  a) private ip or intranet dns name"
-  echo "  b) public dns domain"
-  echo "  c) public ip address"
+  echo "  1) private ip or intranet dns name"
+  echo "  2) public dns domain"
+  echo "  3) public ip address"
   echo ""
   
   local access_type=""
   while [[ -z "${access_type}" ]]; do
-    read -r -p "select [a-c]: " access_type
+    read -r -p "select [1-3]: " access_type
     case "${access_type}" in
-      a|A) access_type="internal" ;;
-      b|B) access_type="public_domain" ;;
-      c|C) access_type="public_ip" ;;
-      *) access_type=""; warn "please select a, b, or c" ;;
+      1) access_type="internal" ;;
+      2) access_type="public_domain" ;;
+      3) access_type="public_ip" ;;
+      *) access_type=""; warn "please select 1, 2, or 3" ;;
     esac
   done
   
@@ -680,23 +686,23 @@ guided_setup() {
     echo ""
     echo "step 2: tls certificate configuration"
     echo ""
-    echo "  a) let's encrypt (automatic)"
-    echo "  b) use my own certificates"
+    echo "  1) let's encrypt (automatic)"
+    echo "  2) use my own certificates"
     echo ""
     
     local cert_choice=""
     while [[ -z "${cert_choice}" ]]; do
-      read -r -p "select [a-b]: " cert_choice
+      read -r -p "select [1-2]: " cert_choice
       case "${cert_choice}" in
-        a|A) 
+        1) 
           tls_mode="letsencrypt"
           cert_choice="letsencrypt"
           ;;
-        b|B) 
+        2) 
           tls_mode="manual"
           cert_choice="own"
           ;;
-        *) cert_choice=""; warn "please select a or b" ;;
+        *) cert_choice=""; warn "please select 1 or 2" ;;
       esac
     done
     
@@ -745,16 +751,16 @@ guided_setup() {
       echo ""
       echo "step 2: tls certificate configuration"
       echo ""
-      echo "  a) auto-generate self-signed certificate (recommended)"
-      echo "  b) use my own certificates"
+      echo "  1) auto-generate self-signed certificate (recommended)"
+      echo "  2) use my own certificates"
       echo ""
       
       while [[ -z "${cert_choice_manual}" ]]; do
-        read -r -p "select [a-b]: " cert_choice_manual
+        read -r -p "select [1-2]: " cert_choice_manual
         case "${cert_choice_manual}" in
-          a|A) generate_certs="yes" ;;
-          b|B) generate_certs="no" ;;
-          *) cert_choice_manual=""; warn "please select a or b" ;;
+          1) generate_certs="yes" ;;
+          2) generate_certs="no" ;;
+          *) cert_choice_manual=""; warn "please select 1 or 2" ;;
         esac
       done
     fi
@@ -802,17 +808,17 @@ guided_setup() {
   # Step 3: Database passwords
   echo "step 3: database password configuration"
   echo ""
-  echo "  a) auto-generate secure passwords (recommended)"
-  echo "  b) set passwords manually"
+  echo "  1) auto-generate secure passwords (recommended)"
+  echo "  2) set passwords manually"
   echo ""
   
   local pass_choice=""
   while [[ -z "${pass_choice}" ]]; do
-    read -r -p "select [a-b]: " pass_choice
+    read -r -p "select [1-2]: " pass_choice
     case "${pass_choice}" in
-      a|A) pass_choice="auto" ;;
-      b|B) pass_choice="manual" ;;
-      *) pass_choice=""; warn "please select a or b" ;;
+      1) pass_choice="auto" ;;
+      2) pass_choice="manual" ;;
+      *) pass_choice=""; warn "please select 1 or 2" ;;
     esac
   done
   
@@ -853,6 +859,29 @@ guided_setup() {
     info "passwords will be auto-generated."
   fi
   
+  # Step 4: Demo data
+  echo ""
+  echo "step 4: deploy sample catalog and data?"
+  echo ""
+  echo "  1) yes"
+  echo "  2) no"
+  echo ""
+  
+  local demo_data_choice=""
+  while [[ -z "${demo_data_choice}" ]]; do
+    read -r -p "select [1-2]: " demo_data_choice
+    case "${demo_data_choice}" in
+      1) demo_data_choice="yes" ;;
+      2) demo_data_choice="no" ;;
+      *) demo_data_choice=""; warn "please select 1 or 2" ;;
+    esac
+  done
+  
+  local seed_demo_data="false"
+  if [[ "${demo_data_choice}" == "yes" ]]; then
+    seed_demo_data="true"
+  fi
+  
   # Summary
   echo ""
   log "=== configuration summary ==="
@@ -869,6 +898,7 @@ guided_setup() {
     printf "  certificates:  let's encrypt (automatic)\n"
   fi
   printf "  db passwords:  %s\n" "${pass_choice}"
+  printf "  demo data:     %s\n" "${demo_data_choice}"
   echo ""
   
   if ! confirm "save this configuration?"; then
@@ -895,6 +925,13 @@ guided_setup() {
   sed -i "s|^EVI_POSTGRES_PASSWORD=.*|EVI_POSTGRES_PASSWORD=${pg_password}|" "${TARGET_SECRETS}"
   sed -i "s|^EVI_APP_DB_PASSWORD=.*|EVI_APP_DB_PASSWORD=${app_password}|" "${TARGET_SECRETS}"
   sed -i "s|^EVI_ADMIN_DB_PASSWORD=.*|EVI_ADMIN_DB_PASSWORD=${admin_password}|" "${TARGET_SECRETS}"
+  
+  # Update EVI_SEED_DEMO_DATA
+  if grep -q "^EVI_SEED_DEMO_DATA=" "${TARGET_ENV}"; then
+    sed -i "s|^EVI_SEED_DEMO_DATA=.*|EVI_SEED_DEMO_DATA=${seed_demo_data}|" "${TARGET_ENV}"
+  else
+    echo "EVI_SEED_DEMO_DATA=${seed_demo_data}" >> "${TARGET_ENV}"
+  fi
   
   info "configuration saved to evi.env and evi.secrets.env"
   
@@ -1066,15 +1103,15 @@ menu_env_config() {
     echo ""
     log "=== containers environment configuration ==="
     echo ""
-    echo "  a) guided setup (recommended for first-time setup)"
-    echo "  b) manual configuration (advanced)"
-    echo "  c) back to main menu"
+    echo "1) guided setup (recommended for first-time setup)"
+    echo "2) manual configuration (advanced)"
+    echo "3) back to main menu"
     echo ""
     read -r -p "select: " opt
     case $opt in
-      a|A) guided_setup ;;
-      b|B) menu_manual_config ;;
-      c|C) break ;;
+      1) guided_setup ;;
+      2) menu_manual_config ;;
+      3) break ;;
       *) warn "invalid option" ;;
     esac
   done
