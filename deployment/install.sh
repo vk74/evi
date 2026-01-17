@@ -14,7 +14,7 @@
 #
 # Changes in v1.5.4:
 # - Unified numbering: replaced letters with numbers in option 2 (environment configuration) for consistency with option 1
-# - Added step 4 in guided setup: "deploy sample catalog and data?" question (yes/no)
+# - Added step 4 in guided setup: "deploy sample catalog and data?" question
 # - EVI_SEED_DEMO_DATA variable now set based on user choice during guided setup
 # - All guided setup questions now use numeric options (1/2/3) instead of letters for better consistency
 #
@@ -484,7 +484,7 @@ check_ports() {
 }
 
 install_core_prerequisites() {
-  log "installing core prerequisites..."
+  log "installing core prerequisites for container environment on this host server..."
   if ! confirm "this will install podman, curl, openssl and configure rootless ports. proceed?"; then
     return 0
   fi
@@ -595,13 +595,14 @@ install_gui_tools() {
   echo "  - pgadmin"
   echo ""
   echo "cockpit:"
-  echo "  to manage your container environment visit cockpit at https://localhost:9090."
+  printf "  to manage your container environment visit cockpit at ${GREEN}https://localhost:9090${NC}.\n"
   echo "  login using your host OS user account and password."
   echo ""
   echo "pgadmin:"
-  echo "  to administer evi database use pgadmin web console at http://localhost:5445."
-  echo "  1. login to webconsole using ${pgadmin_email} and EVI_ADMIN_DB_PASSWORD"
-  echo "  2. for db operations use \"evidba\" user account and EVI_ADMIN_DB_PASSWORD (preconfigured)."
+  printf "  to manage your evi database use pgadmin web-console at ${GREEN}http://localhost:5445${NC}.\n"
+  echo "  evi-pgadmin and evi-db are 2 different containers, you need 2 separate user accounts, but they can use the same password."
+  printf "  1. login to web-console using ${GREEN}${pgadmin_email}${NC} and EVI_ADMIN_DB_PASSWORD\n"
+  printf "  2. in web-console login to database using ${GREEN}evidba${NC} user account and EVI_ADMIN_DB_PASSWORD (preconfigured).\n"
   echo "  3. when evi deployment completes, EVI_ADMIN_DB_PASSWORD can be found in cockpit -> podman containers -> integration tab."
   echo "  4. should you need to set your own db password, proceed to step 2 (container environment configuration) option 2 (manual configuration)."
   echo "  edit evi.secrets.env file, EVI_ADMIN_DB_PASSWORD variable."
@@ -861,10 +862,10 @@ guided_setup() {
   
   # Step 4: Demo data
   echo ""
-  echo "step 4: deploy sample catalog and data?"
+  echo "step 4: deploy sample data?"
   echo ""
-  echo "  1) yes"
-  echo "  2) no"
+  echo "  1) yes, deploy sample data"
+  echo "  2) no demo data, just clean install"
   echo ""
   
   local demo_data_choice=""
