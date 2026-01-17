@@ -1,7 +1,12 @@
-# Version: 1.2.0
+# Version: 1.3.0
 # Purpose: Podman Quadlet container unit for evi reverse proxy (Caddy).
 # Deployment file: evi-reverse-proxy.container
 # Logic: Terminates TLS on host 80/443 and routes / -> evi-fe, /api -> evi-be.
+#
+# Changes in v1.3.0:
+# - Fixed network binding: replaced PublishPort with PodmanArgs --publish 0.0.0.0:PORT:PORT
+# - Ensures ports listen on all interfaces (0.0.0.0) for external access
+# - Makes configuration explicit and reliable across Podman versions
 #
 # Changes in v1.2.0:
 # - Renamed from evi-proxy to evi-reverse-proxy for consistency.
@@ -28,9 +33,10 @@ ContainerName=evi-reverse-proxy
 # Internal network (so it can reach evi-fe and evi-be by container name)
 Network={{EVI_NETWORK}}
 
-# Publish host ports (Caddy is the only container publishing these)
-PublishPort={{EVI_HTTP_PORT}}:80
-PublishPort={{EVI_HTTPS_PORT}}:443
+# Publish host ports on all interfaces (0.0.0.0) for external access
+# Note: PublishPort in Quadlet doesn't support IP binding, using PodmanArgs instead
+PodmanArgs=--publish 0.0.0.0:{{EVI_HTTP_PORT}}:80
+PodmanArgs=--publish 0.0.0.0:{{EVI_HTTPS_PORT}}:443
 
 # Caddy configuration and state
 Volume={{EVI_STATE_DIR}}/proxy/Caddyfile:/etc/caddy/Caddyfile:ro,Z
