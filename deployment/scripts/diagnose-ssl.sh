@@ -108,19 +108,19 @@ echo ""
 # 3. Check container status
 log "3. Checking container status..."
 if command -v podman >/dev/null 2>&1; then
-  if podman ps --filter "name=evi-proxy" --format "{{.Names}}" | grep -q "evi-proxy"; then
-    info "evi-proxy container is running"
-    CONTAINER_STATUS=$(podman ps --filter "name=evi-proxy" --format "{{.Status}}")
+  if podman ps --filter "name=evi-reverse-proxy" --format "{{.Names}}" | grep -q "evi-reverse-proxy"; then
+    info "evi-reverse-proxy container is running"
+    CONTAINER_STATUS=$(podman ps --filter "name=evi-reverse-proxy" --format "{{.Status}}")
     info "  Status: ${CONTAINER_STATUS}"
     
     # Check ports
-    PORTS=$(podman port evi-proxy 2>/dev/null || echo "none")
+    PORTS=$(podman port evi-reverse-proxy 2>/dev/null || echo "none")
     info "  Published ports: ${PORTS}"
   else
-    err "evi-proxy container is not running"
-    if podman ps -a --filter "name=evi-proxy" --format "{{.Names}}" | grep -q "evi-proxy"; then
+    err "evi-reverse-proxy container is not running"
+    if podman ps -a --filter "name=evi-reverse-proxy" --format "{{.Names}}" | grep -q "evi-reverse-proxy"; then
       warn "  Container exists but is stopped"
-      EXIT_CODE=$(podman inspect evi-proxy --format "{{.State.ExitCode}}" 2>/dev/null || echo "unknown")
+      EXIT_CODE=$(podman inspect evi-reverse-proxy --format "{{.State.ExitCode}}" 2>/dev/null || echo "unknown")
       warn "  Exit code: ${EXIT_CODE}"
     fi
   fi
@@ -132,14 +132,14 @@ echo ""
 # 4. Check logs
 log "4. Checking recent proxy logs..."
 if command -v journalctl >/dev/null 2>&1; then
-  if journalctl --user -u evi-proxy -n 50 --no-pager 2>/dev/null | head -20; then
+  if journalctl --user -u evi-reverse-proxy -n 50 --no-pager 2>/dev/null | head -20; then
     info "Recent logs shown above"
   else
     warn "No logs found or journalctl error"
   fi
 else
   warn "journalctl not found, checking podman logs instead..."
-  if podman logs evi-proxy --tail 50 2>&1 | head -30; then
+  if podman logs evi-reverse-proxy --tail 50 2>&1 | head -30; then
     info "Recent container logs shown above"
   else
     warn "Could not retrieve container logs"

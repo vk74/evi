@@ -1,7 +1,10 @@
-# Version: 1.1.0
-# Purpose: Podman Quadlet container unit for evi proxy (Caddy).
-# Deployment file: evi-proxy.container
+# Version: 1.2.0
+# Purpose: Podman Quadlet container unit for evi reverse proxy (Caddy).
+# Deployment file: evi-reverse-proxy.container
 # Logic: Terminates TLS on host 80/443 and routes / -> evi-fe, /api -> evi-be.
+#
+# Changes in v1.2.0:
+# - Renamed from evi-proxy to evi-reverse-proxy for consistency.
 #
 # Changes in v1.1.0:
 # - Renamed from evi-reverse-proxy to evi-proxy for consistency.
@@ -11,7 +14,7 @@
 #
 
 [Unit]
-Description=evi proxy (Caddy) (Podman)
+Description=evi reverse proxy (Caddy) (Podman)
 Wants=network-online.target
 After=network-online.target
 Requires=evi-network.service
@@ -20,7 +23,7 @@ After=evi-network.service
 [Container]
 # Rendered by evictl
 Image={{EVI_PROXY_IMAGE}}
-ContainerName=evi-proxy
+ContainerName=evi-reverse-proxy
 
 # Internal network (so it can reach evi-fe and evi-be by container name)
 Network={{EVI_NETWORK}}

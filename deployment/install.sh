@@ -533,7 +533,7 @@ install_gui_tools() {
   echo ""
   local pgadmin_email=""
   while [[ -z "${pgadmin_email}" ]]; do
-    read -r -p "enter valid e-mail for pgadmin user account (don't use .local or similar domains): " pgadmin_email
+    read -r -p "enter valid e-mail for pgadmin web console user account (don't use .local or similar domains): " pgadmin_email
     if ! validate_email "${pgadmin_email}"; then
       warn "invalid email format. email must be valid (e.g., user@domain.com) and cannot use .local or localhost domain"
       pgadmin_email=""
@@ -598,8 +598,8 @@ install_gui_tools() {
   echo "  2. for db operations use \"evidba\" user account and EVI_ADMIN_DB_PASSWORD (preconfigured)."
   echo "  if you need to set your own db password, proceed to step 2 (container environment configuration) option 2 (manual configuration)."
   echo "  edit evi.secrets.env file, EVI_ADMIN_DB_PASSWORD variable."
-  echo "  otherwise a secure password will be generated for you during guided setup."
-  echo "  EVI_ADMIN_DB_PASSWORD can be found in cockpit -> podman containers -> integration tab, when evi deployment completes."
+  echo "  otherwise a secure password will be generated for you during guided container environment setup."
+  echo "  3. when evi deployment completes, EVI_ADMIN_DB_PASSWORD can be found in cockpit -> podman containers -> integration tab."
   echo ""
   
   read -r -p "press enter to continue..."
@@ -616,7 +616,7 @@ menu_prerequisites() {
     check_ports || true
     echo ""
     echo "1) install core prerequisites (mandatory, requires sudo)"
-    echo "2) install admin tools (optional, cockpit, requires sudo)"
+    echo "2) install admin tools (optional, requires sudo)"
     echo "3) back to main menu"
     read -r -p "select: " opt
     case $opt in
@@ -1083,7 +1083,7 @@ menu_env_config() {
 # --- Deployment Summary Helper Functions ---
 
 get_project_containers() {
-  local containers=("evi-db" "evi-be" "evi-fe" "evi-proxy")
+  local containers=("evi-db" "evi-be" "evi-fe" "evi-reverse-proxy")
   
   # Check if pgAdmin is enabled
   if [[ -f "${TARGET_ENV}" ]]; then
