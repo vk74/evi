@@ -1,6 +1,4 @@
-# evi
-
-**evi** is a containerized application stack hosted using Podman application. This README contains short instruction for evi deployment on your servers. This manual and install script assumes that all containers will be hosted on the same linux server. More usefull information for your server preparation and operations could be found in the end of this file.
+**evi** is a containerized application stack hosted using Podman application. This README contains short instruction for evi deployment on your server. More usefull information for your server preparation and operations could be found in the end of this file. This manual and install script assumes that all containers will be hosted on the same linux server. 
 
 ---
 
@@ -65,16 +63,12 @@ the script will help you to:
 
 The application requires several secrets to function securely. These are stored in `deployment/env/evi.secrets.env`.
 
-**The installer can auto-generate these for you.** If you prefer to set them manually:
+*   `EVI_POSTGRES_PASSWORD`: Strong password for the database superuser (`postgres`).
+*   `EVI_ADMIN_DB_PASSWORD`: Strong password for the admin user. Default admin account created during app installation is `evidba`. Has full DB access. Recommended for use in pgadmin console for admin operations.
+*   `EVI_APP_DB_PASSWORD`: Strong password for the application user (`app_service`). Has limited access only to "app" DB schema in maindb database. Used in evi-be and evi-db containers for regular application operations like reading and writing values to/from database. 
+*   `EVI_JWT_PRIVATE_KEY`: RSA Private key or secure random string for token (jwt) signing.
 
-1.  Copy the template: `cp deployment/env/evi.secrets.template.env deployment/env/evi.secrets.env`
-2.  Edit the file:
-    *   `EVI_POSTGRES_PASSWORD`: Strong password for the database superuser (`postgres`).
-    *   `EVI_ADMIN_DB_PASSWORD`: Strong password for the admin user (`admin`).
-    *   `EVI_APP_DB_PASSWORD`: Strong password for the application user (`app_service`).
-    *   `EVI_JWT_PRIVATE_KEY`: RSA Private key or secure random string for token signing.
-
-*Never commit `evi.secrets.env` to version control.*
+Never commit `evi.secrets.env` to version control.
 
 ---
 
@@ -87,17 +81,15 @@ cd ~/evi/deployment
 ./evictl
 ```
 
-Running it without arguments opens an **Interactive Menu** which lets you to manage containers and host environment
+Running evictl without arguments opens an **Interactive Menu** which lets you to manage containers and host environment
 
 ### Deployment Architecture
 The stack runs as a set of **Rootless Podman Quadlets** (systemd services):
 *   `evi-reverse-proxy`: Caddy (Reverse Proxy & TLS termination)
 *   `evi-fe`: Frontend Nginx container
 *   `evi-be`: Backend Node.js container
-*   `evi-db`: PostgreSQL 17 container
+*   `evi-db`: PostgreSQL database container
 *   `evi-pgadmin`: Optional pgadmin container, is installed when user deploys admin tools on host server
-
-All artifacts are managed in `~/evi`.
 
 ---
 
@@ -106,34 +98,12 @@ All artifacts are managed in `~/evi`.
 ## What is Containerization?
 Containerization on Linux is an OS-level virtualization method that packages an application and its dependencies into isolated, portable containers. Unlike VMs, containers share the host OS kernel and provide process-level isolation. Each container has its own process tree, network stack, and filesystem.
 
-## Linux Kernel Features:
+## Linux Kernel Container Features:
 * Namespaces — isolate processes, network, filesystem, users, IPC, and hostname
 * Control Groups (cgroups) — limit and monitor CPU, memory, disk I/O, network resources
 * Union Filesystems — layer-based image storage (overlay, aufs)
 
-## Recommended Filesystems
-
-* XFS
-Best for: production, large files, high throughput, quota enforcement
-Features: project quotas (pquota), requires ftype=1 for OverlayFS
-Limitations: quota setup more complex than ext4
-
-* ext4
-Best for: general use, small files, standard deployments
-Features: universal support, stable, simple setup
-Limitations: no Docker --storage-opt size= enforcement with overlay2
-
-* BTRFS
-Best for: snapshots, advanced storage features, thin provisioning
-Features: native snapshots, COW, compression, checksums, qgroup quotas
-Limitations: higher overhead, complexity, requires balancing; quota support only with Btrfs storage driver
-
-## Container Volume Quota Support
-XFS: project quotas (pquota) — full Docker/Podman enforcement supported
-ext4: project quotas (prjquota) — manual quotas only, no Docker enforcement
-Btrfs: qgroup quotas — only with Btrfs storage driver (not overlay2)
-
-## Scenario 1: SContainers tack Running on Physical Host
+## Scenario 1: Containers Stack Running on Physical Host
 Virtualization requirements:
 * No virtualization needed for container runtime (Podman)
 * Containers use Linux kernel features (namespaces, cgroups)
@@ -164,6 +134,29 @@ Technology stack:
 * Physical server → Hypervisor (VMware/KVM) → Linux VM → Podman containers
 * Two layers: VM layer (virtualization) + container layer (no virtualization) 
 
+## Recommended Filesystems for Host Servers
+
+* XFS
+Best for: production, large files, high throughput, quota enforcement
+Features: project quotas (pquota), requires ftype=1 for OverlayFS
+Limitations: quota setup more complex than ext4
+
+* ext4
+Best for: general use, small files, standard deployments
+Features: universal support, stable, simple setup
+Limitations: no Docker --storage-opt size= enforcement with overlay2
+
+* BTRFS
+Best for: snapshots, advanced storage features, thin provisioning
+Features: native snapshots, COW, compression, checksums, qgroup quotas
+Limitations: higher overhead, complexity, requires balancing; quota support only with BTRFS storage driver
+
+## Container Volume Quota Support
+XFS: project quotas (pquota) — full Docker/Podman enforcement supported
+ext4: project quotas (prjquota) — manual quotas only, no quota enforcement
+BTRFS: qgroup quotas — only with Btrfs storage driver (not overlay2)
+
+---
 
 # Backup and Disaster Recovery Strategy
 
@@ -174,7 +167,7 @@ evi-db (PostgreSQL container) is the only stateful component in the evi stack. T
 
 Backup the following files once (after deployment completes):
 1. CRITICAL: deployment/env/evi.secrets.env — contains database passwords that cannot be recreated. Without it, you cannot connect to the restored database with the correct passwords.
-2. CRITICAL: ${HOME}/.local/share/evi/secrets/jwt_private_key.pem — required if EVI_JWT_GENERATE_KEY=true. Without it, all existing JWT tokens become invalid after restoration (users will need to re-login).
+2. CRITICAL: ${HOME}/.local/share/evi/secrets/jwt_private_key.pem — required if EVI_JWT_GENERATE_KEY=true. Without it, all existing JWT tokens become invalid after restoration (users will need to re-login, otherwise can be recreated).
 3. RECOMMENDED: deployment/env/evi.env — can be recreated manually, but backup simplifies configuration restoration.
 4. CONDITIONAL: deployment/env/tls/ — only if EVI_TLS_MODE=manual and using custom certificates. Not needed for Let's Encrypt (certificates auto-renew).
 
@@ -182,7 +175,6 @@ Backup the following daily:
 1. evi-db volume (PostgreSQL data)
     * Method: Use pg_dump for logical backups (recommended for regular backups)
     * Frequency: Daily backups at off-peak hours (e.g., 02:00)
-    * Retention: Keep 7 daily, 4 weekly, and 12 monthly backups
     * Storage: Store backups on separate storage or remote location (NFS, S3, or external disk)
 
 
@@ -206,8 +198,6 @@ This recreates quadlet files, podman secrets, and Caddyfile.
    # Wait for DB to be ready   
    systemctl --user start evi-be.service evi-fe.service evi-reverse-proxy.service
 5. Verify: Application should be fully operational with restored data.
-
-Why this recovery process wworks: Frontend (evi-fe) and backend (evi-be) are stateless — they read all data from the database. Reverse proxy (evi-reverse-proxy) regenerates its configuration. Restoring the database volume restores all application state.
 
 ## Key Points on Backup and Disaster Recovery
 * Single point of backup: Only evi-db volume needs regular backups
