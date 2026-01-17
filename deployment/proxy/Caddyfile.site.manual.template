@@ -1,7 +1,12 @@
-# Version: 1.1.0
+# Version: 1.2.0
 # Purpose: Caddy site block template for manual TLS certificate/key.
 # Deployment file: Caddyfile.site.manual.template
 # Logic: Used by `evictl` when EVI_TLS_MODE=manual.
+#
+# Changes in v1.2.0:
+# - Removed HSTS header with preload for self-signed certificates
+# - HSTS with preload blocks Chrome's ability to show "Advanced" button for certificate bypass
+# - Users can now proceed past certificate warnings in Chrome
 #
 # Changes in v1.1.0:
 # - Changed from https://DOMAIN:PORT to :PORT syntax to fix TLS handshake errors
@@ -18,8 +23,9 @@
 	tls {{EVI_TLS_CERT_IN_CONTAINER}} {{EVI_TLS_KEY_IN_CONTAINER}}
 
 	# Basic security headers
+	# Note: HSTS with preload removed for self-signed certificates to allow Chrome bypass
+	# HSTS with preload blocks certificate error bypass in Chrome
 	header {
-		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 		X-Content-Type-Options "nosniff"
 		X-Frame-Options "DENY"
 		Referrer-Policy "strict-origin-when-cross-origin"

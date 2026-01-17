@@ -603,7 +603,7 @@ install_gui_tools() {
   echo "  1. login to webconsole using ${pgadmin_email} and EVI_ADMIN_DB_PASSWORD"
   echo "  2. for db operations use \"evidba\" user account and EVI_ADMIN_DB_PASSWORD (preconfigured)."
   echo "  3. when evi deployment completes, EVI_ADMIN_DB_PASSWORD can be found in cockpit -> podman containers -> integration tab."
-  echo "  4.if you need to set your own db password, proceed to step 2 (container environment configuration) option 2 (manual configuration)."
+  echo "  4. should you need to set your own db password, proceed to step 2 (container environment configuration) option 2 (manual configuration)."
   echo "  edit evi.secrets.env file, EVI_ADMIN_DB_PASSWORD variable."
   echo "  otherwise a secure password will be generated for you during guided container environment setup (option 1)."
   echo ""
