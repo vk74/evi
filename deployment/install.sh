@@ -525,6 +525,21 @@ install_gui_tools() {
     return 0
   fi
 
+  # --- Request pgAdmin email (before installation) ---
+  ensure_config_files
+  echo ""
+  echo "pgadmin requires an email address for the administrator account."
+  echo "this email will be used to log in to pgadmin web interface."
+  echo ""
+  local pgadmin_email=""
+  while [[ -z "${pgadmin_email}" ]]; do
+    read -r -p "enter valid e-mail for pgadmin user account (don't use .local or similar domains): " pgadmin_email
+    if ! validate_email "${pgadmin_email}"; then
+      warn "invalid email format. email must be valid (e.g., user@domain.com) and cannot use .local or localhost domain"
+      pgadmin_email=""
+    fi
+  done
+
   # --- Install Cockpit ---
   log "installing cockpit..."
   sudo apt-get update
@@ -546,21 +561,6 @@ install_gui_tools() {
 
   # --- Configure pgAdmin ---
   log "configuring pgadmin..."
-  ensure_config_files
-  
-  # Request administrator email for pgAdmin
-  echo ""
-  echo "pgadmin requires an email address for the administrator account."
-  echo "this email will be used to log in to pgadmin."
-  echo ""
-  local pgadmin_email=""
-  while [[ -z "${pgadmin_email}" ]]; do
-    read -r -p "enter valid e-mail for pgadmin user account (don't use .local or similar domains): " pgadmin_email
-    if ! validate_email "${pgadmin_email}"; then
-      warn "invalid email format. email must be valid (e.g., user@domain.com) and cannot use .local or localhost domain"
-      pgadmin_email=""
-    fi
-  done
   
   # Enable pgAdmin in evi.env
   if [[ -f "${TARGET_ENV}" ]]; then
@@ -582,19 +582,24 @@ install_gui_tools() {
   fi
   
   echo ""
-  log "=== admin tools configured ==="
+  printf "${GREEN}=== admin tools installation summary ===${NC}\n"
   echo ""
-  echo "  cockpit:  https://localhost:9090 (available now)"
-  echo "  pgadmin:  http://localhost:5445 (available after deployment)"
+  echo "installed tools:"
+  echo "  - cockpit"
+  echo "  - pgadmin"
   echo ""
-  echo "pgadmin login credentials:"
-  echo "  - email: ${pgadmin_email}"
-  echo "  - password: same as EVI_ADMIN_DB_PASSWORD from evi.secrets.env"
+  echo "cockpit:"
+  echo "  to manage your container environment visit cockpit at https://localhost:9090."
+  echo "  login using your host OS user account and password."
   echo ""
-  echo "pgadmin notes:"
-  echo "  - accessible ONLY from localhost (secure)"
-  echo "  - evi-db connection is pre-configured"
-  echo "  - use database username/password to connect to database"
+  echo "pgadmin:"
+  echo "  to administer evi database use pgadmin web console at http://localhost:5445."
+  echo "  1. login to webconsole using ${pgadmin_email} and EVI_ADMIN_DB_PASSWORD"
+  echo "  2. for db operations use \"evidba\" user account and EVI_ADMIN_DB_PASSWORD (preconfigured)."
+  echo "  if you need to set your own db password, proceed to step 2 (container environment configuration) option 2 (manual configuration)."
+  echo "  edit evi.secrets.env file, EVI_ADMIN_DB_PASSWORD variable."
+  echo "  otherwise a secure password will be generated for you during guided setup."
+  echo "  EVI_ADMIN_DB_PASSWORD can be found in cockpit -> podman containers -> integration tab, when evi deployment completes."
   echo ""
   
   read -r -p "press enter to continue..."
@@ -603,7 +608,7 @@ install_gui_tools() {
 menu_prerequisites() {
   while true; do
     echo ""
-    log "=== prerequisites, to be installed on host server ==="
+    log "=== prerequisites for container environment, to be installed on host server ==="
     echo ""
     check_os || true
     check_resources || true
@@ -611,7 +616,7 @@ menu_prerequisites() {
     check_ports || true
     echo ""
     echo "1) install core prerequisites (mandatory, requires sudo)"
-    echo "2) install admin and gui tools (optional, cockpit and others, requires sudo)"
+    echo "2) install admin tools (optional, cockpit, requires sudo)"
     echo "3) back to main menu"
     read -r -p "select: " opt
     case $opt in
