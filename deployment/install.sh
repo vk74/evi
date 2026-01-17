@@ -517,11 +517,11 @@ install_core_prerequisites() {
 }
 
 install_gui_tools() {
-  log "installing admin and gui tools..."
+  log "installing admin tools..."
   echo ""
   echo "this will install:"
-  echo "  - cockpit: web-based server management (https://localhost:9090)"
-  echo "  - pgadmin: database administration tool (http://localhost:5445)"
+  echo "  - cockpit: web-based tool for server management (https://localhost:9090)"
+  echo "  - pgadmin: web-console for database administration (http://localhost:5445)"
   echo ""
   echo "pgadmin runs as a container and will be started with evi deployment."
   echo "it is accessible ONLY from localhost for security."
@@ -539,7 +539,7 @@ install_gui_tools() {
   echo ""
   local pgadmin_email=""
   while [[ -z "${pgadmin_email}" ]]; do
-    read -r -p "enter valid e-mail for pgadmin web console user account (don't use .local or similar domains): " pgadmin_email
+    read -r -p "enter valid e-mail to be used as pgadmin web-console login name (don't use .local or similar domains): " pgadmin_email
     if ! validate_email "${pgadmin_email}"; then
       warn "invalid email format. email must be valid (e.g., user@domain.com) and cannot use .local or localhost domain"
       pgadmin_email=""
@@ -602,10 +602,10 @@ install_gui_tools() {
   echo "  to administer evi database use pgadmin web console at http://localhost:5445."
   echo "  1. login to webconsole using ${pgadmin_email} and EVI_ADMIN_DB_PASSWORD"
   echo "  2. for db operations use \"evidba\" user account and EVI_ADMIN_DB_PASSWORD (preconfigured)."
-  echo "  if you need to set your own db password, proceed to step 2 (container environment configuration) option 2 (manual configuration)."
-  echo "  edit evi.secrets.env file, EVI_ADMIN_DB_PASSWORD variable."
-  echo "  otherwise a secure password will be generated for you during guided container environment setup."
   echo "  3. when evi deployment completes, EVI_ADMIN_DB_PASSWORD can be found in cockpit -> podman containers -> integration tab."
+  echo "  4.if you need to set your own db password, proceed to step 2 (container environment configuration) option 2 (manual configuration)."
+  echo "  edit evi.secrets.env file, EVI_ADMIN_DB_PASSWORD variable."
+  echo "  otherwise a secure password will be generated for you during guided container environment setup (option 1)."
   echo ""
   
   read -r -p "press enter to continue..."
@@ -949,7 +949,7 @@ guided_setup() {
   
   echo ""
   info "guided setup complete!"
-  info "you can now proceed to 'deploy' to start the application."
+  info "you can now proceed to 'deploy' to build and start the application."
   read -r -p "press enter to continue..."
 }
 
@@ -1448,7 +1448,7 @@ deploy_up() {
   deployment_start=$(date +%s)
   
   # Build step (optional)
-  if confirm "do you want to build container images from source?"; then
+  if confirm "do you want to build and start container images from sourcecode?"; then
     build_skipped=false
     local build_start
     build_start=$(date +%s)
