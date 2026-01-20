@@ -46,7 +46,7 @@ const sections = computed((): Section[] => {
       title: t('admin.products.sections.productEditor'),
       icon: 'PhPencilSimple',
       // Visible if user can create, update, or read (auditor) products
-      visible: can('adminProducts:items:create') || 
+      visible: can('adminProducts:items:create:all') || 
                can('adminProducts:items:update:all') || 
                can('adminProducts:items:update:own') ||
                can('adminProducts:items:read:all')

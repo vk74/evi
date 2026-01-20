@@ -199,7 +199,7 @@ const handleError = (error: unknown, context: string) => {
 
 // Product action handlers
 const addProduct = () => {
-  if (!can('adminProducts:items:create')) return
+  if (!can('adminProducts:items:create:all')) return
   
   // Set editor mode to creation and switch to editor section
   productsStore.openProductEditor('creation', undefined, undefined)
@@ -750,7 +750,7 @@ const handleAssignOwnerClose = () => {
           </h3>
           
           <v-btn
-            v-if="can('adminProducts:items:create')"
+            v-if="can('adminProducts:items:create:all')"
             block
             color="teal"
             variant="outlined"
