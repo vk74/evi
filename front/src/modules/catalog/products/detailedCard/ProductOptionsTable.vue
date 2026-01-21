@@ -1,5 +1,5 @@
 <!--
-version: 1.8.1
+version: 1.9.0
 Frontend file ProductOptionsTable.vue.
 Purpose: Displays product option rows with search, counter, and pagination; mirrors PairEditor table UX.
 Filename: ProductOptionsTable.vue
@@ -59,6 +59,14 @@ Changes in v1.8.0:
 - Options are now filtered by user's region (same as products in catalog)
 - Options without region assignment are not shown (filtering happens upstream in ProductDetails.vue)
 - Component receives pre-filtered options list from parent component
+
+Changes in v1.9.0:
+- Added nested sub-options support with automatic loading when units count > 0
+- Added mainProductId prop to exclude main product from sub-options
+- Added visual nesting indicators (>, >>, >>>) in option names
+- Maximum nesting level: 10 levels
+- Sub-options cached using state.catalog.ts cache functions
+- Sub-options automatically removed when parent units count becomes 0
 -->
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
@@ -69,15 +77,31 @@ import Paginator from '@/core/ui/paginator/Paginator.vue'
 import { PhCaretUpDown } from '@phosphor-icons/vue'
 import { fetchPricesByCodes } from '../../service.catalog.fetch.prices.by.codes'
 import { getPricelistByRegion } from '../../service.catalog.get.pricelist.by.region'
-import { getCachedPrice, cachePrice, isPriceCacheValid } from '../../state.catalog'
+import { 
+  getCachedPrice, 
+  cachePrice, 
+  isPriceCacheValid,
+  getCachedOptions,
+  cacheOptions,
+  isOptionsCacheValid
+} from '../../state.catalog'
 import { formatPriceWithPrecision } from '@/core/helpers/helper.format.price'
+import { fetchProductOptions } from '../service.fetch.product.options'
 
 // Use shared UI type
 import type { CatalogProductOption, ProductPriceInfo } from '../types.products'
 
+// Extended type for options with nesting level information
+interface OptionWithLevel extends CatalogProductOption {
+  level: number // 0 for primary options, 1+ for sub-options
+  parentProductId?: string // ID of parent option
+  isSubOption: boolean
+}
+
 interface Props {
   items?: CatalogProductOption[]
   mainProductUnitsCount?: number
+  mainProductId?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -107,6 +131,11 @@ const unitsById = ref<Record<string, number>>({})
 const optionPrices = ref<Map<string, ProductPriceInfo>>(new Map())
 const isLoadingPrices = ref(false)
 
+// Nested options state
+const MAX_NESTING_LEVEL = 10
+const allOptionsWithLevel = ref<OptionWithLevel[]>([])
+const loadingSubOptions = ref<Set<string>>(new Set()) // Track which options are currently loading sub-options
+
 /**
  * Generate dynamic units range based on item type
  * Required options: range from calculated minimum (units_count * mainProductUnitsCount) to 1000
@@ -126,6 +155,10 @@ function getUnitItems(item: CatalogProductOption): number[] {
  * Optional options: set to 0 as default value
  */
 function initializeUiState(list: CatalogProductOption[]) {
+  // Rebuild flat options list with primary options FIRST
+  // This ensures options are in allOptionsWithLevel before unitsById is set
+  buildFlatOptionsList()
+  
   const units: Record<string, number> = {}
   for (const it of list) {
     if (it.is_required) {
@@ -137,14 +170,381 @@ function initializeUiState(list: CatalogProductOption[]) {
   unitsById.value = units
 }
 
-watch(() => props.items, (list) => {
+/**
+ * Format option name with nesting prefix
+ * @param option - Option with level information
+ * @returns Formatted option name with prefix
+ */
+function formatOptionNameWithPrefix(option: OptionWithLevel): string {
+  if (option.level === 0) {
+    return option.option_name || ''
+  }
+  const prefix = '>'.repeat(option.level)
+  return `${prefix} ${option.option_name || ''}`
+}
+
+/**
+ * Load sub-options for a given product option
+ * @param productId - Product ID to load sub-options for
+ * @param parentLevel - Nesting level of parent option
+ * @param parentProductId - Parent option product ID
+ * @param region - User region for filtering
+ */
+async function loadSubOptions(
+  productId: string,
+  parentLevel: number,
+  parentProductId: string,
+  region: string
+): Promise<void> {
+  console.log(`[ProductOptionsTable] loadSubOptions called: productId=${productId}, parentLevel=${parentLevel}, parentProductId=${parentProductId}, region=${region}`)
+  
+  // Check max nesting level
+  if (parentLevel >= MAX_NESTING_LEVEL) {
+    console.log(`[ProductOptionsTable] Max nesting level reached for ${productId}`)
+    return
+  }
+
+  // Prevent duplicate loading
+  if (loadingSubOptions.value.has(productId)) {
+    console.log(`[ProductOptionsTable] Already loading sub-options for ${productId}`)
+    return
+  }
+
+  loadingSubOptions.value.add(productId)
+
+  try {
+    // Check cache first
+    let subOptions: CatalogProductOption[] | null = null
+    if (isOptionsCacheValid(productId, region)) {
+      subOptions = getCachedOptions(productId, region)
+      console.log(`[ProductOptionsTable] Found cached sub-options for ${productId}: ${subOptions?.length || 0} options`)
+    }
+
+    // Load from API if cache miss
+    if (!subOptions) {
+      console.log(`[ProductOptionsTable] Loading sub-options from API for ${productId}`)
+      subOptions = await fetchProductOptions(productId, region)
+      console.log(`[ProductOptionsTable] Loaded ${subOptions?.length || 0} sub-options from API for ${productId}`)
+      // Cache the result
+      if (subOptions) {
+        cacheOptions(productId, region, subOptions)
+      }
+    }
+
+    if (!subOptions || subOptions.length === 0) {
+      console.log(`[ProductOptionsTable] No sub-options found for ${productId}`)
+      loadingSubOptions.value.delete(productId)
+      return
+    }
+
+    // Filter out main product if specified
+    const filteredOptions = props.mainProductId
+      ? subOptions.filter(opt => opt.product_id !== props.mainProductId)
+      : subOptions
+
+    if (filteredOptions.length === 0) {
+      loadingSubOptions.value.delete(productId)
+      return
+    }
+
+    // Convert to OptionWithLevel with metadata
+    const subOptionsWithLevel: OptionWithLevel[] = filteredOptions.map(opt => ({
+      ...opt,
+      level: parentLevel + 1,
+      parentProductId,
+      isSubOption: true
+    }))
+
+    // Check if sub-options already exist for this parent
+    const existingSubOptions = allOptionsWithLevel.value.filter(
+      opt => opt.parentProductId === parentProductId
+    )
+    
+    if (existingSubOptions.length > 0) {
+      console.log(`[ProductOptionsTable] Sub-options already exist for ${parentProductId}, skipping`)
+      loadingSubOptions.value.delete(productId)
+      return
+    }
+
+    // Add sub-options to allOptionsWithLevel
+    // Find parent index and insert after it
+    const parentIndex = allOptionsWithLevel.value.findIndex(
+      opt => opt.product_id === parentProductId
+    )
+
+    console.log(`[ProductOptionsTable] Parent index for ${parentProductId}: ${parentIndex}`)
+    console.log(`[ProductOptionsTable] allOptionsWithLevel length: ${allOptionsWithLevel.value.length}`)
+    console.log(`[ProductOptionsTable] Sub-options to add: ${subOptionsWithLevel.length}`)
+    subOptionsWithLevel.forEach(subOpt => {
+      console.log(`  - ${subOpt.product_id} (${subOpt.option_name})`)
+    })
+
+    if (parentIndex >= 0) {
+      // Find the last child of this parent to insert after
+      let insertIndex = parentIndex + 1
+      while (
+        insertIndex < allOptionsWithLevel.value.length &&
+        allOptionsWithLevel.value[insertIndex].parentProductId === parentProductId
+      ) {
+        insertIndex++
+      }
+      // Insert sub-options
+      console.log(`[ProductOptionsTable] Inserting ${subOptionsWithLevel.length} sub-options at index ${insertIndex}`)
+      allOptionsWithLevel.value.splice(insertIndex, 0, ...subOptionsWithLevel)
+      console.log(`[ProductOptionsTable] After insert, allOptionsWithLevel length: ${allOptionsWithLevel.value.length}`)
+    } else {
+      // Parent not found, append at end
+      console.log(`[ProductOptionsTable] WARNING: Parent ${parentProductId} not found in allOptionsWithLevel!`)
+      console.log(`[ProductOptionsTable] Current options in allOptionsWithLevel:`)
+      allOptionsWithLevel.value.forEach(opt => {
+        console.log(`  - ${opt.product_id} (${opt.option_name}, level ${opt.level}, isSubOption: ${opt.isSubOption})`)
+      })
+      console.log(`[ProductOptionsTable] Appending ${subOptionsWithLevel.length} sub-options at end`)
+      allOptionsWithLevel.value.push(...subOptionsWithLevel)
+    }
+
+    // Initialize units count for new sub-options
+    for (const subOpt of subOptionsWithLevel) {
+      if (!(subOpt.product_id in unitsById.value)) {
+        if (subOpt.is_required) {
+          unitsById.value[subOpt.product_id] = (subOpt.units_count ?? 1) * props.mainProductUnitsCount
+        } else {
+          unitsById.value[subOpt.product_id] = 0
+        }
+      }
+    }
+
+    // Recursively load sub-options for options that have units count > 0
+    for (const subOpt of subOptionsWithLevel) {
+      const unitsCount = unitsById.value[subOpt.product_id] ?? 0
+      if (unitsCount > 0 && subOpt.level < MAX_NESTING_LEVEL) {
+        await loadSubOptions(subOpt.product_id, subOpt.level, subOpt.product_id, region)
+      }
+    }
+
+    // Reload prices to include new sub-options
+    loadOptionPrices()
+  } catch (error) {
+    console.error(`[ProductOptionsTable] Error loading sub-options for ${productId}:`, error)
+  } finally {
+    loadingSubOptions.value.delete(productId)
+  }
+}
+
+/**
+ * Remove all sub-options for a given product (recursively)
+ * @param productId - Product ID to remove sub-options for
+ */
+function removeSubOptions(productId: string): void {
+  // Find all sub-options of this product (recursively)
+  const toRemove: string[] = []
+  
+  function collectSubOptions(parentId: string) {
+    const subOptions = allOptionsWithLevel.value.filter(
+      opt => opt.parentProductId === parentId
+    )
+    for (const subOpt of subOptions) {
+      toRemove.push(subOpt.product_id)
+      // Recursively collect nested sub-options
+      collectSubOptions(subOpt.product_id)
+    }
+  }
+
+  collectSubOptions(productId)
+
+  // Remove from allOptionsWithLevel
+  allOptionsWithLevel.value = allOptionsWithLevel.value.filter(
+    opt => !toRemove.includes(opt.product_id)
+  )
+
+  // Remove units count entries
+  for (const id of toRemove) {
+    delete unitsById.value[id]
+  }
+}
+
+/**
+ * Build flat options list with primary options and their sub-options
+ */
+function buildFlatOptionsList(): void {
+  console.log('[ProductOptionsTable] buildFlatOptionsList called')
+  // Start with primary options (level 0)
+  const primaryOptions: OptionWithLevel[] = (props.items || []).map(opt => ({
+    ...opt,
+    level: 0,
+    isSubOption: false
+  }))
+  console.log(`[ProductOptionsTable] Primary options: ${primaryOptions.length}`)
+
+  // Merge with existing sub-options that are still valid
+  const existingSubOptions = allOptionsWithLevel.value.filter(opt => opt.isSubOption)
+  console.log(`[ProductOptionsTable] Existing sub-options: ${existingSubOptions.length}`)
+  
+  // Create a map of primary option IDs for quick lookup
+  const primaryOptionIds = new Set(primaryOptions.map(opt => opt.product_id))
+  
+  // Filter out sub-options whose parents are no longer in primary options
+  const validSubOptions = existingSubOptions.filter(subOpt => {
+    if (!subOpt.parentProductId) return false
+    // Check if parent is in primary options or in valid sub-options
+    const parentInPrimary = primaryOptionIds.has(subOpt.parentProductId)
+    if (parentInPrimary) return true
+    // Check if parent is in valid sub-options (recursive check)
+    return existingSubOptions.some(opt => opt.product_id === subOpt.parentProductId)
+  })
+  console.log(`[ProductOptionsTable] Valid sub-options: ${validSubOptions.length}`)
+
+  // Combine primary options and valid sub-options
+  // Sub-options will be inserted after their parents by loadSubOptions
+  allOptionsWithLevel.value = [...primaryOptions, ...validSubOptions]
+  
+  // Sort to ensure sub-options are after their parents
+  allOptionsWithLevel.value.sort((a, b) => {
+    // Primary options first
+    if (a.level === 0 && b.level > 0) return -1
+    if (a.level > 0 && b.level === 0) return 1
+    
+    // Same level: maintain order
+    if (a.level === b.level) {
+      // If both are sub-options, maintain parent-child relationship
+      if (a.isSubOption && b.isSubOption) {
+        if (a.parentProductId === b.product_id) return 1
+        if (b.parentProductId === a.product_id) return -1
+      }
+      return 0
+    }
+    
+    // Different levels: higher level comes after
+    return a.level - b.level
+  })
+  console.log(`[ProductOptionsTable] Total options in allOptionsWithLevel: ${allOptionsWithLevel.value.length}`)
+}
+
+watch(() => props.items, async (list) => {
+  console.log('[ProductOptionsTable] Watch on props.items triggered, items count:', list?.length || 0)
   page.value = 1
   initializeUiState(list || [])
+  
+  // Load sub-options for options that already have units count > 0
+  // (these are primary options from props.items)
+  const userLocation = appStore.getUserLocation
+  if (userLocation && list && list.length > 0) {
+    console.log('[ProductOptionsTable] Loading sub-options for options with units count > 0')
+    for (const item of list) {
+      const unitsCount = unitsById.value[item.product_id] ?? 0
+      console.log(`[ProductOptionsTable] Option ${item.product_id} (${item.option_name}): units count = ${unitsCount}`)
+      if (unitsCount > 0) {
+        // This is a primary option with units count > 0, load its sub-options
+        console.log(`[ProductOptionsTable] Loading sub-options for ${item.product_id} (initial load)`)
+        await loadSubOptions(item.product_id, 0, item.product_id, userLocation)
+      }
+    }
+  } else {
+    console.log('[ProductOptionsTable] Cannot load sub-options: userLocation =', userLocation, ', list length =', list?.length || 0)
+  }
+  
   // Emit initial sum after state initialization
   if ((list || []).length === 0) {
     emit('options-sum-changed', 0)
   }
 }, { immediate: true, deep: true })
+
+// Watch for units count changes to load/remove sub-options
+watch(() => unitsById.value, async (newUnits, oldUnits) => {
+  console.log('[ProductOptionsTable] Watch on unitsById triggered')
+  console.log('[ProductOptionsTable] newUnits:', newUnits)
+  console.log('[ProductOptionsTable] oldUnits:', oldUnits)
+  
+  const userLocation = appStore.getUserLocation
+  if (!userLocation) {
+    console.log('[ProductOptionsTable] No user location, skipping sub-options load')
+    return
+  }
+
+  // Skip if oldUnits is undefined (initial load)
+  if (!oldUnits) {
+    console.log('[ProductOptionsTable] Initial load, skipping watch')
+    return
+  }
+
+  // Find options that changed
+  const allOptionIds = new Set([
+    ...Object.keys(newUnits),
+    ...(oldUnits ? Object.keys(oldUnits) : [])
+  ])
+
+  console.log(`[ProductOptionsTable] Checking ${allOptionIds.size} options for changes`)
+
+  for (const optionId of allOptionIds) {
+    const newCount = newUnits[optionId] ?? 0
+    const oldCount = oldUnits?.[optionId] ?? 0
+
+    // Skip if count didn't change
+    if (newCount === oldCount) {
+      continue
+    }
+    
+    console.log(`[ProductOptionsTable] Option ${optionId} changed: ${oldCount} -> ${newCount}`)
+
+    // Find option in allOptionsWithLevel first, then in props.items (primary options)
+    let option = allOptionsWithLevel.value.find(opt => opt.product_id === optionId)
+    let optionLevel = 0
+    let isPrimaryOption = false
+
+    if (!option) {
+      // Not found in allOptionsWithLevel, check if it's a primary option from props.items
+      const primaryOption = (props.items || []).find(opt => opt.product_id === optionId)
+      if (primaryOption) {
+        option = {
+          ...primaryOption,
+          level: 0,
+          isSubOption: false
+        }
+        optionLevel = 0
+        isPrimaryOption = true
+      } else {
+        // Option not found at all, skip
+        continue
+      }
+    } else {
+      optionLevel = option.level
+    }
+
+    // If units count became > 0, load sub-options
+    if (newCount > 0 && oldCount === 0) {
+      if (optionLevel < MAX_NESTING_LEVEL) {
+        console.log(`[ProductOptionsTable] Loading sub-options for ${optionId} (level ${optionLevel}), isPrimaryOption: ${isPrimaryOption}`)
+        
+        // If this is a primary option that wasn't in allOptionsWithLevel, add it first
+        if (isPrimaryOption) {
+          const existingOption = allOptionsWithLevel.value.find(opt => opt.product_id === optionId)
+          if (!existingOption) {
+            console.log(`[ProductOptionsTable] Adding primary option ${optionId} to allOptionsWithLevel`)
+            // Insert at the beginning to maintain order
+            allOptionsWithLevel.value.unshift(option)
+          } else {
+            // Update existing option to ensure it has correct level
+            option = existingOption
+            optionLevel = existingOption.level
+          }
+        }
+        
+        await loadSubOptions(option.product_id, optionLevel, option.product_id, userLocation)
+      }
+    }
+
+    // If units count became 0, remove sub-options
+    if (newCount === 0 && oldCount > 0) {
+      console.log(`[ProductOptionsTable] Removing sub-options for ${optionId}`)
+      removeSubOptions(option.product_id)
+      // Reload prices after removing sub-options
+      loadOptionPrices()
+    }
+  }
+
+  // Emit updated sum
+  emit('options-sum-changed', optionsTotalSum.value)
+}, { deep: true })
 
 /**
  * Watch for mainProductUnitsCount changes and update required options values
@@ -152,7 +552,8 @@ watch(() => props.items, (list) => {
  */
 watch(() => props.mainProductUnitsCount, () => {
   const updatedUnits = { ...unitsById.value }
-  for (const item of props.items || []) {
+  // Update all options (including sub-options)
+  for (const item of allOptionsWithLevel.value) {
     if (item.is_required) {
       const newMinValue = (item.units_count ?? 1) * props.mainProductUnitsCount
       updatedUnits[item.product_id] = newMinValue
@@ -176,8 +577,8 @@ const headers = computed(() => [
 // Apply search filter (backend already filters by status_code = 'active')
 const filteredItems = computed(() => {
   const q = (search.value || '').trim().toLowerCase()
-  if (!q) return props.items || []
-  return (props.items || []).filter(it =>
+  if (!q) return allOptionsWithLevel.value
+  return allOptionsWithLevel.value.filter(it =>
     (it.option_name || '').toLowerCase().includes(q) ||
     (it.product_code || '').toLowerCase().includes(q)
   )
@@ -190,11 +591,11 @@ const pagedItems = computed(() => {
 })
 
 /**
- * Calculate total sum of all options (units count * unit price for options where units count > 0)
+ * Calculate total sum of all options including sub-options (units count * unit price for options where units count > 0)
  */
 const optionsTotalSum = computed(() => {
   let total = 0
-  for (const item of props.items || []) {
+  for (const item of allOptionsWithLevel.value) {
     const unitsCount = unitsById.value[item.product_id]
     if (unitsCount !== undefined && unitsCount > 0 && item.product_code && optionPrices.value.has(item.product_code)) {
       const priceInfo = optionPrices.value.get(item.product_code)!
@@ -230,7 +631,16 @@ function formatOptionSum(productCode: string | null | undefined, units: number):
 
 /** Units change handler for both required and optional options */
 function setUnitsCount(productId: string, v: number | null) {
-  unitsById.value[productId] = v ?? 0
+  const oldValue = unitsById.value[productId] ?? 0
+  const newValue = v ?? 0
+  console.log(`[ProductOptionsTable] setUnitsCount: ${productId}, old: ${oldValue}, new: ${newValue}`)
+  
+  // Create a new object to ensure reactivity
+  unitsById.value = {
+    ...unitsById.value,
+    [productId]: newValue
+  }
+  
   // Emit event with updated total sum
   emit('options-sum-changed', optionsTotalSum.value)
 }
@@ -260,8 +670,8 @@ async function loadOptionPrices() {
       return
     }
     
-    // Collect all product codes from items where product_code is not null/empty
-    const productCodes = (props.items || [])
+    // Collect all product codes from allOptionsWithLevel (including sub-options)
+    const productCodes = allOptionsWithLevel.value
       .map(item => item.product_code)
       .filter((code): code is string => code !== null && code !== undefined && code !== '')
     
@@ -355,7 +765,8 @@ watch(() => appStore.getUserLocation, () => {
 /** Reset all options to default values: required options to minimum, optional options to 0 */
 function clearSelections() {
   const units = { ...unitsById.value }
-  for (const item of props.items || []) {
+  // Reset all options including sub-options
+  for (const item of allOptionsWithLevel.value) {
     if (item.is_required) {
       // Reset required options to minimum value (units_count * mainProductUnitsCount)
       units[item.product_id] = (item.units_count ?? 1) * props.mainProductUnitsCount
@@ -403,7 +814,7 @@ defineExpose({ clearSelections, getUnitsById, getOptionPrices })
       hide-default-footer
     >
       <template #[`item.option_name`]="{ item }">
-        <span>{{ item.option_name || '' }}</span>
+        <span>{{ formatOptionNameWithPrefix(item as OptionWithLevel) }}</span>
       </template>
 
       <template #[`item.product_code`]="{ item }">

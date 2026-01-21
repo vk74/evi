@@ -1,16 +1,21 @@
 /**
- * version: 1.1.0
+ * version: 1.2.0
  * Frontend state management utilities for catalog module.
  * Provides shared reactive state, caching helpers, and view controls for ModuleCatalog.
  * File: state.catalog.ts (frontend)
  *
  * Changes in v1.1.0:
  * - Added rounding precision support to cached product prices
+ *
+ * Changes in v1.2.0:
+ * - Added product options caching functionality
+ * - Cache key format: `${productId}:${region}`
+ * - TTL: 5 minutes (same as price cache)
  */
 
 import { ref, computed, type Component } from 'vue';
 import { PhCaretDown, PhCaretRight } from '@phosphor-icons/vue';
-import type { ProductPriceInfo } from './products/types.products';
+import type { ProductPriceInfo, CatalogProductOption } from './products/types.products';
 
 // ==================== OPTIONS BAR STATE ====================
 export const searchQuery = ref('');
@@ -109,6 +114,7 @@ export const resetCatalogState = () => {
   sortDirection.value = 'asc';
   selectedServiceId.value = null;
   clearPriceCache();
+  clearOptionsCache();
 };
 
 // ==================== PRICE CACHE ====================
@@ -206,4 +212,106 @@ export function isPriceCacheValid(productCode: string): boolean {
  */
 export function clearPriceCache(): void {
   priceCache.value.clear();
+}
+
+// ==================== OPTIONS CACHE ====================
+// Cache for product options (TTL 5 minutes)
+interface CachedOptionsInfo {
+  options: CatalogProductOption[];
+  timestamp: number;
+}
+
+const optionsCache = ref<Map<string, CachedOptionsInfo>>(new Map());
+const OPTIONS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Get cache key for product options
+ * @param productId - Product ID
+ * @param region - Region name
+ * @returns Cache key string
+ */
+function getOptionsCacheKey(productId: string, region: string): string {
+  return `${productId}:${region}`;
+}
+
+/**
+ * Get cached options for a product and region
+ * @param productId - Product ID
+ * @param region - Region name
+ * @returns Cached options array or null if not found or expired
+ */
+export function getCachedOptions(productId: string, region: string): CatalogProductOption[] | null {
+  if (!productId || !region) {
+    return null;
+  }
+  
+  const cacheKey = getOptionsCacheKey(productId, region);
+  const cached = optionsCache.value.get(cacheKey);
+  
+  if (!cached) {
+    return null;
+  }
+  
+  // Check if cache is still valid
+  const now = Date.now();
+  if (now - cached.timestamp > OPTIONS_CACHE_TTL) {
+    // Cache expired, remove it
+    optionsCache.value.delete(cacheKey);
+    return null;
+  }
+  
+  return cached.options;
+}
+
+/**
+ * Cache options for a product and region
+ * @param productId - Product ID
+ * @param region - Region name
+ * @param options - Options array to cache
+ */
+export function cacheOptions(productId: string, region: string, options: CatalogProductOption[]): void {
+  if (!productId || !region) {
+    return;
+  }
+  
+  const cacheKey = getOptionsCacheKey(productId, region);
+  optionsCache.value.set(cacheKey, {
+    options,
+    timestamp: Date.now()
+  });
+}
+
+/**
+ * Check if options cache is valid for a product and region
+ * @param productId - Product ID
+ * @param region - Region name
+ * @returns True if cache exists and is still valid
+ */
+export function isOptionsCacheValid(productId: string, region: string): boolean {
+  if (!productId || !region) {
+    return false;
+  }
+  
+  const cacheKey = getOptionsCacheKey(productId, region);
+  const cached = optionsCache.value.get(cacheKey);
+  
+  if (!cached) {
+    return false;
+  }
+  
+  const now = Date.now();
+  if (now - cached.timestamp > OPTIONS_CACHE_TTL) {
+    // Cache expired, remove it
+    optionsCache.value.delete(cacheKey);
+    return false;
+  }
+  
+  return true;
+}
+
+/**
+ * Clear options cache
+ */
+export function clearOptionsCache(): void {
+  optionsCache.value.clear();
 }

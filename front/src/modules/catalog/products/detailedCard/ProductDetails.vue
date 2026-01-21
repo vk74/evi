@@ -674,6 +674,7 @@ watch(() => options.value, () => {
                 ref="optionsTableRef" 
                 :items="options" 
                 :main-product-units-count="mainProductUnitsCount"
+                :main-product-id="productId"
                 @options-sum-changed="handleOptionsSumChanged"
               />
             </div>
