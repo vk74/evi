@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.0
+# Version: 1.1.0
 # Purpose: Developer release automation script for evi application.
 # Deployment file: release.sh
 # Logic:
@@ -10,6 +10,15 @@
 # - Creates Git tags for releases
 # - Interactive menu and command-line interfaces
 # - Independent from install.sh and evictl (developer workflow only)
+#
+# Changes in v1.1.0:
+# - Added GHCR authentication via credentials file (deployment/ghcr.io)
+# - Implemented load_ghcr_credentials() with validation and security checks
+# - Implemented authenticate_ghcr() for automatic authentication
+# - Updated validate_ghcr_auth() to use credentials file automatically
+# - Added file permissions check (recommends 600)
+# - Added token format validation (must start with ghp_)
+# - Improved error messages with helpful instructions
 
 set -euo pipefail
 
@@ -329,18 +338,103 @@ validate_prerequisites() {
   return 0
 }
 
-# Load GHCR credentials from ghcr.io file (placeholder for future implementation)
+# Load GHCR credentials from ghcr.io file
 load_ghcr_credentials() {
+  # Check if file exists
   if [[ ! -f "${GHCR_CREDENTIALS_FILE}" ]]; then
-    warn "GHCR credentials file not found: ${GHCR_CREDENTIALS_FILE}"
-    warn "This file will be used for GHCR authentication when implemented"
+    err "GHCR credentials file not found: ${GHCR_CREDENTIALS_FILE}"
+    err "To create it, copy the example file:"
+    err "  cp ${SCRIPT_DIR}/ghcr.io.example ${GHCR_CREDENTIALS_FILE}"
+    err "Then edit ${GHCR_CREDENTIALS_FILE} and fill in your credentials"
     return 1
   fi
   
-  # TODO: Implement reading username and token from ghcr.io file
-  # For now, this is a placeholder
-  info "GHCR credentials file found (implementation pending)"
+  # Check file permissions (should be 600 - only owner can read/write)
+  local file_perms
+  file_perms=$(stat -f "%A" "${GHCR_CREDENTIALS_FILE}" 2>/dev/null || stat -c "%a" "${GHCR_CREDENTIALS_FILE}" 2>/dev/null || echo "")
+  
+  if [[ -n "${file_perms}" ]] && [[ "${file_perms}" != "600" ]]; then
+    warn "GHCR credentials file has insecure permissions: ${file_perms}"
+    warn "Recommended: chmod 600 ${GHCR_CREDENTIALS_FILE}"
+    if ! confirm "Continue with current permissions?" "n"; then
+      return 1
+    fi
+  fi
+  
+  # Load variables from file
+  # Use a subshell to avoid polluting the main environment
+  local loaded_vars
+  loaded_vars=$(source "${GHCR_CREDENTIALS_FILE}" 2>&1 && echo "GHCR_USERNAME=${GHCR_USERNAME:-} GHCR_TOKEN=${GHCR_TOKEN:-}")
+  
+  if [[ $? -ne 0 ]]; then
+    err "Failed to load GHCR credentials file: ${GHCR_CREDENTIALS_FILE}"
+    return 1
+  fi
+  
+  # Source the file to load variables into current shell
+  # Unset variables first to avoid using stale values
+  unset GHCR_USERNAME GHCR_TOKEN
+  source "${GHCR_CREDENTIALS_FILE}" || {
+    err "Failed to source GHCR credentials file: ${GHCR_CREDENTIALS_FILE}"
+    return 1
+  }
+  
+  # Validate GHCR_USERNAME
+  if [[ -z "${GHCR_USERNAME:-}" ]]; then
+    err "GHCR_USERNAME is not set in ${GHCR_CREDENTIALS_FILE}"
+    err "Please add: export GHCR_USERNAME=\"your_github_username\""
+    return 1
+  fi
+  
+  # Validate GHCR_TOKEN
+  if [[ -z "${GHCR_TOKEN:-}" ]]; then
+    err "GHCR_TOKEN is not set in ${GHCR_CREDENTIALS_FILE}"
+    err "Please add: export GHCR_TOKEN=\"ghp_your_token_here\""
+    return 1
+  fi
+  
+  # Validate token format (should start with ghp_)
+  if [[ ! "${GHCR_TOKEN}" =~ ^ghp_ ]]; then
+    err "Invalid GHCR_TOKEN format in ${GHCR_CREDENTIALS_FILE}"
+    err "Token must start with 'ghp_' (GitHub Personal Access Token)"
+    err "Create a token at: https://github.com/settings/tokens"
+    return 1
+  fi
+  
+  # Validate username is not empty after trimming
+  if [[ -z "${GHCR_USERNAME// }" ]]; then
+    err "GHCR_USERNAME is empty in ${GHCR_CREDENTIALS_FILE}"
+    return 1
+  fi
+  
   return 0
+}
+
+# Authenticate to GHCR using credentials from file
+authenticate_ghcr() {
+  log "Authenticating to GitHub Container Registry..."
+  
+  # Load credentials from file
+  if ! load_ghcr_credentials; then
+    err "Failed to load GHCR credentials"
+    return 1
+  fi
+  
+  # Perform login using podman
+  # Use --password-stdin to avoid token appearing in process list
+  if echo "${GHCR_TOKEN}" | podman login ghcr.io -u "${GHCR_USERNAME}" --password-stdin >/dev/null 2>&1; then
+    info "Successfully authenticated to ghcr.io as ${GHCR_USERNAME}"
+    return 0
+  else
+    err "Failed to authenticate to ghcr.io"
+    err "Please check:"
+    err "  1. Your GitHub username is correct: ${GHCR_USERNAME}"
+    err "  2. Your token is valid and has required scopes (write:packages, read:packages)"
+    err "  3. Token has not expired"
+    err "  4. You have access to the repository/organization"
+    err "Create a new token at: https://github.com/settings/tokens"
+    return 1
+  fi
 }
 
 validate_ghcr_auth() {
@@ -349,16 +443,14 @@ validate_ghcr_auth() {
     return 0
   fi
   
-  # Try to load credentials from file (placeholder)
-  if load_ghcr_credentials; then
-    # TODO: Use credentials to login when implemented
-    warn "GHCR authentication via credentials file not yet implemented"
-    warn "Please run: podman login ghcr.io"
-    return 1
+  # Try to authenticate using credentials file
+  if authenticate_ghcr; then
+    return 0
   fi
   
+  # If authentication failed, provide helpful error message
   err "Not authenticated to ghcr.io"
-  err "Please run: podman login ghcr.io"
+  err "Authentication via credentials file failed"
   return 1
 }
 
@@ -618,7 +710,8 @@ cleanup_local_images() {
 publish_images() {
   log "Publishing images to GHCR..."
   
-  # Validate GHCR authentication
+  # Ensure GHCR authentication (will authenticate automatically if needed)
+  log "Checking GHCR authentication..."
   if ! validate_ghcr_auth; then
     die "GHCR authentication failed"
   fi
