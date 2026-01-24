@@ -1,7 +1,7 @@
 {
   "name": "evi",
-  "version": "0.5.0",
-  "description": "EVI Application - Backend, Frontend, and Database",
+  "version": "0.9.1",
+  "description": "evi application",
   "private": true,
   "scripts": {
     "version:sync": "node deployment/sync-version.js",
