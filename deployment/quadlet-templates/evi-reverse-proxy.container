@@ -39,7 +39,7 @@ PodmanArgs=--publish 0.0.0.0:{{EVI_HTTP_PORT}}:80
 PodmanArgs=--publish 0.0.0.0:{{EVI_HTTPS_PORT}}:443
 
 # Caddy configuration and state
-Volume={{EVI_STATE_DIR}}/proxy/Caddyfile:/etc/caddy/Caddyfile:ro,Z
+Volume={{EVI_STATE_DIR}}/reverse-proxy/Caddyfile:/etc/caddy/Caddyfile:ro,Z
 Volume=evi_caddy_data:/data:Z
 Volume=evi_caddy_config:/config:Z
 

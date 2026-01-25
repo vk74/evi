@@ -87,7 +87,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOYMENT_DIR="${SCRIPT_DIR}"
 ENV_DIR="${DEPLOYMENT_DIR}/env"
 TPL_DIR="${DEPLOYMENT_DIR}/quadlet-templates"
-PROXY_DIR="${DEPLOYMENT_DIR}/proxy"
+PROXY_DIR="${DEPLOYMENT_DIR}/reverse-proxy"
 SCRIPTS_DIR="${DEPLOYMENT_DIR}/scripts"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
@@ -155,7 +155,7 @@ load_env_files() {
 }
 
 ensure_dirs() {
-  mkdir -p "${EVI_STATE_DIR}/proxy" "${EVI_STATE_DIR}/tls" "${EVI_STATE_DIR}/secrets"
+  mkdir -p "${EVI_STATE_DIR}/reverse-proxy" "${EVI_STATE_DIR}/tls" "${EVI_STATE_DIR}/secrets"
   mkdir -p "${EVI_STATE_DIR}/pgadmin" "${EVI_STATE_DIR}/pgadmin/data"
   mkdir -p "${EVI_CONFIG_DIR}"
   mkdir -p "${EVI_QUADLET_DIR}"
@@ -274,8 +274,8 @@ render_caddyfile() {
   export EVI_TLS_SITE_BLOCK="${EVI_TLS_SITE_BLOCK//\{\{EVI_BE_PORT\}\}/${EVI_BE_PORT}}"
   export EVI_TLS_SITE_BLOCK="${EVI_TLS_SITE_BLOCK//\{\{EVI_FE_PORT\}\}/${EVI_FE_PORT}}"
 
-  render_template_file "${base_tpl}" "${EVI_STATE_DIR}/proxy/Caddyfile"
-  log "OK: rendered Caddyfile to ${EVI_STATE_DIR}/proxy/Caddyfile"
+  render_template_file "${base_tpl}" "${EVI_STATE_DIR}/reverse-proxy/Caddyfile"
+  log "OK: rendered Caddyfile to ${EVI_STATE_DIR}/reverse-proxy/Caddyfile"
 }
 
 create_or_update_secret_from_file() {

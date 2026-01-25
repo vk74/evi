@@ -86,21 +86,21 @@ echo ""
 # 2. Check generated Caddyfile
 log "2. Checking generated Caddyfile..."
 STATE_DIR="${HOME}/.local/share/evi"
-if [[ -f "${STATE_DIR}/proxy/Caddyfile" ]]; then
-  info "Found generated Caddyfile at ${STATE_DIR}/proxy/Caddyfile"
-  if grep -q "tls internal" "${STATE_DIR}/proxy/Caddyfile"; then
+if [[ -f "${STATE_DIR}/reverse-proxy/Caddyfile" ]]; then
+  info "Found generated Caddyfile at ${STATE_DIR}/reverse-proxy/Caddyfile"
+  if grep -q "tls internal" "${STATE_DIR}/reverse-proxy/Caddyfile"; then
     info "  Caddyfile contains 'tls internal'"
-  elif grep -q "tls " "${STATE_DIR}/proxy/Caddyfile"; then
+  elif grep -q "tls " "${STATE_DIR}/reverse-proxy/Caddyfile"; then
     info "  Caddyfile contains TLS directive (not internal)"
-    grep "tls " "${STATE_DIR}/proxy/Caddyfile" || true
+    grep "tls " "${STATE_DIR}/reverse-proxy/Caddyfile" || true
   else
     warn "  No TLS directive found in Caddyfile (may use automatic HTTPS)"
   fi
   echo "  --- Caddyfile content ---"
-  cat "${STATE_DIR}/proxy/Caddyfile" | head -30
+  cat "${STATE_DIR}/reverse-proxy/Caddyfile" | head -30
   echo "  --- End Caddyfile ---"
 else
-  warn "Generated Caddyfile not found at ${STATE_DIR}/proxy/Caddyfile"
+  warn "Generated Caddyfile not found at ${STATE_DIR}/reverse-proxy/Caddyfile"
   warn "  Run 'evictl init' to generate it"
 fi
 echo ""
