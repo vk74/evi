@@ -10,7 +10,7 @@
 # - Independent from install.sh and evictl (developer workflow only).
 #
 # Changes in v1.3.0:
-# - Multi-arch build: images built for linux/amd64 and linux/arm64, combined into manifest list; push uses manifest push --all.
+# - Multi-arch build only: images built for all BUILD_PLATFORMS (default linux/amd64, linux/arm64), combined into manifest list; push uses manifest push --all.
 # - BUILD_PLATFORMS config; validate_images_built checks manifest exists; cleanup removes manifest and per-arch tags.
 #
 # Changes in v1.2.0 (beta version testing 2): 
@@ -815,14 +815,11 @@ build_images() {
   local be_image="ghcr.io/${GHCR_NAMESPACE}/evi-be:${version}"
   local fe_image="ghcr.io/${GHCR_NAMESPACE}/evi-fe:${version}"
   
-  # Build one component for all platforms and create manifest list
+  # Build one component for all platforms and create manifest list (always multi-arch, no single-arch path)
   build_multi_arch_component() {
     local name="$1"
     local main_tag="$2"
     local context="$3"
-    local build_args=()
-    [[ "$name" == "fe" ]] && build_args=(--build-arg VUE_APP_API_URL=/api)
-    
     local platform_list
     IFS=',' read -ra platform_list <<< "${BUILD_PLATFORMS}"
     local tags=()
@@ -840,9 +837,16 @@ build_images() {
       local tag="${main_tag}-${suffix}"
       tags+=("${tag}")
       log "Building ${main_tag} for ${pl}..."
-      if ! podman build --platform "${pl}" "${build_args[@]}" -t "${tag}" "${context}"; then
-        err "Build failed: ${main_tag} for ${pl}"
-        return 1
+      if [[ "$name" == "fe" ]]; then
+        if ! podman build --platform "${pl}" --build-arg VUE_APP_API_URL=/api -t "${tag}" "${context}"; then
+          err "Build failed: ${main_tag} for ${pl}"
+          return 1
+        fi
+      else
+        if ! podman build --platform "${pl}" -t "${tag}" "${context}"; then
+          err "Build failed: ${main_tag} for ${pl}"
+          return 1
+        fi
       fi
     done
     
