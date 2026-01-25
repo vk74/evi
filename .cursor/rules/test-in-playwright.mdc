@@ -1,6 +1,0 @@
----
-description:
-globs:
-alwaysApply: false
----
-use playwright mcp to test the changes in the app: connect to http://localhost:8080 and use username "t1"and password "1"to login. if you reload page, no need to re-login, the app will use jwt or cookie to let you in.

@@ -57,6 +57,7 @@ coverage/
 # IDE files
 .vscode/
 .idea/
+.cursor/
 *.suo
 *.ntvs*
 *.njsproj

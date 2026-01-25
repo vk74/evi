@@ -1,8 +1,0 @@
----
-alwaysApply: true
----
-when writing or updating code in application:
-1. for application files use only TypeScript, never use JavaScript except for files which are not part of a production build, for example Jest tests which explicitly require JavaScript
-2. never use classes
-3. single responsibility principle - one file has 1 responsibility. if user asks to create multiple responsibility file agent must offer split. however user will decide.
-4. use "do not repeat yourself" principle. if agent see a repeating functionaliy in several files then agent must offer to create a separate function or helper file to eliminate repetitions. however user will decide if it is necessary.
