@@ -1,6 +1,13 @@
--- Version: 1.12.1
+-- Version: 1.13.0
 -- Description: Create all application tables, functions, and triggers.
--- Backend file: 04_tables.sql
+-- Backend file: 05_tables.sql
+--
+-- Changes in v1.13.0 (MVP merge init+migrations):
+-- - users.location -> location_id INTEGER, FK to app.regions(region_id)
+-- - price_lists_info.region -> region_id INTEGER, FK to regions(region_id), unique index
+-- - regions_taxable_categories: UNIQUE(region_id, category_name)
+-- - Removed check_max_options_per_product function and trigger (products.options removed)
+-- - Added app.permissions and app.group_permissions tables
 --
 -- Changes in v1.12.1:
 -- - Fixed table creation order: moved app.regions, app.taxable_categories, and app.regions_taxable_categories before app.product_regions to resolve foreign key dependency error
@@ -69,7 +76,7 @@ CREATE TABLE IF NOT EXISTS app.users (
     created_at TIMESTAMP WITH TIME ZONE,
     mobile_phone VARCHAR(15),
     gender app.gender,
-    location VARCHAR(50),
+    location_id INTEGER,
     is_system BOOLEAN NOT NULL DEFAULT false,
     CONSTRAINT unique_user_name UNIQUE (username),
     CONSTRAINT unique_email UNIQUE (email),
@@ -106,6 +113,27 @@ CREATE TABLE IF NOT EXISTS app.group_members (
     removed_by UUID REFERENCES app.users(user_id),
     CONSTRAINT group_members_group_id_user_id_is_active_key UNIQUE(group_id, user_id, is_active)
 );
+
+-- Permissions registry (authorization)
+CREATE TABLE IF NOT EXISTS app.permissions (
+    permission_key VARCHAR(255) PRIMARY KEY,
+    module VARCHAR(100) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+COMMENT ON TABLE app.permissions IS 'Registry of all available system permissions';
+
+-- Group-to-permission mapping (authorization)
+CREATE TABLE IF NOT EXISTS app.group_permissions (
+    group_id UUID NOT NULL REFERENCES app.groups(group_id) ON DELETE CASCADE,
+    permission_key VARCHAR(255) NOT NULL REFERENCES app.permissions(permission_key) ON DELETE CASCADE,
+    granted_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    granted_by UUID,
+    PRIMARY KEY (group_id, permission_key)
+);
+
+COMMENT ON TABLE app.group_permissions IS 'Mapping of system groups to permissions';
 
 -- Create tokens table
 CREATE TABLE IF NOT EXISTS app.tokens (
@@ -250,7 +278,9 @@ CREATE TABLE IF NOT EXISTS app.regions_taxable_categories (
         REFERENCES app.regions(region_id) 
         ON DELETE CASCADE,
     CONSTRAINT chk_regions_taxable_categories_vat_rate 
-        CHECK (vat_rate IS NULL OR (vat_rate >= 0 AND vat_rate <= 99))
+        CHECK (vat_rate IS NULL OR (vat_rate >= 0 AND vat_rate <= 99)),
+    CONSTRAINT uq_regions_taxable_categories_region_category 
+        UNIQUE (region_id, category_name)
 );
 
 COMMENT ON TABLE app.regions_taxable_categories IS 'Regional taxable categories. Each row is a unique category defined for a specific region with a VAT rate.';
@@ -343,17 +373,15 @@ COMMENT ON TABLE app.currencies IS 'Currency dictionary - rounding logic handled
 COMMENT ON COLUMN app.currencies.code IS 'ISO 4217 currency code (3 letters)';
 COMMENT ON COLUMN app.currencies.symbol IS 'Currency symbol for UI display (max 3 characters, required)';
 
--- Add foreign key constraint for app.users.location -> app.regions.region_name
--- This constraint ensures data integrity: user locations must reference valid regions
--- When a region is deleted, user locations referencing it are automatically set to NULL
+-- Add foreign key constraint for app.users.location_id -> app.regions.region_id
 ALTER TABLE app.users
-ADD CONSTRAINT fk_users_location_region
-    FOREIGN KEY (location)
-    REFERENCES app.regions(region_name)
+ADD CONSTRAINT fk_users_location_region_id
+    FOREIGN KEY (location_id)
+    REFERENCES app.regions(region_id)
     ON DELETE SET NULL;
 
-COMMENT ON CONSTRAINT fk_users_location_region ON app.users IS 
-    'Foreign key constraint: app.users.location references app.regions.region_name. When a region is deleted, user locations are automatically set to NULL.';
+COMMENT ON COLUMN app.users.location_id IS 
+    'Reference to app.regions.region_id. When a region is deleted, user locations are automatically set to NULL.';
 
 -- Ensure product_code is suitable for FK (not null + unique)
 ALTER TABLE app.products
@@ -580,44 +608,6 @@ CREATE TRIGGER trg_product_options_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION app.tgr_set_updated_at();
 
--- Trigger to check maximum number of options per product
-CREATE OR REPLACE FUNCTION app.check_max_options_per_product()
-RETURNS trigger AS $$
-DECLARE
-    max_options INTEGER;
-    current_count INTEGER;
-BEGIN
-    -- Get max options limit from settings
-    SELECT value::INTEGER INTO max_options
-    FROM app.app_settings 
-    WHERE section_path = 'products.options' 
-    AND setting_name = 'max.options.per.product';
-    
-    -- If setting not found, raise error - this is a configuration issue
-    IF max_options IS NULL THEN
-        RAISE EXCEPTION 'Configuration error: max.options.per.product setting not found in app.app_settings. Please check database initialization.';
-    END IF;
-    
-    -- Count current options for the main product
-    SELECT COUNT(*) INTO current_count
-    FROM app.product_options
-    WHERE main_product_id = NEW.main_product_id;
-    
-    -- Check if adding this option would exceed the limit
-    IF current_count >= max_options THEN
-        RAISE EXCEPTION 'Maximum number of options (%) exceeded for product %', 
-            max_options, NEW.main_product_id;
-    END IF;
-    
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_check_max_options_per_product
-    BEFORE INSERT ON app.product_options
-    FOR EACH ROW
-    EXECUTE FUNCTION app.check_max_options_per_product();
-
 -- ============================================
 -- Column Comments for Product Roles
 -- ============================================
@@ -664,7 +654,7 @@ CREATE TABLE IF NOT EXISTS app.price_lists_info (
     currency_code CHAR(3) NOT NULL,
     is_active BOOLEAN DEFAULT FALSE NOT NULL,
     owner_id UUID,
-    region VARCHAR(255) NULL,
+    region_id INTEGER NULL,
     created_by UUID,
     updated_by UUID,
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
@@ -691,11 +681,15 @@ CREATE TABLE IF NOT EXISTS app.price_lists_info (
         REFERENCES app.users(user_id) 
         ON DELETE SET NULL,
     
-    CONSTRAINT fk_price_lists_info_region 
-        FOREIGN KEY (region) 
-        REFERENCES app.regions(region_name) 
+    CONSTRAINT fk_price_lists_info_region_id 
+        FOREIGN KEY (region_id) 
+        REFERENCES app.regions(region_id) 
         ON DELETE SET NULL
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_price_lists_info_region_id_unique 
+ON app.price_lists_info(region_id) 
+WHERE region_id IS NOT NULL;
 
 COMMENT ON TABLE app.price_lists_info IS 'Metadata for price lists - headers/info about each price list';
 COMMENT ON COLUMN app.price_lists_info.price_list_id IS 'Unique identifier for the price list';
@@ -704,7 +698,7 @@ COMMENT ON COLUMN app.price_lists_info.description IS 'User description/notes ab
 COMMENT ON COLUMN app.price_lists_info.currency_code IS 'Currency for all prices in this price list';
 COMMENT ON COLUMN app.price_lists_info.is_active IS 'Whether this price list is currently active';
 COMMENT ON COLUMN app.price_lists_info.owner_id IS 'Price list owner (optional, can be different from created_by)';
-COMMENT ON COLUMN app.price_lists_info.region IS 'Region assigned to this price list. References app.regions.region_name. Each region can be assigned to only one price list. NULL values are allowed. Automatically set to NULL when referenced region is deleted.';
+COMMENT ON COLUMN app.price_lists_info.region_id IS 'Reference to app.regions.region_id. Each region can be assigned to only one price list. NULL values are allowed. Automatically set to NULL when referenced region is deleted.';
 
 -- Price list items (partitioned by price_list_id)
 CREATE TABLE IF NOT EXISTS app.price_lists (

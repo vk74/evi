@@ -1,6 +1,6 @@
 -- Version: 1.8.0
 -- Description: Database validation functions and triggers for business logic enforcement.
--- Backend file: 08_validations_and_triggers.sql
+-- Backend file: 10_validations_and_triggers.sql
 -- 
 -- This script contains validation functions and triggers that enforce business rules
 -- and data integrity constraints beyond basic foreign key relationships.

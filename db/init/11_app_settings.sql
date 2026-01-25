@@ -1,8 +1,8 @@
--- Version: 1.5.8
+-- Version: 1.6.0
 -- Description: Seeds the database with default application settings.
--- Backend file: 09_app_settings.sql
--- Added: 5 new settings (allowed.languages, default.module.registered.users, default.module.anonymous.users, product.card.default.section)
--- Previous: Country price list mapping setting (Admin.Catalog.CountryPricelistID)
+-- Backend file: 11_app_settings.sql
+--
+-- Changes in v1.6.0 (MVP merge): section_path AdminProducts, AdminServices, AdminOrgMgmt from start; removed products.options setting
 --
 -- Changes in v1.5.7:
 -- - Removed app.regions setting (replaced by app.regions table)
@@ -83,18 +83,15 @@ INSERT INTO app.app_settings (
 ('Application.System.EventBus', 'generate.events.in.domain.knowledgeBase', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in knowledge base module domain', false),
 ('Application.System.EventBus', 'generate.events.in.domain.guards', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable event generation in guards security domain', false),
 
--- Organization Management Settings
-('OrganizationManagement.GroupsManagement', 'add.only.active.users.to.groups', 'all', 'false', '{"type":"boolean"}', 'true', 'Allow adding to groups only those users with status ACTIVE', false),
-('OrganizationManagement.RegistrationPage', 'registration.page.enabled', 'all', 'false', '{"type": "boolean"}', 'false', 'Users self-registration page', true),
+-- Organization Management Settings (section_path AdminOrgMgmt from start - MVP merge)
+('AdminOrgMgmt', 'add.only.active.users.to.groups', 'all', 'false', '{"type":"boolean"}', 'true', 'Allow adding to groups only those users with status ACTIVE', false),
+('AdminOrgMgmt', 'registration.page.enabled', 'all', 'false', '{"type": "boolean"}', 'false', 'Users self-registration page', true),
 
--- Products Options Settings
-('products.options', 'max.options.per.product', 'all', to_jsonb(100), '{"type":"integer","minimum":1,"maximum":1000}', to_jsonb(100), 'Maximum number of direct options per product', false),
-
--- Catalog Settings
-('Catalog.Products', 'display.optionsOnlyProducts', 'all', 'false', '{"type":"boolean"}', 'false', 'Sets catalog to display or hide products which are marked as "option only"', true),
-('Catalog.Products', 'card.color', 'all', '"#E8F4F8"', '{"type":"string","pattern":"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"}', '"#E8F4F8"', 'Background color for product cards in catalog (hex format)', true),
-('Catalog.Products', 'product.card.default.section', 'all', '"details"', '{"type":"string","enum":["details","options","specs"]}', '"details"', 'Default section to display in product card', false),
-('Catalog.Services', 'card.color', 'all', '"#F5F5F5"', '{"type":"string","pattern":"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"}', '"#F5F5F5"', 'Background color for service cards in catalog (hex format)', true),
+-- Catalog Settings (section_path AdminProducts / AdminServices from start - MVP merge)
+('AdminProducts', 'display.optionsOnlyProducts', 'all', 'false', '{"type":"boolean"}', 'false', 'Sets catalog to display or hide products which are marked as "option only"', true),
+('AdminProducts', 'card.color', 'all', '"#E8F4F8"', '{"type":"string","pattern":"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"}', '"#E8F4F8"', 'Background color for product cards in catalog (hex format)', true),
+('AdminProducts', 'product.card.default.section', 'all', '"details"', '{"type":"string","enum":["details","options","specs"]}', '"details"', 'Default section to display in product card', false),
+('AdminServices', 'card.color', 'all', '"#F5F5F5"', '{"type":"string","pattern":"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"}', '"#F5F5F5"', 'Background color for service cards in catalog (hex format)', true),
 
 -- Data Validation Settings (Standard fields removed)
 ('Application.System.DataValidation', 'wellKnownFields.userName.minLength', 'all', '1', '{"type":"integer","minimum":1,"maximum":5}', '1', 'Minimum length for user name fields', true),

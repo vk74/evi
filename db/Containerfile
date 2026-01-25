@@ -1,4 +1,4 @@
-# Version: 1.2.1
+# Version: 1.3.0
 # Description: Containerfile for evi database container based on official PostgreSQL 17 image with pg_cron support.
 # Backend file: Containerfile
 # This Containerfile extends the official postgres image and adds initialization scripts.
@@ -20,6 +20,9 @@
 # - Renamed demo data target to z_demo_catalog.sql to ensure it runs last (z_ > m_)
 # - Removed complex renaming logic from Containerfile as source files are now correctly named
 #
+# Changes in v1.3.0 (MVP merge):
+# - Init scripts 00-12 (authorization and renumbered validations/app_settings/pg_cron); migrations only m_001
+#
 FROM docker.io/postgres:17
 
 # Install pg_cron extension package for PostgreSQL 17
@@ -36,12 +39,12 @@ RUN set -eux; \
 
 # Copy initialization scripts to the entrypoint directory
 # These scripts will be executed automatically when the database is first initialized
-# Order: init scripts (00-10) -> migrations (m_*)
+# Order: init scripts (00-12) -> migrations (m_001 only)
 COPY init/*.sql /docker-entrypoint-initdb.d/
 COPY init/*.sh /docker-entrypoint-initdb.d/
 
 # Copy migration scripts to the entrypoint directory
-# Source files are now named m_xxx_*.sql which ensures they sort AFTER init scripts (00-10)
+# Source: only m_001_future_migrations.sql; runs after init scripts (00-12)
 # m (109) > 0 (48) and m > 1 (49)
 COPY migrations/*.sql /docker-entrypoint-initdb.d/
 
