@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.1.1
+# Version: 1.1.2
 # Purpose: Developer release automation script for evi application.
 # Deployment file: release.sh
 # Logic:
@@ -11,11 +11,18 @@
 # - Interactive menu and command-line interfaces
 # - Independent from install.sh and evictl (developer workflow only)
 #
+# Changes in v1.1.2:
+# - GHCR_NAMESPACE support: configurable via ghcr.io (default evi-app)
+# - Push to personal GHCR (e.g. GHCR_NAMESPACE="${GHCR_USERNAME}") when org write restricted
+# - load_ghcr_config(); tag evi-app -> namespace before push when using personal namespace
+# - build/publish/validate/cleanup/summary use GHCR_NAMESPACE; ghcr.io.example updated
+#
 # Changes in v1.1.1:
 # - Auth logging: "Using existing GHCR session; GitHub authorized." / "GitHub authorized the operation." (no username/token)
 # - authenticate_ghcr/validate_ghcr_auth error messages no longer expose username
 # - publish_images: capture podman push stderr+stdout, display it, detect permission_denied/create_package
 # - print_ghcr_permission_troubleshooting() on push permission errors
+# - set +e / set -e around push capture so script does not exit on push failure (set -e); show errors and troubleshooting
 #
 # Changes in v1.1.0:
 # - Added GHCR authentication via credentials file (deployment/ghcr.io)
@@ -200,8 +207,8 @@ update_package_json_version() {
 # Extract version from image tag in env file line
 extract_version_from_image_tag() {
   local line="$1"
-  # Match pattern: EVI_(FE|BE|DB)_IMAGE=ghcr.io/evi-app/evi-(fe|be|db):VERSION
-  if [[ "${line}" =~ ^EVI_(FE|BE|DB)_IMAGE=ghcr\.io/evi-app/evi-(fe|be|db):(.+)$ ]]; then
+  # Match pattern: EVI_(FE|BE|DB)_IMAGE=ghcr.io/NAMESPACE/evi-(fe|be|db):VERSION (namespace: evi-app, vk74, etc.)
+  if [[ "${line}" =~ ^EVI_(FE|BE|DB)_IMAGE=ghcr\.io/[^/]+/evi-(fe|be|db):(.+)$ ]]; then
     echo "${BASH_REMATCH[3]}"
   else
     echo ""
@@ -344,6 +351,17 @@ validate_prerequisites() {
   return 0
 }
 
+# Load GHCR namespace (and optionally credentials) from ghcr.io; no validation
+# Sets GHCR_NAMESPACE (default evi-app). Use for build when credentials not needed.
+load_ghcr_config() {
+  GHCR_NAMESPACE="${GHCR_NAMESPACE:-evi-app}"
+  if [[ -f "${GHCR_CREDENTIALS_FILE}" ]]; then
+    unset GHCR_NAMESPACE
+    source "${GHCR_CREDENTIALS_FILE}" 2>/dev/null || true
+    GHCR_NAMESPACE="${GHCR_NAMESPACE:-evi-app}"
+  fi
+}
+
 # Load GHCR credentials from ghcr.io file
 load_ghcr_credentials() {
   # Check if file exists
@@ -379,12 +397,13 @@ load_ghcr_credentials() {
   
   # Source the file to load variables into current shell
   # Unset variables first to avoid using stale values
-  unset GHCR_USERNAME GHCR_TOKEN
+  unset GHCR_USERNAME GHCR_TOKEN GHCR_NAMESPACE
   source "${GHCR_CREDENTIALS_FILE}" || {
     err "Failed to source GHCR credentials file: ${GHCR_CREDENTIALS_FILE}"
     return 1
   }
-  
+  GHCR_NAMESPACE="${GHCR_NAMESPACE:-evi-app}"
+
   # Validate GHCR_USERNAME
   if [[ -z "${GHCR_USERNAME:-}" ]]; then
     err "GHCR_USERNAME is not set in ${GHCR_CREDENTIALS_FILE}"
@@ -467,17 +486,18 @@ print_ghcr_permission_troubleshooting() {
   err "  - Username in ghcr.io must exactly match your GitHub account (case, hyphens, etc.)"
   err "  - PAT must have scopes: write:packages, read:packages; for org use fine-grained PAT with evi-app package access"
   err "  - evi-app is an organization: org package creation/write may be restricted; ensure you have write access to the packages"
+  err "  - To push to personal GHCR, set GHCR_NAMESPACE=\"\${GHCR_USERNAME}\" in deployment/ghcr.io"
   err "  - Create or check token: https://github.com/settings/tokens — see deployment/ghcr.io.example"
 }
 
 validate_images_built() {
   local version="$1"
   local missing=0
-  
+  local ns="${GHCR_NAMESPACE:-evi-app}"
   local images=(
-    "ghcr.io/evi-app/evi-db:${version}"
-    "ghcr.io/evi-app/evi-be:${version}"
-    "ghcr.io/evi-app/evi-fe:${version}"
+    "ghcr.io/${ns}/evi-db:${version}"
+    "ghcr.io/${ns}/evi-be:${version}"
+    "ghcr.io/${ns}/evi-fe:${version}"
   )
   
   for image in "${images[@]}"; do
@@ -499,11 +519,11 @@ validate_images_built() {
 check_and_cleanup_existing_images() {
   local version="$1"
   local context="$2"  # "build", "publish", or "release"
-  
+  local ns="${GHCR_NAMESPACE:-evi-app}"
   local images=(
-    "ghcr.io/evi-app/evi-db:${version}"
-    "ghcr.io/evi-app/evi-be:${version}"
-    "ghcr.io/evi-app/evi-fe:${version}"
+    "ghcr.io/${ns}/evi-db:${version}"
+    "ghcr.io/${ns}/evi-be:${version}"
+    "ghcr.io/${ns}/evi-fe:${version}"
   )
   
   local existing_images=()
@@ -619,6 +639,8 @@ sync_versions() {
 build_images() {
   log "Building container images..."
   
+  load_ghcr_config
+  
   # Validate prerequisites
   if ! validate_prerequisites; then
     die "Prerequisites validation failed"
@@ -635,12 +657,12 @@ build_images() {
   # Check for existing images and ask to remove them
   check_and_cleanup_existing_images "${version}" "build"
   
-  info "Building images for version: ${version}"
+  info "Building images for version: ${version} (namespace: ${GHCR_NAMESPACE})"
   
   # Define image tags
-  local db_image="ghcr.io/evi-app/evi-db:${version}"
-  local be_image="ghcr.io/evi-app/evi-be:${version}"
-  local fe_image="ghcr.io/evi-app/evi-fe:${version}"
+  local db_image="ghcr.io/${GHCR_NAMESPACE}/evi-db:${version}"
+  local be_image="ghcr.io/${GHCR_NAMESPACE}/evi-be:${version}"
+  local fe_image="ghcr.io/${GHCR_NAMESPACE}/evi-fe:${version}"
   
   local pids=()
   local build_errors=0
@@ -693,11 +715,11 @@ build_images() {
 # Remove local images after successful publication
 cleanup_local_images() {
   local version="$1"
-  
+  local ns="${GHCR_NAMESPACE:-evi-app}"
   local images=(
-    "ghcr.io/evi-app/evi-db:${version}"
-    "ghcr.io/evi-app/evi-be:${version}"
-    "ghcr.io/evi-app/evi-fe:${version}"
+    "ghcr.io/${ns}/evi-db:${version}"
+    "ghcr.io/${ns}/evi-be:${version}"
+    "ghcr.io/${ns}/evi-fe:${version}"
   )
   
   echo ""
@@ -726,6 +748,8 @@ cleanup_local_images() {
 publish_images() {
   log "Publishing images to GHCR..."
   
+  load_ghcr_config
+  
   # Ensure GHCR authentication (will authenticate automatically if needed)
   log "Checking GHCR authentication..."
   if ! validate_ghcr_auth; then
@@ -743,17 +767,30 @@ publish_images() {
   # Check for existing images (in case of retry after failed publish)
   check_and_cleanup_existing_images "${version}" "publish"
   
+  # If using personal namespace but only evi-app images exist locally, tag evi-app -> namespace
+  if [[ "${GHCR_NAMESPACE}" != "evi-app" ]]; then
+    local name
+    for name in evi-db evi-be evi-fe; do
+      local src="ghcr.io/evi-app/${name}:${version}"
+      local dst="ghcr.io/${GHCR_NAMESPACE}/${name}:${version}"
+      if podman image exists "${src}" >/dev/null 2>&1 && ! podman image exists "${dst}" >/dev/null 2>&1; then
+        podman tag "${src}" "${dst}"
+        info "Tagged ${src} -> ${dst}"
+      fi
+    done
+  fi
+  
   # Validate images are built
   if ! validate_images_built "${version}"; then
     die "Images validation failed"
   fi
   
-  info "Publishing images for version: ${version}"
+  info "Publishing images for version: ${version} (namespace: ${GHCR_NAMESPACE})"
   
   local images=(
-    "ghcr.io/evi-app/evi-db:${version}"
-    "ghcr.io/evi-app/evi-be:${version}"
-    "ghcr.io/evi-app/evi-fe:${version}"
+    "ghcr.io/${GHCR_NAMESPACE}/evi-db:${version}"
+    "ghcr.io/${GHCR_NAMESPACE}/evi-be:${version}"
+    "ghcr.io/${GHCR_NAMESPACE}/evi-fe:${version}"
   )
   
   local push_errors=0
@@ -761,8 +798,11 @@ publish_images() {
   for image in "${images[@]}"; do
     log "Pushing ${image}..."
     local push_output
+    local push_ret
+    set +e
     push_output=$(podman push "${image}" 2>&1)
-    local push_ret=$?
+    push_ret=$?
+    set -e
     printf '%s\n' "${push_output}"
     if [[ ${push_ret} -ne 0 ]]; then
       err "Failed to push ${image}"
@@ -907,13 +947,16 @@ do_full_release() {
   printf "    ${SYM_OK} Create tag: ${GREEN}success${NC}\n"
   echo ""
   printf "  ${CYAN}Published Images:${NC}\n"
-  printf "    ${GREEN}ghcr.io/evi-app/evi-db:${version}${NC}\n"
-  printf "    ${GREEN}ghcr.io/evi-app/evi-be:${version}${NC}\n"
-  printf "    ${GREEN}ghcr.io/evi-app/evi-fe:${version}${NC}\n"
+  printf "    ${GREEN}ghcr.io/${GHCR_NAMESPACE:-evi-app}/evi-db:${version}${NC}\n"
+  printf "    ${GREEN}ghcr.io/${GHCR_NAMESPACE:-evi-app}/evi-be:${version}${NC}\n"
+  printf "    ${GREEN}ghcr.io/${GHCR_NAMESPACE:-evi-app}/evi-fe:${version}${NC}\n"
   echo ""
   printf "  ${CYAN}View images at:${NC}\n"
-  printf "    ${CYAN}https://github.com/orgs/evi-app/packages${NC}\n"
-  printf "    ${CYAN}https://github.com/vk74/evi/pkgs/container${NC}\n"
+  if [[ "${GHCR_NAMESPACE:-evi-app}" == "evi-app" ]]; then
+    printf "    ${CYAN}https://github.com/orgs/evi-app/packages${NC}\n"
+  else
+    printf "    ${CYAN}https://github.com/${GHCR_NAMESPACE}?tab=packages${NC}\n"
+  fi
   echo ""
   info "Full release completed successfully!"
 }

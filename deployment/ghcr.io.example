@@ -25,3 +25,8 @@ export GHCR_USERNAME="your_github_username"
 # Your GitHub Personal Access Token (PAT)
 # Token must start with "ghp_"
 export GHCR_TOKEN="ghp_your_token_here"
+
+# GHCR namespace (default: evi-app). Use your username to push to personal GHCR
+# when org write is restricted (permission_denied: create_package).
+# export GHCR_NAMESPACE="evi-app"
+# export GHCR_NAMESPACE="${GHCR_USERNAME}"

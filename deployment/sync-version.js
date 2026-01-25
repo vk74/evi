@@ -155,8 +155,8 @@ function writeTextFile(filePath, content) {
  * @returns {string|null} Version string or null if not found
  */
 function extractVersionFromImageTag(line) {
-  // Match pattern: EVI_(FE|BE|DB)_IMAGE=ghcr.io/evi-app/evi-(fe|be|db):VERSION
-  const match = line.match(/^EVI_(FE|BE|DB)_IMAGE=ghcr\.io\/evi-app\/evi-(fe|be|db):(.+)$/);
+  // Match pattern: EVI_(FE|BE|DB)_IMAGE=ghcr.io/NAMESPACE/evi-(fe|be|db):VERSION (namespace: evi-app, vk74, etc.)
+  const match = line.match(/^EVI_(FE|BE|DB)_IMAGE=ghcr\.io\/[^/]+\/evi-(fe|be|db):(.+)$/);
   return match ? match[3].trim() : null;
 }
 
