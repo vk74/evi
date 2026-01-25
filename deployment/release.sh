@@ -1,15 +1,19 @@
 #!/usr/bin/env bash
 #
-# Version: 1.1.2
+# Version: 1.2.0
 # Purpose: Developer release automation script for evi application.
 # Deployment file: release.sh
 # Logic:
-# - Provides version synchronization (replacing sync-version.js)
-# - Builds container images for GHCR publication
-# - Publishes images to GitHub Container Registry
-# - Creates Git tags for releases
-# - Interactive menu and command-line interfaces
-# - Independent from install.sh and evictl (developer workflow only)
+# - Version sync: package.json (root, back, front), deployment/env/evi.template.env, db/init/02_schema.sql; optional sync to evi-install repo (stable only).
+# - Builds container images for GHCR publication; publishes to GHCR; creates Git tags; optionally pushes version to evi-install repo.
+# - Two modes: step-by-step (menu) and automatic (release command).
+# - Independent from install.sh and evictl (developer workflow only).
+#
+# Changes in v1.2.0 (beta version testing 2): 
+# - Version format: allow stable X.Y.Z and intermediate X.Y.Z-alpha, X.Y.Z-beta, X.Y.Z-rcN (no leading v).
+# - sync_versions: update db/init/02_schema.sql (single version in both columns); call sync_version_to_install_repo (no push).
+# - sync_version_to_install_repo: update evi-install env/evi.template.env only for stable version; optional --push (EVI_INSTALL_REPO_PATH or EVI_INSTALL_REPO_URL).
+# - do_full_release: after publish, push to evi-install if stable (step 4/5), then git tag (step 5/5).
 #
 # Changes in v1.1.2:
 # - GHCR_NAMESPACE support: configurable via ghcr.io (default evi-app)
@@ -44,7 +48,9 @@ ROOT_PACKAGE_JSON="${PROJECT_ROOT}/package.json"
 BACK_PACKAGE_JSON="${PROJECT_ROOT}/back/package.json"
 FRONT_PACKAGE_JSON="${PROJECT_ROOT}/front/package.json"
 TEMPLATE_ENV="${ENV_DIR}/evi.template.env"
+SCHEMA_SQL="${PROJECT_ROOT}/db/init/02_schema.sql"
 GHCR_CREDENTIALS_FILE="${SCRIPT_DIR}/ghcr.io"
+INSTALL_REPO_CONFIG="${SCRIPT_DIR}/install-repo.env"
 
 # Colors
 RED='\033[0;31m'
@@ -104,30 +110,36 @@ read_version_from_package_json() {
   echo "${version}"
 }
 
-# Validate version format (MAJOR.MINOR.PATCH - only digits and dots)
+# Validate version format: X.Y.Z (stable) or X.Y.Z-suffix (intermediate: alpha, beta, rcN)
 validate_version_format() {
   local version="$1"
-  if [[ ! "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  if [[ ! "${version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
     return 1
   fi
   return 0
 }
 
-# Compare two version strings
+# Return 0 if version is stable (no prerelease suffix), 1 if intermediate (alpha, beta, rcN)
+is_stable_version() {
+  local version="$1"
+  [[ ! "${version}" =~ - ]]
+}
+
+# Compare two version strings (numeric part only; strips -suffix for comparison)
 # Returns: -1 if v1 < v2, 0 if equal, 1 if v1 > v2
 compare_versions() {
-  local v1="$1"
-  local v2="$2"
+  local v1="${1%%-*}"
+  local v2="${2%%-*}"
   local v1_parts v2_parts
   
   IFS='.' read -ra v1_parts <<< "${v1}"
   IFS='.' read -ra v2_parts <<< "${v2}"
   
   for i in 0 1 2; do
-    if [[ ${v1_parts[$i]} -lt ${v2_parts[$i]} ]]; then
+    if [[ ${v1_parts[$i]:-0} -lt ${v2_parts[$i]:-0} ]]; then
       echo "-1"
       return
-    elif [[ ${v1_parts[$i]} -gt ${v2_parts[$i]} ]]; then
+    elif [[ ${v1_parts[$i]:-0} -gt ${v2_parts[$i]:-0} ]]; then
       echo "1"
       return
     fi
@@ -280,13 +292,37 @@ update_env_template_version() {
   fi
 }
 
+# Update version in db/init/02_schema.sql INSERT (version, schema_version) — single version, no v prefix
+update_schema_sql_version() {
+  local file_path="$1"
+  local new_version="$2"
+  if [[ ! -f "${file_path}" ]]; then
+    err "File not found: ${file_path}"
+    return 1
+  fi
+  if ! grep -q "INSERT INTO app.app_version" "${file_path}"; then
+    err "INSERT INTO app.app_version not found in ${file_path}"
+    return 1
+  fi
+  # Replace VALUES ('...', '...') on the VALUES line only (portable: write to temp then mv)
+  local tmpf
+  tmpf=$(mktemp)
+  if sed "/^[[:space:]]*VALUES/s/('[^']*', '[^']*')/('${new_version}', '${new_version}')/" "${file_path}" > "${tmpf}" && mv "${tmpf}" "${file_path}"; then
+    info "Updated ${file_path}: version and schema_version set to ${new_version}"
+    return 0
+  fi
+  rm -f "${tmpf}"
+  err "Failed to update ${file_path}"
+  return 1
+}
+
 # --- Validation Functions ---
 
 validate_version() {
   local version="$1"
   if ! validate_version_format "${version}"; then
     err "Invalid version format: ${version}"
-    err "Version must be in format MAJOR.MINOR.PATCH (e.g., 1.0.0)"
+    err "Use X.Y.Z (stable) or X.Y.Z-suffix (e.g. 1.1.12-rc1, 1.2.0-beta, 1.2.0-alpha)"
     return 1
   fi
   return 0
@@ -638,6 +674,19 @@ sync_versions() {
     updates=$((updates + 1))
   fi
   
+  # Update db/init/02_schema.sql (version and schema_version, no v prefix)
+  if [[ -f "${SCHEMA_SQL}" ]]; then
+    log "Updating db/init/02_schema.sql..."
+    if update_schema_sql_version "${SCHEMA_SQL}" "${version}"; then
+      updates=$((updates + 1))
+    fi
+  else
+    warn "Schema file not found: ${SCHEMA_SQL}, skipping"
+  fi
+  
+  # Sync version to evi-install repo (files only, no push)
+  sync_version_to_install_repo
+  
   # Summary
   log "Version synchronization completed"
   if [[ ${updates} -eq 0 ]]; then
@@ -645,6 +694,82 @@ sync_versions() {
   else
     info "Updated version in ${updates} file(s)"
   fi
+}
+
+# Update evi-install repo: env/evi.template.env (only for stable version). Optional: --push to commit and push.
+sync_version_to_install_repo() {
+  local do_push=false
+  if [[ "${1:-}" == "--push" ]]; then
+    do_push=true
+  fi
+  
+  local version
+  version=$(read_version_from_package_json)
+  if ! is_stable_version "${version}"; then
+    info "Skipping evi-install sync: ${version} is not stable (use alpha, beta, or rcN for intermediate)"
+    return 0
+  fi
+  
+  load_ghcr_config
+  if [[ -f "${INSTALL_REPO_CONFIG}" ]]; then
+    source "${INSTALL_REPO_CONFIG}"
+  fi
+  local install_repo_path="${EVI_INSTALL_REPO_PATH:-}"
+  if [[ -n "${install_repo_path}" ]] && [[ "${install_repo_path}" != /* ]]; then
+    local resolved
+    resolved="$(cd "${SCRIPT_DIR}" && cd "${install_repo_path}" 2>/dev/null && pwd)" || true
+    if [[ -n "${resolved}" ]] && [[ -d "${resolved}" ]]; then
+      install_repo_path="${resolved}"
+    else
+      warn "EVI_INSTALL_REPO_PATH (${install_repo_path}) not found from deployment/ (use ../../evi-install if repo is sibling of evi), skipping evi-install sync"
+      install_repo_path=""
+    fi
+  fi
+  if [[ -n "${install_repo_path}" ]] && [[ -d "${install_repo_path}" ]]; then
+    local install_env="${install_repo_path}/env/evi.template.env"
+    if [[ ! -f "${install_env}" ]]; then
+      warn "evi-install env template not found: ${install_env}, skipping"
+      return 0
+    fi
+    log "Updating evi-install env/evi.template.env with version ${version}..."
+    if ! update_env_template_version "${install_env}" "${version}"; then
+      warn "Failed to update evi-install env template"
+      return 1
+    fi
+    if [[ "${do_push}" == true ]]; then
+      (cd "${install_repo_path}" && git add env/evi.template.env && git diff --staged --quiet || { git commit -m "chore: sync version to ${version}" && git push; })
+    fi
+    return 0
+  fi
+  
+  if [[ -n "${EVI_INSTALL_REPO_URL:-}" ]]; then
+    require_cmd git
+    local tmpdir
+    tmpdir=$(mktemp -d)
+    if ! git clone --depth 1 "${EVI_INSTALL_REPO_URL}" "${tmpdir}"; then
+      err "Failed to clone evi-install repo: ${EVI_INSTALL_REPO_URL}"
+      rm -rf "${tmpdir}"
+      return 1
+    fi
+    local install_env="${tmpdir}/env/evi.template.env"
+    if [[ ! -f "${install_env}" ]]; then
+      warn "evi-install env template not found in clone, skipping"
+      rm -rf "${tmpdir}"
+      return 0
+    fi
+    if ! update_env_template_version "${install_env}" "${version}"; then
+      rm -rf "${tmpdir}"
+      return 1
+    fi
+    if [[ "${do_push}" == true ]]; then
+      (cd "${tmpdir}" && git add env/evi.template.env && git diff --staged --quiet || { git commit -m "chore: sync version to ${version}" && git push; })
+    fi
+    rm -rf "${tmpdir}"
+    return 0
+  fi
+  
+  info "EVI_INSTALL_REPO_PATH and EVI_INSTALL_REPO_URL not set, skipping evi-install sync"
+  return 0
 }
 
 # Build container images
@@ -722,6 +847,10 @@ build_images() {
   fi
   
   info "All images built successfully"
+  info "Local images (Podman store):"
+  printf "    ${CYAN}ghcr.io/${GHCR_NAMESPACE}/evi-db:${version}${NC}\n"
+  printf "    ${CYAN}ghcr.io/${GHCR_NAMESPACE}/evi-be:${version}${NC}\n"
+  printf "    ${CYAN}ghcr.io/${GHCR_NAMESPACE}/evi-fe:${version}${NC}\n"
 }
 
 # Remove local images after successful publication
@@ -775,9 +904,6 @@ publish_images() {
   if ! validate_version "${version}"; then
     die "Version validation failed"
   fi
-  
-  # Check for existing images (in case of retry after failed publish)
-  check_and_cleanup_existing_images "${version}" "publish"
   
   # If using personal namespace but only evi-app images exist locally, tag evi-app -> namespace
   if [[ "${GHCR_NAMESPACE}" != "evi-app" ]]; then
@@ -892,16 +1018,14 @@ do_full_release() {
     die "Version validation failed"
   fi
   
-  # Check for existing images at the start
-  check_and_cleanup_existing_images "${version}" "release"
-  
   local sync_status="success"
   local build_status="success"
   local publish_status="success"
+  local install_repo_status="success"
   local tag_status="success"
   
   # Step 1: Sync versions
-  log "Step 1/4: Synchronizing versions..."
+  log "Step 1/5: Synchronizing versions..."
   if sync_versions; then
     info "${SYM_OK} Version synchronization completed"
   else
@@ -911,7 +1035,7 @@ do_full_release() {
   fi
   
   # Step 2: Build images
-  log "Step 2/4: Building images..."
+  log "Step 2/5: Building images..."
   if build_images; then
     info "${SYM_OK} Image build completed"
   else
@@ -921,7 +1045,7 @@ do_full_release() {
   fi
   
   # Step 3: Publish images
-  log "Step 3/4: Publishing images..."
+  log "Step 3/5: Publishing images..."
   if publish_images; then
     info "${SYM_OK} Image publish completed"
   else
@@ -930,8 +1054,17 @@ do_full_release() {
     die "Release aborted: image publish failed"
   fi
   
-  # Step 4: Create Git tag
-  log "Step 4/4: Creating Git tag..."
+  # Step 4: Push version to evi-install repo (stable only)
+  log "Step 4/5: Syncing version to evi-install repo..."
+  if sync_version_to_install_repo --push; then
+    info "${SYM_OK} evi-install repo updated (or skipped if not stable / not configured)"
+  else
+    warn "${SYM_WARN} evi-install repo sync failed (continuing)"
+    install_repo_status="failed"
+  fi
+  
+  # Step 5: Create Git tag
+  log "Step 5/5: Creating Git tag..."
   if create_git_tag; then
     info "${SYM_OK} Git tag creation completed"
   else
@@ -956,6 +1089,7 @@ do_full_release() {
   printf "    ${SYM_OK} Version sync: ${GREEN}success${NC}\n"
   printf "    ${SYM_OK} Build images: ${GREEN}success${NC}\n"
   printf "    ${SYM_OK} Publish images: ${GREEN}success${NC}\n"
+  printf "    ${SYM_OK} evi-install sync: ${GREEN}success${NC}\n"
   printf "    ${SYM_OK} Create tag: ${GREEN}success${NC}\n"
   echo ""
   printf "  ${CYAN}Published Images:${NC}\n"
@@ -981,7 +1115,7 @@ show_menu() {
   echo "|           evi release manager, main menu                     |"
   echo "+--------------------------------------------------------------+"
   echo ""
-  echo "  1) sync versions (update all package.json and env files)"
+  echo "  1) sync app version across all related files of the app"
   echo "  2) build images (build container images from source)"
   echo "  3) publish images (push images to GHCR)"
   echo "  4) create git tag (create version tag in git)"
@@ -1042,7 +1176,7 @@ Usage:
 
 Commands:
   menu      Show interactive menu (default)
-  sync      Synchronize version across all files
+  sync      Synchronize app version across all related files
   build     Build container images from source
   publish   Publish images to GHCR
   tag       Create Git tag for current version

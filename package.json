@@ -1,6 +1,6 @@
 {
   "name": "evi",
-  "version": "0.9.1",
+  "version": "0.9.3",
   "description": "evi application",
   "private": true,
   "scripts": {

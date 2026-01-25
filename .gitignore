@@ -16,6 +16,7 @@ deployment/env/evi.env
 deployment/env/evi.secrets.env
 deployment/env/tls/
 deployment/ghcr.io
+deployment/install-repo.env
 
 # Build outputs
 dist/

@@ -26,9 +26,9 @@ CREATE TABLE IF NOT EXISTS app.app_version (
     deployed_by VARCHAR(100) DEFAULT CURRENT_USER
 );
 
--- Insert initial version record
+-- Insert initial version record (version and schema_version kept in sync by release.sh)
 INSERT INTO app.app_version (version, schema_version) 
-VALUES ('v0.5.0', '001')
+VALUES ('0.9.3', '0.9.3')
 ON CONFLICT (id) DO UPDATE SET 
     version = EXCLUDED.version,
     schema_version = EXCLUDED.schema_version,
