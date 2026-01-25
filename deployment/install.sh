@@ -1377,6 +1377,9 @@ display_deployment_summary() {
       stopped)
         printf " ${RED}stopped${NC}"
         ;;
+      not_found)
+        printf " ${RED}not found${NC}"
+        ;;
       *)
         printf " ${GRAY}unknown${NC}"
         ;;

@@ -105,7 +105,7 @@ DECLARE
 BEGIN
     SELECT user_id INTO sys_user_id FROM app.users WHERE username = 'admin' LIMIT 1;
     IF sys_user_id IS NULL THEN
-        RAISE NOTICE 'System admin user not found, authorization seed may be incomplete';
+        RAISE EXCEPTION 'Authorization seed failed: system admin user (username=admin) not found. Ensure 07_system_users.sql ran successfully.';
     END IF;
 
     -- role.users.registered (fixed UUID)
