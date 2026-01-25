@@ -1,8 +1,10 @@
--- Version: 1.1.10
+-- Version: 1.1.11
 -- Description: Create all indexes for the application tables.
 -- Backend file: 05_indexes.sql
 -- Updated: mobile_phone_number -> mobile_phone field name
 -- Added: index on products.status_code
+-- Changes in v1.1.11:
+-- - Removed idx_price_lists_info_region_unique (column region was renamed to region_id in app.price_lists_info; unique index already exists in 05_tables.sql)
 -- Changes in v1.1.4:
 -- - Removed invalid index on app.price_lists_info(valid_from, valid_to) (columns do not exist)
 -- Changes in v1.1.5:
@@ -137,10 +139,8 @@ CREATE INDEX IF NOT EXISTS idx_pli_currency_active
 CREATE INDEX IF NOT EXISTS idx_pli_is_active 
     ON app.price_lists_info(is_active);
 
--- UNIQUE index on region column (allows multiple NULL values)
-CREATE UNIQUE INDEX IF NOT EXISTS idx_price_lists_info_region_unique 
-    ON app.price_lists_info(region) 
-    WHERE region IS NOT NULL;
+-- UNIQUE index on region_id is created in 05_tables.sql (idx_price_lists_info_region_id_unique)
+-- Removed obsolete idx_price_lists_info_region_unique (column was renamed region -> region_id)
 
 -- Indexes on price_lists (partitioned table - will be inherited by partitions)
 CREATE INDEX IF NOT EXISTS idx_pl_item_lookup 
