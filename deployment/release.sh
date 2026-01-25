@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.1.0
+# Version: 1.1.1
 # Purpose: Developer release automation script for evi application.
 # Deployment file: release.sh
 # Logic:
@@ -10,6 +10,12 @@
 # - Creates Git tags for releases
 # - Interactive menu and command-line interfaces
 # - Independent from install.sh and evictl (developer workflow only)
+#
+# Changes in v1.1.1:
+# - Auth logging: "Using existing GHCR session; GitHub authorized." / "GitHub authorized the operation." (no username/token)
+# - authenticate_ghcr/validate_ghcr_auth error messages no longer expose username
+# - publish_images: capture podman push stderr+stdout, display it, detect permission_denied/create_package
+# - print_ghcr_permission_troubleshooting() on push permission errors
 #
 # Changes in v1.1.0:
 # - Added GHCR authentication via credentials file (deployment/ghcr.io)
@@ -423,13 +429,13 @@ authenticate_ghcr() {
   # Perform login using podman
   # Use --password-stdin to avoid token appearing in process list
   if echo "${GHCR_TOKEN}" | podman login ghcr.io -u "${GHCR_USERNAME}" --password-stdin >/dev/null 2>&1; then
-    info "Successfully authenticated to ghcr.io as ${GHCR_USERNAME}"
+    info "GitHub authorized the operation."
     return 0
   else
     err "Failed to authenticate to ghcr.io"
     err "Please check:"
-    err "  1. Your GitHub username is correct: ${GHCR_USERNAME}"
-    err "  2. Your token is valid and has required scopes (write:packages, read:packages)"
+    err "  1. Username in ghcr.io matches your GitHub account (check spelling, e.g. hyphens)"
+    err "  2. Token is valid and has required scopes (write:packages, read:packages)"
     err "  3. Token has not expired"
     err "  4. You have access to the repository/organization"
     err "Create a new token at: https://github.com/settings/tokens"
@@ -440,6 +446,7 @@ authenticate_ghcr() {
 validate_ghcr_auth() {
   # Check if already logged in
   if podman login --get-login ghcr.io >/dev/null 2>&1; then
+    info "Using existing GHCR session; GitHub authorized."
     return 0
   fi
   
@@ -452,6 +459,15 @@ validate_ghcr_auth() {
   err "Not authenticated to ghcr.io"
   err "Authentication via credentials file failed"
   return 1
+}
+
+# Print troubleshooting hints when push fails with permission_denied / create_package
+print_ghcr_permission_troubleshooting() {
+  err "Troubleshooting (permission_denied / create_package):"
+  err "  - Username in ghcr.io must exactly match your GitHub account (case, hyphens, etc.)"
+  err "  - PAT must have scopes: write:packages, read:packages; for org use fine-grained PAT with evi-app package access"
+  err "  - evi-app is an organization: org package creation/write may be restricted; ensure you have write access to the packages"
+  err "  - Create or check token: https://github.com/settings/tokens — see deployment/ghcr.io.example"
 }
 
 validate_images_built() {
@@ -744,11 +760,18 @@ publish_images() {
   
   for image in "${images[@]}"; do
     log "Pushing ${image}..."
-    if podman push "${image}"; then
-      info "Successfully pushed ${image}"
-    else
+    local push_output
+    push_output=$(podman push "${image}" 2>&1)
+    local push_ret=$?
+    printf '%s\n' "${push_output}"
+    if [[ ${push_ret} -ne 0 ]]; then
       err "Failed to push ${image}"
+      if printf '%s' "${push_output}" | grep -qE 'permission_denied|create_package'; then
+        print_ghcr_permission_troubleshooting
+      fi
       push_errors=$((push_errors + 1))
+    else
+      info "Successfully pushed ${image}"
     fi
   done
   
