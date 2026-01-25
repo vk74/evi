@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 #
-# Version: 1.2.0
+# Version: 1.3.0
 # Purpose: Developer release automation script for evi application.
 # Deployment file: release.sh
 # Logic:
 # - Version sync: package.json (root, back, front), deployment/env/evi.template.env, db/init/02_schema.sql; optional sync to evi-install repo (stable only).
-# - Builds container images for GHCR publication; publishes to GHCR; creates Git tags; optionally pushes version to evi-install repo.
+# - Builds multi-arch container images (linux/amd64, linux/arm64) for GHCR; publishes manifest lists; creates Git tags.
 # - Two modes: step-by-step (menu) and automatic (release command).
 # - Independent from install.sh and evictl (developer workflow only).
+#
+# Changes in v1.3.0:
+# - Multi-arch build: images built for linux/amd64 and linux/arm64, combined into manifest list; push uses manifest push --all.
+# - BUILD_PLATFORMS config; validate_images_built checks manifest exists; cleanup removes manifest and per-arch tags.
 #
 # Changes in v1.2.0 (beta version testing 2): 
 # - Version format: allow stable X.Y.Z and intermediate X.Y.Z-alpha, X.Y.Z-beta, X.Y.Z-rcN (no leading v).
@@ -51,6 +55,9 @@ TEMPLATE_ENV="${ENV_DIR}/evi.template.env"
 SCHEMA_SQL="${PROJECT_ROOT}/db/init/02_schema.sql"
 GHCR_CREDENTIALS_FILE="${SCRIPT_DIR}/ghcr.io"
 INSTALL_REPO_CONFIG="${SCRIPT_DIR}/install-repo.env"
+
+# Multi-arch: platforms to build (comma-separated for podman build --platform)
+BUILD_PLATFORMS="${BUILD_PLATFORMS:-linux/amd64,linux/arm64}"
 
 # Colors
 RED='\033[0;31m'
@@ -549,8 +556,8 @@ validate_images_built() {
   )
   
   for image in "${images[@]}"; do
-    if ! podman image exists "${image}" >/dev/null 2>&1; then
-      err "Image not found: ${image}"
+    if ! podman manifest exists "${image}" >/dev/null 2>&1; then
+      err "Manifest not found: ${image} (run build first)"
       missing=$((missing + 1))
     fi
   done
@@ -576,9 +583,9 @@ check_and_cleanup_existing_images() {
   
   local existing_images=()
   
-  # Check which images exist
+  # Check which images/manifests exist
   for image in "${images[@]}"; do
-    if podman image exists "${image}" >/dev/null 2>&1; then
+    if podman manifest exists "${image}" >/dev/null 2>&1 || podman image exists "${image}" >/dev/null 2>&1; then
       existing_images+=("${image}")
     fi
   done
@@ -613,18 +620,29 @@ check_and_cleanup_existing_images() {
   esac
   
   if confirm "${prompt_msg}" "n"; then
-    log "Removing existing images..."
+    log "Removing existing images and manifests..."
     local removed=0
     for image in "${existing_images[@]}"; do
-      if podman rmi "${image}" >/dev/null 2>&1; then
-        info "Removed ${image}"
-        removed=$((removed + 1))
-      else
-        warn "Failed to remove ${image} (may be in use)"
+      if podman manifest exists "${image}" >/dev/null 2>&1; then
+        if podman manifest rm "${image}" >/dev/null 2>&1; then
+          info "Removed manifest ${image}"
+          removed=$((removed + 1))
+        fi
+      fi
+      for suffix in amd64 arm64; do
+        if podman image exists "${image}-${suffix}" >/dev/null 2>&1; then
+          if podman rmi "${image}-${suffix}" >/dev/null 2>&1; then
+            info "Removed ${image}-${suffix}"
+            removed=$((removed + 1))
+          fi
+        fi
+      done
+      if podman image exists "${image}" >/dev/null 2>&1; then
+        podman rmi "${image}" >/dev/null 2>&1 && removed=$((removed + 1)) || true
       fi
     done
     if [[ ${removed} -gt 0 ]]; then
-      info "Removed ${removed} existing image(s)"
+      info "Removed ${removed} existing image(s)/manifest(s)"
     fi
     return 0
   else
@@ -772,88 +790,112 @@ sync_version_to_install_repo() {
   return 0
 }
 
-# Build container images
+# Build multi-arch container images (per platform, then manifest list)
 build_images() {
-  log "Building container images..."
+  log "Building multi-arch container images..."
   
   load_ghcr_config
   
-  # Validate prerequisites
   if ! validate_prerequisites; then
     die "Prerequisites validation failed"
   fi
   
-  # Read version
   local version
   version=$(read_version_from_package_json)
-  
   if ! validate_version "${version}"; then
     die "Version validation failed"
   fi
   
-  # Check for existing images and ask to remove them
   check_and_cleanup_existing_images "${version}" "build"
   
-  info "Building images for version: ${version} (namespace: ${GHCR_NAMESPACE})"
+  info "Building for version: ${version} (namespace: ${GHCR_NAMESPACE})"
+  info "Platforms: ${BUILD_PLATFORMS}"
   
-  # Define image tags
   local db_image="ghcr.io/${GHCR_NAMESPACE}/evi-db:${version}"
   local be_image="ghcr.io/${GHCR_NAMESPACE}/evi-be:${version}"
   local fe_image="ghcr.io/${GHCR_NAMESPACE}/evi-fe:${version}"
   
-  local pids=()
+  # Build one component for all platforms and create manifest list
+  build_multi_arch_component() {
+    local name="$1"
+    local main_tag="$2"
+    local context="$3"
+    local build_args=()
+    [[ "$name" == "fe" ]] && build_args=(--build-arg VUE_APP_API_URL=/api)
+    
+    local platform_list
+    IFS=',' read -ra platform_list <<< "${BUILD_PLATFORMS}"
+    local tags=()
+    
+    for pl in "${platform_list[@]}"; do
+      pl=$(printf '%s' "${pl}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+      [[ -z "${pl}" ]] && continue
+      local suffix=""
+      case "${pl}" in
+        linux/amd64) suffix=amd64 ;;
+        linux/arm64) suffix=arm64 ;;
+        linux/arm/v7) suffix=armv7 ;;
+        *) suffix=$(echo "${pl}" | tr '/' '_' | tr -d ' ') ;;
+      esac
+      local tag="${main_tag}-${suffix}"
+      tags+=("${tag}")
+      log "Building ${main_tag} for ${pl}..."
+      if ! podman build --platform "${pl}" "${build_args[@]}" -t "${tag}" "${context}"; then
+        err "Build failed: ${main_tag} for ${pl}"
+        return 1
+      fi
+    done
+    
+    log "Creating manifest list: ${main_tag}"
+    if podman manifest exists "${main_tag}" >/dev/null 2>&1; then
+      podman manifest rm "${main_tag}" || true
+    fi
+    podman manifest create "${main_tag}" "${tags[@]}" || { err "Manifest create failed: ${main_tag}"; return 1; }
+    info "Built and assembled ${main_tag} (${#tags[@]} platforms)"
+    return 0
+  }
+  
   local build_errors=0
   
-  # Build DB
   if [[ -d "${PROJECT_ROOT}/db" ]]; then
-    log "Building database image: ${db_image}"
-    podman build -t "${db_image}" "${PROJECT_ROOT}/db" &
-    pids+=($!)
+    if ! build_multi_arch_component "db" "${db_image}" "${PROJECT_ROOT}/db"; then
+      build_errors=$((build_errors + 1))
+    fi
   else
     err "DB source directory not found: ${PROJECT_ROOT}/db"
     build_errors=$((build_errors + 1))
   fi
   
-  # Build Backend
   if [[ -d "${PROJECT_ROOT}/back" ]]; then
-    log "Building backend image: ${be_image}"
-    podman build -t "${be_image}" "${PROJECT_ROOT}/back" &
-    pids+=($!)
+    if ! build_multi_arch_component "be" "${be_image}" "${PROJECT_ROOT}/back"; then
+      build_errors=$((build_errors + 1))
+    fi
   else
     err "Backend source directory not found: ${PROJECT_ROOT}/back"
     build_errors=$((build_errors + 1))
   fi
   
-  # Build Frontend
   if [[ -d "${PROJECT_ROOT}/front" ]]; then
-    log "Building frontend image: ${fe_image}"
-    podman build --build-arg VUE_APP_API_URL=/api -t "${fe_image}" "${PROJECT_ROOT}/front" &
-    pids+=($!)
+    if ! build_multi_arch_component "fe" "${fe_image}" "${PROJECT_ROOT}/front"; then
+      build_errors=$((build_errors + 1))
+    fi
   else
     err "Frontend source directory not found: ${PROJECT_ROOT}/front"
     build_errors=$((build_errors + 1))
   fi
   
-  # Wait for all builds
-  local failed_builds=0
-  for pid in "${pids[@]}"; do
-    if ! wait "${pid}"; then
-      failed_builds=$((failed_builds + 1))
-    fi
-  done
-  
-  if [[ ${failed_builds} -gt 0 ]] || [[ ${build_errors} -gt 0 ]]; then
-    die "Build failed: ${failed_builds} build(s) failed, ${build_errors} error(s)"
+  if [[ ${build_errors} -gt 0 ]]; then
+    die "Build failed: ${build_errors} component(s) failed"
   fi
   
-  info "All images built successfully"
-  info "Local images (Podman store):"
+  info "All multi-arch images built successfully"
+  info "Local manifest lists:"
   printf "    ${CYAN}ghcr.io/${GHCR_NAMESPACE}/evi-db:${version}${NC}\n"
   printf "    ${CYAN}ghcr.io/${GHCR_NAMESPACE}/evi-be:${version}${NC}\n"
   printf "    ${CYAN}ghcr.io/${GHCR_NAMESPACE}/evi-fe:${version}${NC}\n"
 }
 
-# Remove local images after successful publication
+# Remove local manifest lists and per-arch images after successful publication
 cleanup_local_images() {
   local version="$1"
   local ns="${GHCR_NAMESPACE:-evi-app}"
@@ -864,21 +906,30 @@ cleanup_local_images() {
   )
   
   echo ""
-  if confirm "Do you want to remove local images to start fresh next time?" "n"; then
-    log "Removing local images..."
+  if confirm "Do you want to remove local images and manifests to start fresh next time?" "n"; then
+    log "Removing local manifests and images..."
     local removed=0
     for image in "${images[@]}"; do
-      if podman image exists "${image}" >/dev/null 2>&1; then
-        if podman rmi "${image}" >/dev/null 2>&1; then
-          info "Removed ${image}"
+      if podman manifest exists "${image}" >/dev/null 2>&1; then
+        if podman manifest rm "${image}" >/dev/null 2>&1; then
+          info "Removed manifest ${image}"
           removed=$((removed + 1))
-        else
-          warn "Failed to remove ${image}"
         fi
+      fi
+      for suffix in amd64 arm64 armv7; do
+        if podman image exists "${image}-${suffix}" >/dev/null 2>&1; then
+          if podman rmi "${image}-${suffix}" >/dev/null 2>&1; then
+            info "Removed ${image}-${suffix}"
+            removed=$((removed + 1))
+          fi
+        fi
+      done
+      if podman image exists "${image}" >/dev/null 2>&1; then
+        podman rmi "${image}" >/dev/null 2>&1 && removed=$((removed + 1)) || true
       fi
     done
     if [[ ${removed} -gt 0 ]]; then
-      info "Removed ${removed} local image(s)"
+      info "Removed ${removed} local image(s)/manifest(s)"
     fi
   else
     info "Keeping local images"
@@ -905,25 +956,24 @@ publish_images() {
     die "Version validation failed"
   fi
   
-  # If using personal namespace but only evi-app images exist locally, tag evi-app -> namespace
+  # If using personal namespace but only evi-app manifests exist locally, create namespace manifest from evi-app arch images
   if [[ "${GHCR_NAMESPACE}" != "evi-app" ]]; then
     local name
     for name in evi-db evi-be evi-fe; do
       local src="ghcr.io/evi-app/${name}:${version}"
       local dst="ghcr.io/${GHCR_NAMESPACE}/${name}:${version}"
-      if podman image exists "${src}" >/dev/null 2>&1 && ! podman image exists "${dst}" >/dev/null 2>&1; then
-        podman tag "${src}" "${dst}"
-        info "Tagged ${src} -> ${dst}"
+      if podman manifest exists "${src}" >/dev/null 2>&1 && ! podman manifest exists "${dst}" >/dev/null 2>&1; then
+        if podman manifest exists "${dst}" >/dev/null 2>&1; then podman manifest rm "${dst}" 2>/dev/null || true; fi
+        podman manifest create "${dst}" "ghcr.io/evi-app/${name}:${version}-amd64" "ghcr.io/evi-app/${name}:${version}-arm64" 2>/dev/null && info "Created manifest ${dst} from evi-app arch images"
       fi
     done
   fi
   
-  # Validate images are built
   if ! validate_images_built "${version}"; then
     die "Images validation failed"
   fi
   
-  info "Publishing images for version: ${version} (namespace: ${GHCR_NAMESPACE})"
+  info "Publishing multi-arch images for version: ${version} (namespace: ${GHCR_NAMESPACE})"
   
   local images=(
     "ghcr.io/${GHCR_NAMESPACE}/evi-db:${version}"
@@ -934,11 +984,11 @@ publish_images() {
   local push_errors=0
   
   for image in "${images[@]}"; do
-    log "Pushing ${image}..."
+    log "Pushing manifest list (all platforms): ${image}..."
     local push_output
     local push_ret
     set +e
-    push_output=$(podman push "${image}" 2>&1)
+    push_output=$(podman manifest push --all "${image}" "docker://${image}" 2>&1)
     push_ret=$?
     set -e
     printf '%s\n' "${push_output}"
@@ -949,7 +999,7 @@ publish_images() {
       fi
       push_errors=$((push_errors + 1))
     else
-      info "Successfully pushed ${image}"
+      info "Successfully pushed ${image} (multi-arch)"
     fi
   done
   

@@ -532,15 +532,27 @@ cmd_build() {
 
 cmd_up() {
   require_cmd systemctl
+  require_cmd podman
   load_env_files
-  
+
+  # Pull images so they are present before starting units (visible in log; surfaces GHCR auth errors)
+  log "Pulling container images..."
+  podman pull "${EVI_PROXY_IMAGE}" || { err "Failed to pull ${EVI_PROXY_IMAGE}"; return 1; }
+  podman pull "${EVI_DB_IMAGE}"   || { err "Failed to pull ${EVI_DB_IMAGE}"; return 1; }
+  podman pull "${EVI_BE_IMAGE}"   || { err "Failed to pull ${EVI_BE_IMAGE}"; return 1; }
+  podman pull "${EVI_FE_IMAGE}"   || { err "Failed to pull ${EVI_FE_IMAGE}"; return 1; }
+  if [[ "${EVI_PGADMIN_ENABLED:-false}" == "true" ]]; then
+    podman pull "${EVI_PGADMIN_IMAGE:-docker.io/dpage/pgadmin4:8}" || { err "Failed to pull pgAdmin image"; return 1; }
+  fi
+  log "OK: images pulled."
+
   # Reload systemd units in case they were changed
   systemctl --user daemon-reload
-  
+
   systemctl --user start evi-network.service evi-db-volume.service || true
   # Explicitly start services (autostart is handled by [Install] via generator)
   systemctl --user start evi-db evi-be evi-fe evi-reverse-proxy
-  
+
   if [[ "${EVI_PGADMIN_ENABLED:-false}" == "true" ]]; then
     if ! systemctl --user start evi-pgadmin; then
       warn "Failed to start evi-pgadmin service. Check logs with: journalctl --user -u evi-pgadmin"
