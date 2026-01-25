@@ -1,11 +1,15 @@
 /**
- * version: 1.1.0
+ * version: 1.2.0
  * Main server file
  * 
  * This is the entry point for the backend server.
  * It handles server initialization, middleware setup, and route registration.
  * File: server.ts
  * Updated to support httpOnly cookies for refresh tokens.
+ * 
+ * Changes in v1.2.0:
+ * - Use JWT_PRIVATE_KEY_PATH env when set (container/deploy mount secret path)
+ * - Fallback to ./dist/keys/ or ./src/core/keys/ for local runs
  * 
  * Changes in v1.1.0:
  * - Added rate limit guard validation during server initialization
@@ -190,10 +194,9 @@ async function initializeServer(): Promise<void> {
   try {
     console.log('Starting server initialization');
 
-    // 1. Loading private key
-    const privateKeyPath = process.env.NODE_ENV === 'production' 
-      ? './dist/keys/private_key.pem' 
-      : './src/core/keys/private_key.pem';
+    // 1. Loading private key (env path used in container; fallback for local)
+    const privateKeyPath = process.env.JWT_PRIVATE_KEY_PATH
+      || (process.env.NODE_ENV === 'production' ? './dist/keys/private_key.pem' : './src/core/keys/private_key.pem');
     const privateKey = fs.readFileSync(privateKeyPath, 'utf8');
     global.privateKey = privateKey;
 
