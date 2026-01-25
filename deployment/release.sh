@@ -16,6 +16,7 @@
 # - Push to personal GHCR (e.g. GHCR_NAMESPACE="${GHCR_USERNAME}") when org write restricted
 # - load_ghcr_config(); tag evi-app -> namespace before push when using personal namespace
 # - build/publish/validate/cleanup/summary use GHCR_NAMESPACE; ghcr.io.example updated
+# - load_ghcr_credentials: resolve ghcr.io to absolute path; trim CR/LF and whitespace from credentials
 #
 # Changes in v1.1.1:
 # - Auth logging: "Using existing GHCR session; GitHub authorized." / "GitHub authorized the operation." (no username/token)
@@ -364,7 +365,8 @@ load_ghcr_config() {
 
 # Load GHCR credentials from ghcr.io file
 load_ghcr_credentials() {
-  # Check if file exists
+  # Resolve to absolute path so the script works from any cwd
+  GHCR_CREDENTIALS_FILE="$(cd "${SCRIPT_DIR}" && pwd)/ghcr.io"
   if [[ ! -f "${GHCR_CREDENTIALS_FILE}" ]]; then
     err "GHCR credentials file not found: ${GHCR_CREDENTIALS_FILE}"
     err "To create it, copy the example file:"
@@ -403,6 +405,10 @@ load_ghcr_credentials() {
     return 1
   }
   GHCR_NAMESPACE="${GHCR_NAMESPACE:-evi-app}"
+
+  # Trim CR/LF and leading/trailing whitespace (avoids paste/newline breaking login)
+  GHCR_USERNAME=$(printf '%s' "${GHCR_USERNAME:-}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr -d '\r\n')
+  GHCR_TOKEN=$(printf '%s' "${GHCR_TOKEN:-}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr -d '\r\n')
 
   # Validate GHCR_USERNAME
   if [[ -z "${GHCR_USERNAME:-}" ]]; then
@@ -445,21 +451,27 @@ authenticate_ghcr() {
     return 1
   fi
   
-  # Perform login using podman
-  # Use --password-stdin to avoid token appearing in process list
-  if echo "${GHCR_TOKEN}" | podman login ghcr.io -u "${GHCR_USERNAME}" --password-stdin >/dev/null 2>&1; then
+  # Perform login using podman (capture podman stderr on failure to show real reason)
+  # Use printf to avoid adding newline to token (echo would add \n and break login)
+  local login_err
+  login_err=$(printf '%s' "${GHCR_TOKEN}" | podman login ghcr.io -u "${GHCR_USERNAME}" --password-stdin 2>&1)
+  local login_ret=$?
+  if [[ ${login_ret} -eq 0 ]]; then
     info "GitHub authorized the operation."
     return 0
-  else
-    err "Failed to authenticate to ghcr.io"
-    err "Please check:"
-    err "  1. Username in ghcr.io matches your GitHub account (check spelling, e.g. hyphens)"
-    err "  2. Token is valid and has required scopes (write:packages, read:packages)"
-    err "  3. Token has not expired"
-    err "  4. You have access to the repository/organization"
-    err "Create a new token at: https://github.com/settings/tokens"
-    return 1
   fi
+  err "Failed to authenticate to ghcr.io"
+  if [[ -n "${login_err}" ]]; then
+    err "Podman output: ${login_err}"
+  fi
+  err "Please check:"
+  err "  1. Username in ghcr.io matches your GitHub account (check spelling, e.g. hyphens)"
+  err "  2. Token is valid and has required scopes (write:packages, read:packages)"
+  err "  3. Token has not expired"
+  err "  4. You have access to the repository/organization"
+  err "  5. In deployment/ghcr.io: no extra newline or space after token; use double quotes"
+  err "Create a new token at: https://github.com/settings/tokens"
+  return 1
 }
 
 validate_ghcr_auth() {
