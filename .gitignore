@@ -17,6 +17,7 @@ dev-ops/common/env/evi.secrets.env
 dev-ops/common/env/tls/
 dev-ops/release/ghcr.io
 dev-ops/release/install-repo.env
+dev-ops/release/.release-pre-build-images.list
 
 # Build outputs
 dist/

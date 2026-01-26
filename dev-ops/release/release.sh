@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.3.3
+# Version: 1.3.4
 # Purpose: Developer release automation script for evi application.
 # Deployment file: release.sh
 # Logic:
@@ -8,6 +8,11 @@
 # - Builds multi-arch container images (linux/amd64, linux/arm64) for GHCR; publishes manifest lists; creates Git tags.
 # - Two modes: step-by-step (menu) and automatic (release command).
 # - Independent from install.sh and evictl (developer workflow only).
+#
+# Changes in v1.3.4:
+# - cleanup_local_images: pre-build image snapshot; remove evi-* and any images not in snapshot (base images pulled during build, e.g. node/nginx/postgres, plus dangling layers) so Podman is restored to pre-build state.
+# - build_images: save image IDs to snapshot file before any build; snapshot path in RELEASE_PRE_BUILD_SNAPSHOT_FILE (same run only).
+# - At script startup: remove snapshot file if present so no artifacts remain between runs.
 #
 # Changes in v1.3.3:
 # - Paths updated for dev-ops layout: ENV_DIR=../common/env, PROJECT_ROOT=../..; messages reference dev-ops/release/
@@ -68,6 +73,10 @@ INSTALL_REPO_CONFIG="${SCRIPT_DIR}/install-repo.env"
 # Multi-arch: platforms to build (comma-separated for podman build --platform)
 BUILD_PLATFORMS="${BUILD_PLATFORMS:-linux/amd64,linux/arm64}"
 
+# Pre-build snapshot: path to file with image IDs saved before build; used in cleanup to avoid removing pre-existing images.
+RELEASE_SNAPSHOT_FILE_PATH="${SCRIPT_DIR}/.release-pre-build-images.list"
+RELEASE_PRE_BUILD_SNAPSHOT_FILE=""
+
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -81,6 +90,9 @@ SYM_OK="${GREEN}[✓]${NC}"
 SYM_FAIL="${RED}[✗]${NC}"
 SYM_WARN="${YELLOW}[!]${NC}"
 SYM_PENDING="${GRAY}[○]${NC}"
+
+# Reset pre-build snapshot from any previous run so no artifacts remain
+rm -f "${RELEASE_SNAPSHOT_FILE_PATH}"
 
 # --- Helper Functions ---
 
@@ -852,6 +864,12 @@ build_images() {
   
   check_and_cleanup_existing_images "${version}" "build"
   
+  RELEASE_PRE_BUILD_SNAPSHOT_FILE="${RELEASE_SNAPSHOT_FILE_PATH}"
+  podman images -a --format '{{.ID}}' | sort -u > "${RELEASE_PRE_BUILD_SNAPSHOT_FILE}"
+  local snapshot_count
+  snapshot_count=$(wc -l < "${RELEASE_PRE_BUILD_SNAPSHOT_FILE}" | tr -d ' ')
+  info "Saved pre-build image snapshot (${snapshot_count} image IDs)"
+  
   info "Building for version: ${version} (namespace: ${GHCR_NAMESPACE})"
   info "Platforms: ${BUILD_PLATFORMS}"
   
@@ -943,7 +961,9 @@ build_images() {
   printf "    ${CYAN}ghcr.io/${GHCR_NAMESPACE}/evi-fe:${version}${NC}\n"
 }
 
-# Remove local manifest lists and per-arch images after successful publication
+# Remove local manifest lists, per-arch images, and any images added during build so Podman returns to pre-build state.
+# Removes only images that were not in the pre-build snapshot (including base images pulled by build, e.g. node, nginx, postgres).
+# Does not remove containers/volumes/build cache.
 cleanup_local_images() {
   local version="$1"
   local ns="${GHCR_NAMESPACE:-evi-app}"
@@ -978,6 +998,26 @@ cleanup_local_images() {
     done
     if [[ ${removed} -gt 0 ]]; then
       info "Removed ${removed} local image(s)/manifest(s)"
+    fi
+
+    # Remove any images present now that were not in pre-build snapshot (base images pulled during build + dangling layers)
+    if [[ -n "${RELEASE_PRE_BUILD_SNAPSHOT_FILE:-}" ]] && [[ -f "${RELEASE_PRE_BUILD_SNAPSHOT_FILE}" ]]; then
+      local pass max_pass=10 pass_removed total_extra_removed=0 id
+      for (( pass=1; pass<=max_pass; pass++ )); do
+        pass_removed=0
+        while IFS= read -r id; do
+          [[ -z "${id}" ]] && continue
+          grep -qFx "${id}" "${RELEASE_PRE_BUILD_SNAPSHOT_FILE}" 2>/dev/null && continue
+          if podman rmi "${id}" >/dev/null 2>&1; then
+            pass_removed=$((pass_removed + 1))
+          fi
+        done < <(podman images -a --format '{{.ID}}' 2>/dev/null | sort -u)
+        total_extra_removed=$((total_extra_removed + pass_removed))
+        [[ ${pass_removed} -eq 0 ]] && break
+      done
+      if [[ ${total_extra_removed} -gt 0 ]]; then
+        info "Removed ${total_extra_removed} image(s) added during build (Podman restored to pre-build state)"
+      fi
     fi
   else
     info "Keeping local images"
