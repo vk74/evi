@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.3.0
+# Version: 1.3.2
 # Purpose: Developer release automation script for evi application.
 # Deployment file: release.sh
 # Logic:
@@ -8,6 +8,12 @@
 # - Builds multi-arch container images (linux/amd64, linux/arm64) for GHCR; publishes manifest lists; creates Git tags.
 # - Two modes: step-by-step (menu) and automatic (release command).
 # - Independent from install.sh and evictl (developer workflow only).
+#
+# Changes in v1.3.2:
+# - sync_versions: interactive version update. Prompts for new version, validates input, updates root package.json and syncs to other files.
+#
+# Changes in v1.3.1:
+# - sync_versions: displays current version and versioning guidelines before synchronization.
 #
 # Changes in v1.3.0:
 # - Multi-arch build only: images built for all BUILD_PLATFORMS (default linux/amd64, linux/arm64), combined into manifest list; push uses manifest push --all.
@@ -662,17 +668,52 @@ sync_versions() {
     die "Prerequisites validation failed"
   fi
   
-  # Read version from root package.json
-  local version
-  version=$(read_version_from_package_json)
+  # Read current version from root package.json
+  local current_version
+  current_version=$(read_version_from_package_json)
   
-  if ! validate_version "${version}"; then
-    die "Version validation failed"
-  fi
+  # Display version info and guidelines
+  echo ""
+  info "Current Version: ${current_version}"
+  echo ""
+  echo "Versioning Guidelines:"
+  echo "  1. Stable versions: X.Y.Z (e.g. 1.2.0, 1.3.1)"
+  echo "     - Use for production-ready releases."
+  echo "     - Must not have any suffix."
+  echo ""
+  echo "  2. Intermediate versions: X.Y.Z-suffix (e.g. 1.3.0-beta, 1.3.0-rc1)"
+  echo "     - Use for testing, development, or release candidates."
+  echo "     - Suffix can be alpha, beta, rc, etc."
+  echo ""
+  echo "  Note: Do NOT include a leading 'v' in package.json version."
+  echo "        The script will automatically add 'v' when creating Git tags (e.g. v1.2.0)."
+  echo ""
+
+  # Prompt for new version
+  local version=""
+  while true; do
+    read -r -p "Enter new version (or press Enter to keep ${current_version}): " version
+    if [[ -z "${version}" ]]; then
+      version="${current_version}"
+      break
+    fi
+    
+    if validate_version_format "${version}"; then
+      break
+    else
+      err "Invalid version format. Please use X.Y.Z or X.Y.Z-suffix."
+    fi
+  done
   
-  info "Source version: ${version}"
+  info "Target version: ${version}"
   
   local updates=0
+  
+  # Update root package.json first (source of truth)
+  log "Updating root package.json..."
+  if update_package_json_version "${ROOT_PACKAGE_JSON}" "${version}"; then
+    updates=$((updates + 1))
+  fi
   
   # Update back/package.json
   log "Updating back/package.json..."
