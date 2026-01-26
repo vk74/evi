@@ -28,7 +28,7 @@ if [[ -z "${ENV_DIR}" ]]; then
 	fi
 fi
 
-# Final fallback: use deployment/env even if it doesn't exist yet
+# Final fallback: use common/env even if it doesn't exist yet
 if [[ -z "${ENV_DIR}" ]]; then
 	ENV_DIR="${DEPLOYMENT_DIR}/env"
 fi

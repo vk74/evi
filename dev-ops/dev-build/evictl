@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 #
-# Version: 1.5.5
+# Version: 1.5.6
 # Purpose: evi production deployment controller (rootless Podman + Quadlet).
 # Deployment file: evictl
 # Logic:
 # - Provides CLI subcommands (init/up/down/restart/status/logs/update/doctor/health/cert/build/cleanup)
 # - Provides interactive menu mode when run without args
 # - Renders Quadlet units from templates, renders Caddyfile, and manages secrets
+#
+# Changes in v1.5.6:
+# - Paths updated for dev-ops layout: COMMON_DIR points to dev-ops/common/; DEPLOYMENT_DIR removed
 #
 # Changes in v1.5.5:
 # - Fixed frontend-backend connection in production: added --build-arg VUE_APP_API_URL=/api to frontend build
@@ -52,7 +55,7 @@
 # - Fixed unbound variable error: EVI_TLS_CERT_IN_CONTAINER now set in render_caddyfile()
 #
 # Changes in v1.2.0:
-# - Updated manual TLS mode to auto-detect certificates from deployment/env/tls/
+# - Updated manual TLS mode to auto-detect certificates from dev-ops/common/env/tls/
 # - Removed internal TLS mode recommendation in favor of manual mode with self-signed certs
 # - Improved certificate path resolution (supports absolute and relative paths)
 #
@@ -84,12 +87,12 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DEPLOYMENT_DIR="${SCRIPT_DIR}"
-ENV_DIR="${DEPLOYMENT_DIR}/env"
-TPL_DIR="${DEPLOYMENT_DIR}/quadlet-templates"
-PROXY_DIR="${DEPLOYMENT_DIR}/reverse-proxy"
-SCRIPTS_DIR="${DEPLOYMENT_DIR}/scripts"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+COMMON_DIR="${SCRIPT_DIR}/../common"
+ENV_DIR="${COMMON_DIR}/env"
+TPL_DIR="${COMMON_DIR}/quadlet-templates"
+PROXY_DIR="${COMMON_DIR}/reverse-proxy"
+SCRIPTS_DIR="${COMMON_DIR}/scripts"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 EVI_STATE_DIR_DEFAULT="${HOME}/.local/share/evi"
 EVI_CONFIG_DIR_DEFAULT="${HOME}/.config/evi"
@@ -339,9 +342,9 @@ resolve_tls_path() {
     return
   fi
   
-  # Try relative to DEPLOYMENT_DIR
-  if [[ -f "${DEPLOYMENT_DIR}/${path}" ]]; then
-    echo "${DEPLOYMENT_DIR}/${path}"
+  # Try relative to COMMON_DIR
+  if [[ -f "${COMMON_DIR}/${path}" ]]; then
+    echo "${COMMON_DIR}/${path}"
     return
   fi
   
@@ -423,7 +426,7 @@ render_quadlets() {
     render_template_file "${TPL_DIR}/evi-pgadmin.container" "${EVI_QUADLET_DIR}/evi-pgadmin.container"
     
     # Render servers.json for pre-configured evi-db connection
-    local pgadmin_tpl="${DEPLOYMENT_DIR}/pgadmin/servers.json.template"
+    local pgadmin_tpl="${COMMON_DIR}/pgadmin/servers.json.template"
     local pgadmin_out="${EVI_STATE_DIR}/pgadmin/servers.json"
     if [[ -f "${pgadmin_tpl}" ]]; then
       local servers_content
@@ -578,7 +581,7 @@ cmd_up() {
     echo "needed after successful deployment. you can remove them to save disk space."
     echo ""
     echo "files that will be kept:"
-    echo "  - deployment/ (install.sh, evictl, configs, scripts, templates)"
+    echo "  - dev-ops/dev-build/ and dev-ops/common/ (install.sh, evictl, configs, scripts, templates)"
     echo ""
     echo "files that will be removed:"
     echo "  - back/ (backend source code)"

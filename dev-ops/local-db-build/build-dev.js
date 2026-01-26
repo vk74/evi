@@ -1,9 +1,12 @@
 #!/usr/bin/env node
 
 // evi Local Podman Build & Management Script
-// Version: 2.1.0 (Fixes and Improvements)
+// Version: 2.2.0 (Fixes and Improvements)
 // Description: A streamlined Node.js script to manage the local Podman environment for evi.
 // Interactive menu system with submenus for container management operations.
+//
+// Changes in v2.2.0:
+// - COMPOSE_FILE path updated for dev-ops layout (path.join(__dirname, 'podman-compose-dev.yml'))
 //
 // Changes in v2.1.0:
 // - Fixed container detection and statistics logic (handling JSON Array vs JSON Lines output)
@@ -18,7 +21,7 @@ const fs = require('fs');
 const path = require('path');
 
 // --- Configuration ---
-const COMPOSE_FILE = 'deployment/podman-compose-dev.yml';
+const COMPOSE_FILE = path.join(__dirname, 'podman-compose-dev.yml');
 const ENV_FILE = '.env.local'; // Optional file for environment variables
 
 // Global variable to store detected compose command

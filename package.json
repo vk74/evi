@@ -4,7 +4,7 @@
   "description": "evi application",
   "private": true,
   "scripts": {
-    "version:sync": "node deployment/sync-version.js",
+    "version:sync": "node dev-ops/release/sync-version.js",
     "install:all": "cd back && npm install && cd ../front && npm install",
     "build:all": "npm run build:backend && npm run build:frontend",
     "build:backend": "cd back && npm run build",
@@ -17,12 +17,12 @@
     "start:backend": "cd back && npm start",
     "start:frontend": "cd front && npm run serve",
     "clean": "rm -rf back/dist front/dist back/node_modules front/node_modules",
-    "podman:build": "podman compose -f deployment/podman-compose-dev.yml build",
-    "podman:up": "podman compose -f deployment/podman-compose-dev.yml up -d",
-    "podman:down": "podman compose -f deployment/podman-compose-dev.yml down",
-    "podman:logs": "podman compose -f deployment/podman-compose-dev.yml logs -f",
-    "build:local": "node deployment/build-dev.js",
-    "build:local:clean": "node deployment/build-dev.js --clean"
+    "podman:build": "podman compose -f dev-ops/local-db-build/podman-compose-dev.yml build",
+    "podman:up": "podman compose -f dev-ops/local-db-build/podman-compose-dev.yml up -d",
+    "podman:down": "podman compose -f dev-ops/local-db-build/podman-compose-dev.yml down",
+    "podman:logs": "podman compose -f dev-ops/local-db-build/podman-compose-dev.yml logs -f",
+    "build:local": "node dev-ops/local-db-build/build-dev.js",
+    "build:local:clean": "node dev-ops/local-db-build/build-dev.js --clean"
   },
   "keywords": [
     "evi",

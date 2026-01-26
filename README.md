@@ -28,17 +28,14 @@ Clone the repository to your home directory.
 sudo apt install git
 cd ~
 git clone https://vk74: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@github.com/vk74/evi.git ~/evi
-cd evi/deployment
+cd evi/dev-ops/dev-build
 ```
-
-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
-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
 
 #### Step 2: Run the Installer
 Launch the interactive installer wizard.
 
 ```bash
-cd ~/evi/deployment
+cd ~/evi/dev-ops/dev-build
 chmod +x install.sh evictl
 ./install.sh
 ```
@@ -61,7 +58,7 @@ the script will help you to:
 
 ## 🔐 Secrets Management
 
-The application requires several secrets to function securely. These are stored in `deployment/env/evi.secrets.env`.
+The application requires several secrets to function securely. These are stored in `dev-ops/common/env/evi.secrets.env`.
 
 *   `EVI_POSTGRES_PASSWORD`: Strong password for the database superuser (`postgres`).
 *   `EVI_ADMIN_DB_PASSWORD`: Strong password for the admin user. Default admin account created during app installation is `evidba`. Has full DB access. Recommended for use in pgadmin console for admin operations.
@@ -77,7 +74,7 @@ Never commit `evi.secrets.env` to version control.
 Day-to-day management is handled by the `evictl` tool.
 
 ```bash
-cd ~/evi/deployment
+cd ~/evi/dev-ops/dev-build
 ./evictl
 ```
 
@@ -166,10 +163,10 @@ evi-db (PostgreSQL container) is the only stateful component in the evi stack. T
 ## Backup Strategy
 
 Backup the following files once (after deployment completes):
-1. CRITICAL: deployment/env/evi.secrets.env — contains database passwords that cannot be recreated. Without it, you cannot connect to the restored database with the correct passwords.
+1. CRITICAL: dev-ops/common/env/evi.secrets.env — contains database passwords that cannot be recreated. Without it, you cannot connect to the restored database with the correct passwords.
 2. CRITICAL: ${HOME}/.local/share/evi/secrets/jwt_private_key.pem — required if EVI_JWT_GENERATE_KEY=true. Without it, all existing JWT tokens become invalid after restoration (users will need to re-login, otherwise can be recreated).
-3. RECOMMENDED: deployment/env/evi.env — can be recreated manually, but backup simplifies configuration restoration.
-4. CONDITIONAL: deployment/env/tls/ — only if EVI_TLS_MODE=manual and using custom certificates. Not needed for Let's Encrypt (certificates auto-renew).
+3. RECOMMENDED: dev-ops/common/env/evi.env — can be recreated manually, but backup simplifies configuration restoration.
+4. CONDITIONAL: dev-ops/common/env/tls/ — only if EVI_TLS_MODE=manual and using custom certificates. Not needed for Let's Encrypt (certificates auto-renew).
 
 Backup the following daily:
 1. evi-db volume (PostgreSQL data)
@@ -181,10 +178,10 @@ Backup the following daily:
 ## Disaster Recovery Process
 
 1. Restore configuration files:
-    * Restore deployment/env/evi.secrets.env
-    * Restore deployment/env/evi.env (or recreate manually)
+    * Restore dev-ops/common/env/evi.secrets.env
+    * Restore dev-ops/common/env/evi.env (or recreate manually)
     * Restore ${HOME}/.local/share/evi/secrets/jwt_private_key.pem (if auto-generated)
-    * Restore deployment/env/tls/ (only if manual TLS mode with custom certificates)
+    * Restore dev-ops/common/env/tls/ (only if manual TLS mode with custom certificates)
 2. Regenerate systemd services and secrets by using evictl:
    cd ~/evi/deployment   
    ./evictl init
@@ -209,4 +206,4 @@ This recreates quadlet files, podman secrets, and Caddyfile.
 * Test restore procedures regularly — verify backups are restorable
 * Monitor backup completion — ensure backups run successfully
 * Store backups off-host — protect against host hardware failure
-* Document credentials — ensure access to deployment/env/evi.secrets.env for restore
+* Document credentials — ensure access to dev-ops/common/env/evi.secrets.env for restore

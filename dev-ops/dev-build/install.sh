@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.5.4
+# Version: 1.5.5
 # Purpose: Interactive installer and manager for evi production deployment.
 # Deployment file: install.sh
 # Logic:
@@ -11,6 +11,9 @@
 # - TLS certificate management (auto-generate or user-provided)
 # - Deployment orchestration and status display
 # - Optional cleanup of source files after successful deployment
+#
+# Changes in v1.5.5:
+# - Paths updated for dev-ops layout: COMMON_DIR, ENV_DIR, SCRIPTS_DIR point to dev-ops/common/
 #
 # Changes in v1.5.4:
 # - Unified numbering: replaced letters with numbers in option 2 (environment configuration) for consistency with option 1
@@ -62,9 +65,10 @@ set -euo pipefail
 
 # --- Configuration ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-ENV_DIR="${SCRIPT_DIR}/env"
-SCRIPTS_DIR="${SCRIPT_DIR}/scripts"
+COMMON_DIR="${SCRIPT_DIR}/../common"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+ENV_DIR="${COMMON_DIR}/env"
+SCRIPTS_DIR="${COMMON_DIR}/scripts"
 TLS_DIR="${ENV_DIR}/tls"
 TEMPLATE_ENV="${ENV_DIR}/evi.template.env"
 TEMPLATE_SECRETS="${ENV_DIR}/evi.secrets.template.env"

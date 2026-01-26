@@ -1,21 +1,24 @@
 #!/usr/bin/env node
 
 // evi Version Synchronization Script
-// Version: 1.0.0
+// Version: 1.1.0
 // Description: Centralized version synchronization script for evi application.
 // Backend file: sync-version.js
-// Logic: Reads version from root package.json and synchronizes it to all target files (back/package.json, front/package.json, deployment/env/evi.template.env).
+// Logic: Reads version from root package.json and synchronizes it to all target files (back/package.json, front/package.json, dev-ops/common/env/evi.template.env).
 // Validates version format (only digits and dots), checks for version decrease with user confirmation, and updates all target files.
+//
+// Changes in v1.1.0:
+// - Paths updated for dev-ops layout: package.json and env template relative to dev-ops/release/
 
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 
 // --- Configuration ---
-const ROOT_PACKAGE_JSON = path.join(__dirname, '..', 'package.json');
-const BACK_PACKAGE_JSON = path.join(__dirname, '..', 'back', 'package.json');
-const FRONT_PACKAGE_JSON = path.join(__dirname, '..', 'front', 'package.json');
-const ENV_TEMPLATE = path.join(__dirname, 'env', 'evi.template.env');
+const ROOT_PACKAGE_JSON = path.join(__dirname, '..', '..', 'package.json');
+const BACK_PACKAGE_JSON = path.join(__dirname, '..', '..', 'back', 'package.json');
+const FRONT_PACKAGE_JSON = path.join(__dirname, '..', '..', 'front', 'package.json');
+const ENV_TEMPLATE = path.join(__dirname, '..', 'common', 'env', 'evi.template.env');
 
 // ANSI colors for better output visibility
 const colors = {
@@ -348,14 +351,14 @@ async function main() {
       throw error;
     }
 
-    // Update deployment/env/evi.template.env
-    log(`\n📝 Updating deployment/env/evi.template.env...`, colors.cyan);
+    // Update dev-ops/common/env/evi.template.env
+    log(`\n📝 Updating dev-ops/common/env/evi.template.env...`, colors.cyan);
     try {
       const result = await updateEnvTemplate(ENV_TEMPLATE, sourceVersion);
       if (result.updated) {
         for (const change of result.changes) {
           updates.push({
-            file: 'deployment/env/evi.template.env',
+            file: 'dev-ops/common/env/evi.template.env',
             oldVersion: change.oldVersion,
             newVersion: change.newVersion,
             line: change.line

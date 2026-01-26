@@ -12,11 +12,11 @@
 .env.*.local
 
 # Deployment secrets and generated files (do NOT commit these!)
-deployment/env/evi.env
-deployment/env/evi.secrets.env
-deployment/env/tls/
-deployment/ghcr.io
-deployment/install-repo.env
+dev-ops/common/env/evi.env
+dev-ops/common/env/evi.secrets.env
+dev-ops/common/env/tls/
+dev-ops/release/ghcr.io
+dev-ops/release/install-repo.env
 
 # Build outputs
 dist/

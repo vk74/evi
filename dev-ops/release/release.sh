@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 #
-# Version: 1.3.2
+# Version: 1.3.3
 # Purpose: Developer release automation script for evi application.
 # Deployment file: release.sh
 # Logic:
-# - Version sync: package.json (root, back, front), deployment/env/evi.template.env, db/init/02_schema.sql; optional sync to evi-install repo (stable only).
+# - Version sync: package.json (root, back, front), dev-ops/common/env/evi.template.env, db/init/02_schema.sql; optional sync to evi-install repo (stable only).
 # - Builds multi-arch container images (linux/amd64, linux/arm64) for GHCR; publishes manifest lists; creates Git tags.
 # - Two modes: step-by-step (menu) and automatic (release command).
 # - Independent from install.sh and evictl (developer workflow only).
+#
+# Changes in v1.3.3:
+# - Paths updated for dev-ops layout: ENV_DIR=../common/env, PROJECT_ROOT=../..; messages reference dev-ops/release/
 #
 # Changes in v1.3.2:
 # - sync_versions: interactive version update. Prompts for new version, validates input, updates root package.json and syncs to other files.
@@ -40,7 +43,7 @@
 # - set +e / set -e around push capture so script does not exit on push failure (set -e); show errors and troubleshooting
 #
 # Changes in v1.1.0:
-# - Added GHCR authentication via credentials file (deployment/ghcr.io)
+# - Added GHCR authentication via credentials file (dev-ops/release/ghcr.io)
 # - Implemented load_ghcr_credentials() with validation and security checks
 # - Implemented authenticate_ghcr() for automatic authentication
 # - Updated validate_ghcr_auth() to use credentials file automatically
@@ -52,8 +55,8 @@ set -euo pipefail
 
 # --- Configuration ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-ENV_DIR="${SCRIPT_DIR}/env"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+ENV_DIR="${SCRIPT_DIR}/../common/env"
 ROOT_PACKAGE_JSON="${PROJECT_ROOT}/package.json"
 BACK_PACKAGE_JSON="${PROJECT_ROOT}/back/package.json"
 FRONT_PACKAGE_JSON="${PROJECT_ROOT}/front/package.json"
@@ -518,7 +521,7 @@ authenticate_ghcr() {
   err "  2. Token is valid and has required scopes (write:packages, read:packages)"
   err "  3. Token has not expired"
   err "  4. You have access to the repository/organization"
-  err "  5. In deployment/ghcr.io: no extra newline or space after token; use double quotes"
+  err "  5. In dev-ops/release/ghcr.io: no extra newline or space after token; use double quotes"
   err "Create a new token at: https://github.com/settings/tokens"
   return 1
 }
@@ -547,8 +550,8 @@ print_ghcr_permission_troubleshooting() {
   err "  - Username in ghcr.io must exactly match your GitHub account (case, hyphens, etc.)"
   err "  - PAT must have scopes: write:packages, read:packages; for org use fine-grained PAT with evi-app package access"
   err "  - evi-app is an organization: org package creation/write may be restricted; ensure you have write access to the packages"
-  err "  - To push to personal GHCR, set GHCR_NAMESPACE=\"\${GHCR_USERNAME}\" in deployment/ghcr.io"
-  err "  - Create or check token: https://github.com/settings/tokens — see deployment/ghcr.io.example"
+  err "  - To push to personal GHCR, set GHCR_NAMESPACE=\"\${GHCR_USERNAME}\" in dev-ops/release/ghcr.io"
+  err "  - Create or check token: https://github.com/settings/tokens — see dev-ops/release/ghcr.io.example"
 }
 
 validate_images_built() {
@@ -727,8 +730,8 @@ sync_versions() {
     updates=$((updates + 1))
   fi
   
-  # Update deployment/env/evi.template.env
-  log "Updating deployment/env/evi.template.env..."
+  # Update dev-ops/common/env/evi.template.env
+  log "Updating dev-ops/common/env/evi.template.env..."
   if update_env_template_version "${TEMPLATE_ENV}" "${version}"; then
     updates=$((updates + 1))
   fi
@@ -780,7 +783,7 @@ sync_version_to_install_repo() {
     if [[ -n "${resolved}" ]] && [[ -d "${resolved}" ]]; then
       install_repo_path="${resolved}"
     else
-      warn "EVI_INSTALL_REPO_PATH (${install_repo_path}) not found from deployment/ (use ../../evi-install if repo is sibling of evi), skipping evi-install sync"
+      warn "EVI_INSTALL_REPO_PATH (${install_repo_path}) not found from dev-ops/release/ (use ../../evi-install if repo is sibling of evi), skipping evi-install sync"
       install_repo_path=""
     fi
   fi
