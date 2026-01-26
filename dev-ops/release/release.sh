@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.3.4
+# Version: 1.3.5
 # Purpose: Developer release automation script for evi application.
 # Deployment file: release.sh
 # Logic:
@@ -8,6 +8,9 @@
 # - Builds multi-arch container images (linux/amd64, linux/arm64) for GHCR; publishes manifest lists; creates Git tags.
 # - Two modes: step-by-step (menu) and automatic (release command).
 # - Independent from install.sh and evictl (developer workflow only).
+#
+# Changes in v1.3.5:
+# - build_images: build statistics: format_duration() helper; per-image and total build time; per-platform times inside each component; Build statistics block (Platforms, evi-db/be/fe times, total).
 #
 # Changes in v1.3.4:
 # - cleanup_local_images: pre-build image snapshot; remove evi-* and any images not in snapshot (base images pulled during build, e.g. node/nginx/postgres, plus dangling layers) so Podman is restored to pre-build state.
@@ -101,6 +104,16 @@ info() { printf "${GREEN}info:${NC} %s\n" "$*"; }
 warn() { printf "${YELLOW}warn:${NC} %s\n" "$*"; }
 err() { printf "${RED}error:${NC} %s\n" "$*"; }
 die() { err "$*"; exit 1; }
+
+# Format seconds as "Nm Os" or "Ns" for build statistics
+format_duration() {
+  local sec="${1:-0}"
+  if [[ "${sec}" -ge 60 ]]; then
+    printf '%dm %ds' $((sec / 60)) $((sec % 60))
+  else
+    printf '%ds' "${sec}"
+  fi
+}
 
 confirm() {
   local prompt="$1"
@@ -885,6 +898,8 @@ build_images() {
     local platform_list
     IFS=',' read -ra platform_list <<< "${BUILD_PLATFORMS}"
     local tags=()
+    local platform_times=""
+    local first_pl=1
     
     for pl in "${platform_list[@]}"; do
       pl=$(printf '%s' "${pl}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
@@ -899,6 +914,8 @@ build_images() {
       local tag="${main_tag}-${suffix}"
       tags+=("${tag}")
       log "Building ${main_tag} for ${pl}..."
+      local pl_start pl_end pl_sec
+      pl_start=$(date +%s)
       if [[ "$name" == "fe" ]]; then
         if ! podman build --platform "${pl}" --build-arg VUE_APP_API_URL=/api -t "${tag}" "${context}"; then
           err "Build failed: ${main_tag} for ${pl}"
@@ -910,8 +927,19 @@ build_images() {
           return 1
         fi
       fi
+      pl_end=$(date +%s)
+      pl_sec=$((pl_end - pl_start))
+      if [[ "${first_pl}" -eq 1 ]]; then
+        platform_times="${suffix} ${pl_sec}s"
+        first_pl=0
+      else
+        platform_times="${platform_times}, ${suffix} ${pl_sec}s"
+      fi
     done
     
+    if [[ -n "${platform_times}" ]]; then
+      info "  evi-${name}: ${platform_times}"
+    fi
     log "Creating manifest list: ${main_tag}"
     if podman manifest exists "${main_tag}" >/dev/null 2>&1; then
       podman manifest rm "${main_tag}" || true
@@ -922,39 +950,78 @@ build_images() {
   }
   
   local build_errors=0
-  
+  local build_total_start build_total_end total_build_sec
+  local db_sec=0 be_sec=0 fe_sec=0
+  local comp_start comp_end
+
+  build_total_start=$(date +%s)
+
   if [[ -d "${PROJECT_ROOT}/db" ]]; then
+    comp_start=$(date +%s)
     if ! build_multi_arch_component "db" "${db_image}" "${PROJECT_ROOT}/db"; then
       build_errors=$((build_errors + 1))
+    else
+      comp_end=$(date +%s)
+      db_sec=$((comp_end - comp_start))
     fi
   else
     err "DB source directory not found: ${PROJECT_ROOT}/db"
     build_errors=$((build_errors + 1))
   fi
-  
+
   if [[ -d "${PROJECT_ROOT}/back" ]]; then
+    comp_start=$(date +%s)
     if ! build_multi_arch_component "be" "${be_image}" "${PROJECT_ROOT}/back"; then
       build_errors=$((build_errors + 1))
+    else
+      comp_end=$(date +%s)
+      be_sec=$((comp_end - comp_start))
     fi
   else
     err "Backend source directory not found: ${PROJECT_ROOT}/back"
     build_errors=$((build_errors + 1))
   fi
-  
+
   if [[ -d "${PROJECT_ROOT}/front" ]]; then
+    comp_start=$(date +%s)
     if ! build_multi_arch_component "fe" "${fe_image}" "${PROJECT_ROOT}/front"; then
       build_errors=$((build_errors + 1))
+    else
+      comp_end=$(date +%s)
+      fe_sec=$((comp_end - comp_start))
     fi
   else
     err "Frontend source directory not found: ${PROJECT_ROOT}/front"
     build_errors=$((build_errors + 1))
   fi
+
+  build_total_end=$(date +%s)
+  total_build_sec=$((build_total_end - build_total_start))
   
   if [[ ${build_errors} -gt 0 ]]; then
     die "Build failed: ${build_errors} component(s) failed"
   fi
   
   info "All multi-arch images built successfully"
+  log "Build statistics:"
+  local platform_count=0 platform_display="" first=1 p
+  for p in $(echo "${BUILD_PLATFORMS}" | tr ',' ' '); do
+    p=$(printf '%s' "${p}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    [[ -z "${p}" ]] && continue
+    platform_count=$((platform_count + 1))
+    if [[ "${first}" -eq 1 ]]; then
+      platform_display="${p}"
+      first=0
+    else
+      platform_display="${platform_display}, ${p}"
+    fi
+  done
+  printf "  ${CYAN}Platforms:${NC} %s (%s)\n" "${platform_count}" "${platform_display}"
+  printf "  ${CYAN}evi-db:${NC}  %s\n" "$(format_duration "${db_sec}")"
+  printf "  ${CYAN}evi-be:${NC}  %s\n" "$(format_duration "${be_sec}")"
+  printf "  ${CYAN}evi-fe:${NC}  %s\n" "$(format_duration "${fe_sec}")"
+  printf "  ${CYAN}Total build time:${NC} %s\n" "$(format_duration "${total_build_sec}")"
+  echo ""
   info "Local manifest lists:"
   printf "    ${CYAN}ghcr.io/${GHCR_NAMESPACE}/evi-db:${version}${NC}\n"
   printf "    ${CYAN}ghcr.io/${GHCR_NAMESPACE}/evi-be:${version}${NC}\n"
@@ -1253,11 +1320,11 @@ show_menu() {
   echo "|           evi release manager, main menu                     |"
   echo "+--------------------------------------------------------------+"
   echo ""
-  echo "  1) sync app version across all related files of the app"
-  echo "  2) build images (build container images from source)"
-  echo "  3) publish images (push images to GHCR)"
-  echo "  4) create git tag (create version tag in git)"
-  echo "  5) full release (automatic: sync + build + publish + tag)"
+  echo "  1) set app version for the release"
+  echo "  2) build multi-arch container images from source code"
+  echo "  3) push images to GHCR"
+  echo "  4) create git version tag"
+  echo "  5) automatic full release: version + build + push + tag"
   echo "  6) exit"
   echo ""
 }
