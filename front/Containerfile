@@ -27,9 +27,12 @@ COPY ./ .
 ARG VUE_APP_API_URL=http://localhost:3000
 ENV VUE_APP_API_URL=${VUE_APP_API_URL}
 
+# Optional build flags (e.g. --no-parallel to save memory)
+ARG BUILD_FLAGS=""
+
 # Build production assets (cache webpack/babel caches)
 RUN --mount=type=cache,target=/app/node_modules/.cache \
-    npm run build
+    npm run build -- ${BUILD_FLAGS}
 
 
 # =========================

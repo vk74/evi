@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.3.5
+# Version: 1.3.6
 # Purpose: Developer release automation script for evi application.
 # Deployment file: release.sh
 # Logic:
@@ -8,6 +8,10 @@
 # - Builds multi-arch container images (linux/amd64, linux/arm64) for GHCR; publishes manifest lists; creates Git tags.
 # - Two modes: step-by-step (menu) and automatic (release command).
 # - Independent from install.sh and evictl (developer workflow only).
+#
+# Changes in v1.3.6:
+# - build_images: added check for existing images (manifests and platform-specific tags) before build start to prevent artifacts from previous runs.
+# - build_images: disabled parallel build for frontend (BUILD_FLAGS="--no-parallel") to prevent OOM errors during cross-compilation.
 #
 # Changes in v1.3.5:
 # - build_images: build statistics: format_duration() helper; per-image and total build time; per-platform times inside each component; Build statistics block (Platforms, evi-db/be/fe times, total).
@@ -604,6 +608,8 @@ validate_images_built() {
   return 0
 }
 
+# ... (existing content) ...
+
 # Check for existing images with current version and ask to remove them
 check_and_cleanup_existing_images() {
   local version="$1"
@@ -622,6 +628,12 @@ check_and_cleanup_existing_images() {
     if podman manifest exists "${image}" >/dev/null 2>&1 || podman image exists "${image}" >/dev/null 2>&1; then
       existing_images+=("${image}")
     fi
+    # Check platform specific tags (probable artifacts from previous runs)
+    for suffix in amd64 arm64 armv7; do
+       if podman image exists "${image}-${suffix}" >/dev/null 2>&1; then
+          existing_images+=("${image}-${suffix}")
+       fi
+    done
   done
   
   # If no existing images, nothing to do
@@ -631,7 +643,7 @@ check_and_cleanup_existing_images() {
   
   # Show warning about existing images
   echo ""
-  warn "Found existing images for version ${version}:"
+  warn "Found existing images for version ${version} (including partial/platform-specific builds):"
   for image in "${existing_images[@]}"; do
     warn "  - ${image}"
   done
@@ -656,25 +668,25 @@ check_and_cleanup_existing_images() {
   if confirm "${prompt_msg}" "n"; then
     log "Removing existing images and manifests..."
     local removed=0
-    for image in "${existing_images[@]}"; do
-      if podman manifest exists "${image}" >/dev/null 2>&1; then
+    # Dedup images to avoid double deletion attempts
+    local unique_images
+    unique_images=$(printf "%s\n" "${existing_images[@]}" | sort -u)
+    
+    for image in $unique_images; do
+       if podman manifest exists "${image}" >/dev/null 2>&1; then
         if podman manifest rm "${image}" >/dev/null 2>&1; then
           info "Removed manifest ${image}"
           removed=$((removed + 1))
         fi
       fi
-      for suffix in amd64 arm64; do
-        if podman image exists "${image}-${suffix}" >/dev/null 2>&1; then
-          if podman rmi "${image}-${suffix}" >/dev/null 2>&1; then
-            info "Removed ${image}-${suffix}"
-            removed=$((removed + 1))
-          fi
-        fi
-      done
       if podman image exists "${image}" >/dev/null 2>&1; then
-        podman rmi "${image}" >/dev/null 2>&1 && removed=$((removed + 1)) || true
+        if podman rmi "${image}" >/dev/null 2>&1; then
+          info "Removed image ${image}"
+          removed=$((removed + 1))
+        fi
       fi
     done
+    
     if [[ ${removed} -gt 0 ]]; then
       info "Removed ${removed} existing image(s)/manifest(s)"
     fi
@@ -684,6 +696,7 @@ check_and_cleanup_existing_images() {
     return 0
   fi
 }
+
 
 # --- Main Functions ---
 
@@ -802,6 +815,16 @@ sync_version_to_install_repo() {
     source "${INSTALL_REPO_CONFIG}"
   fi
   local install_repo_path="${EVI_INSTALL_REPO_PATH:-}"
+  
+  # Auto-discover sibling evi-install repo if not configured
+  if [[ -z "${install_repo_path}" ]]; then
+    local sibling_path="${PROJECT_ROOT}/../evi-install"
+    if [[ -d "${sibling_path}" ]]; then
+      install_repo_path="${sibling_path}"
+      info "Auto-discovered evi-install repo at: ${install_repo_path}"
+    fi
+  fi
+
   if [[ -n "${install_repo_path}" ]] && [[ "${install_repo_path}" != /* ]]; then
     local resolved
     resolved="$(cd "${SCRIPT_DIR}" && cd "${install_repo_path}" 2>/dev/null && pwd)" || true
@@ -916,8 +939,9 @@ build_images() {
       log "Building ${main_tag} for ${pl}..."
       local pl_start pl_end pl_sec
       pl_start=$(date +%s)
+      
       if [[ "$name" == "fe" ]]; then
-        if ! podman build --platform "${pl}" --build-arg VUE_APP_API_URL=/api -t "${tag}" "${context}"; then
+        if ! podman build --platform "${pl}" --build-arg VUE_APP_API_URL=/api --build-arg "BUILD_FLAGS=--no-parallel" -t "${tag}" "${context}"; then
           err "Build failed: ${main_tag} for ${pl}"
           return 1
         fi
@@ -927,6 +951,7 @@ build_images() {
           return 1
         fi
       fi
+      
       pl_end=$(date +%s)
       pl_sec=$((pl_end - pl_start))
       if [[ "${first_pl}" -eq 1 ]]; then
