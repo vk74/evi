@@ -1,0 +1,16 @@
+# Version: 1.0.0
+# Purpose: Podman Quadlet volume for PostgreSQL data persistence.
+# Deployment file: evi-db.volume
+# Logic: Creates a named volume used by the evi-db container.
+#
+# Changes in v1.0.0:
+# - Initial DB volume definition
+#
+
+[Unit]
+Description=evi database volume (Podman)
+
+[Volume]
+VolumeName=evi_db_data
+
+

@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 #
-# Version: 1.3.6
+# Version: 1.3.7
 # Purpose: Developer release automation script for evi application.
 # Deployment file: release.sh
 # Logic:
-# - Version sync: package.json (root, back, front), dev-ops/common/env/evi.template.env, db/init/02_schema.sql; optional sync to evi-install repo (stable only).
+# - Version sync: package.json (root, back, front), dev-ops/common/env/evi.template.env, db/init/02_schema.sql, deploy/env/evi.template.env.
 # - Builds multi-arch container images (linux/amd64, linux/arm64) for GHCR; publishes manifest lists; creates Git tags.
 # - Two modes: step-by-step (menu) and automatic (release command).
 # - Independent from install.sh and evictl (developer workflow only).
+#
+# Changes in v1.3.7:
+# - Removed evi-install repo: version sync now updates deploy/env/evi.template.env in same repo; full release is 4 steps (sync, build, publish, tag).
 #
 # Changes in v1.3.6:
 # - build_images: added check for existing images (manifests and platform-specific tags) before build start to prevent artifacts from previous runs.
@@ -36,9 +39,8 @@
 #
 # Changes in v1.2.0 (beta version testing 2): 
 # - Version format: allow stable X.Y.Z and intermediate X.Y.Z-alpha, X.Y.Z-beta, X.Y.Z-rcN (no leading v).
-# - sync_versions: update db/init/02_schema.sql (single version in both columns); call sync_version_to_install_repo (no push).
-# - sync_version_to_install_repo: update evi-install env/evi.template.env only for stable version; optional --push (EVI_INSTALL_REPO_PATH or EVI_INSTALL_REPO_URL).
-# - do_full_release: after publish, push to evi-install if stable (step 4/5), then git tag (step 5/5).
+# - sync_versions: update db/init/02_schema.sql (single version in both columns), deploy/env/evi.template.env.
+# - do_full_release: version sync, build, publish, create tag (4 steps).
 #
 # Changes in v1.1.2:
 # - GHCR_NAMESPACE support: configurable via ghcr.io (default evi-app)
@@ -75,7 +77,6 @@ FRONT_PACKAGE_JSON="${PROJECT_ROOT}/front/package.json"
 TEMPLATE_ENV="${ENV_DIR}/evi.template.env"
 SCHEMA_SQL="${PROJECT_ROOT}/db/init/02_schema.sql"
 GHCR_CREDENTIALS_FILE="${SCRIPT_DIR}/ghcr.io"
-INSTALL_REPO_CONFIG="${SCRIPT_DIR}/install-repo.env"
 
 # Multi-arch: platforms to build (comma-separated for podman build --platform)
 BUILD_PLATFORMS="${BUILD_PLATFORMS:-linux/amd64,linux/arm64}"
@@ -784,8 +785,15 @@ sync_versions() {
     warn "Schema file not found: ${SCHEMA_SQL}, skipping"
   fi
   
-  # Sync version to evi-install repo (files only, no push)
-  sync_version_to_install_repo
+  # Update deploy/env/evi.template.env (install tree for end users)
+  if [[ -f "${PROJECT_ROOT}/deploy/env/evi.template.env" ]]; then
+    log "Updating deploy/env/evi.template.env..."
+    if update_env_template_version "${PROJECT_ROOT}/deploy/env/evi.template.env" "${version}"; then
+      updates=$((updates + 1))
+    fi
+  else
+    warn "deploy/env/evi.template.env not found, skipping"
+  fi
   
   # Summary
   log "Version synchronization completed"
@@ -794,92 +802,6 @@ sync_versions() {
   else
     info "Updated version in ${updates} file(s)"
   fi
-}
-
-# Update evi-install repo: env/evi.template.env (only for stable version). Optional: --push to commit and push.
-sync_version_to_install_repo() {
-  local do_push=false
-  if [[ "${1:-}" == "--push" ]]; then
-    do_push=true
-  fi
-  
-  local version
-  version=$(read_version_from_package_json)
-  if ! is_stable_version "${version}"; then
-    info "Skipping evi-install sync: ${version} is not stable (use alpha, beta, or rcN for intermediate)"
-    return 0
-  fi
-  
-  load_ghcr_config
-  if [[ -f "${INSTALL_REPO_CONFIG}" ]]; then
-    source "${INSTALL_REPO_CONFIG}"
-  fi
-  local install_repo_path="${EVI_INSTALL_REPO_PATH:-}"
-  
-  # Auto-discover sibling evi-install repo if not configured
-  if [[ -z "${install_repo_path}" ]]; then
-    local sibling_path="${PROJECT_ROOT}/../evi-install"
-    if [[ -d "${sibling_path}" ]]; then
-      install_repo_path="${sibling_path}"
-      info "Auto-discovered evi-install repo at: ${install_repo_path}"
-    fi
-  fi
-
-  if [[ -n "${install_repo_path}" ]] && [[ "${install_repo_path}" != /* ]]; then
-    local resolved
-    resolved="$(cd "${SCRIPT_DIR}" && cd "${install_repo_path}" 2>/dev/null && pwd)" || true
-    if [[ -n "${resolved}" ]] && [[ -d "${resolved}" ]]; then
-      install_repo_path="${resolved}"
-    else
-      warn "EVI_INSTALL_REPO_PATH (${install_repo_path}) not found from dev-ops/release/ (use ../../evi-install if repo is sibling of evi), skipping evi-install sync"
-      install_repo_path=""
-    fi
-  fi
-  if [[ -n "${install_repo_path}" ]] && [[ -d "${install_repo_path}" ]]; then
-    local install_env="${install_repo_path}/env/evi.template.env"
-    if [[ ! -f "${install_env}" ]]; then
-      warn "evi-install env template not found: ${install_env}, skipping"
-      return 0
-    fi
-    log "Updating evi-install env/evi.template.env with version ${version}..."
-    if ! update_env_template_version "${install_env}" "${version}"; then
-      warn "Failed to update evi-install env template"
-      return 1
-    fi
-    if [[ "${do_push}" == true ]]; then
-      (cd "${install_repo_path}" && git add env/evi.template.env && git diff --staged --quiet || { git commit -m "chore: sync version to ${version}" && git push; })
-    fi
-    return 0
-  fi
-  
-  if [[ -n "${EVI_INSTALL_REPO_URL:-}" ]]; then
-    require_cmd git
-    local tmpdir
-    tmpdir=$(mktemp -d)
-    if ! git clone --depth 1 "${EVI_INSTALL_REPO_URL}" "${tmpdir}"; then
-      err "Failed to clone evi-install repo: ${EVI_INSTALL_REPO_URL}"
-      rm -rf "${tmpdir}"
-      return 1
-    fi
-    local install_env="${tmpdir}/env/evi.template.env"
-    if [[ ! -f "${install_env}" ]]; then
-      warn "evi-install env template not found in clone, skipping"
-      rm -rf "${tmpdir}"
-      return 0
-    fi
-    if ! update_env_template_version "${install_env}" "${version}"; then
-      rm -rf "${tmpdir}"
-      return 1
-    fi
-    if [[ "${do_push}" == true ]]; then
-      (cd "${tmpdir}" && git add env/evi.template.env && git diff --staged --quiet || { git commit -m "chore: sync version to ${version}" && git push; })
-    fi
-    rm -rf "${tmpdir}"
-    return 0
-  fi
-  
-  info "EVI_INSTALL_REPO_PATH and EVI_INSTALL_REPO_URL not set, skipping evi-install sync"
-  return 0
 }
 
 # Build multi-arch container images (per platform, then manifest list)
@@ -1251,11 +1173,10 @@ do_full_release() {
   local sync_status="success"
   local build_status="success"
   local publish_status="success"
-  local install_repo_status="success"
   local tag_status="success"
   
   # Step 1: Sync versions
-  log "Step 1/5: Synchronizing versions..."
+  log "Step 1/4: Synchronizing versions..."
   if sync_versions; then
     info "${SYM_OK} Version synchronization completed"
   else
@@ -1265,7 +1186,7 @@ do_full_release() {
   fi
   
   # Step 2: Build images
-  log "Step 2/5: Building images..."
+  log "Step 2/4: Building images..."
   if build_images; then
     info "${SYM_OK} Image build completed"
   else
@@ -1275,7 +1196,7 @@ do_full_release() {
   fi
   
   # Step 3: Publish images
-  log "Step 3/5: Publishing images..."
+  log "Step 3/4: Publishing images..."
   if publish_images; then
     info "${SYM_OK} Image publish completed"
   else
@@ -1284,17 +1205,8 @@ do_full_release() {
     die "Release aborted: image publish failed"
   fi
   
-  # Step 4: Push version to evi-install repo (stable only)
-  log "Step 4/5: Syncing version to evi-install repo..."
-  if sync_version_to_install_repo --push; then
-    info "${SYM_OK} evi-install repo updated (or skipped if not stable / not configured)"
-  else
-    warn "${SYM_WARN} evi-install repo sync failed (continuing)"
-    install_repo_status="failed"
-  fi
-  
-  # Step 5: Create Git tag
-  log "Step 5/5: Creating Git tag..."
+  # Step 4: Create Git tag
+  log "Step 4/4: Creating Git tag..."
   if create_git_tag; then
     info "${SYM_OK} Git tag creation completed"
   else
@@ -1319,7 +1231,6 @@ do_full_release() {
   printf "    ${SYM_OK} Version sync: ${GREEN}success${NC}\n"
   printf "    ${SYM_OK} Build images: ${GREEN}success${NC}\n"
   printf "    ${SYM_OK} Publish images: ${GREEN}success${NC}\n"
-  printf "    ${SYM_OK} evi-install sync: ${GREEN}success${NC}\n"
   printf "    ${SYM_OK} Create tag: ${GREEN}success${NC}\n"
   echo ""
   printf "  ${CYAN}Published Images:${NC}\n"

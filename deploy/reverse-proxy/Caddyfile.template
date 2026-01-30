@@ -1,0 +1,23 @@
+# Version: 1.1.0
+# Purpose: Caddy reverse-proxy configuration template for evi.
+# Deployment file: Caddyfile.template
+# Logic: Provides HTTPS ingress on a single domain, routing `/` to frontend and `/api/*` to backend.
+# Supports Let's Encrypt (ACME) and manual TLS. Rendered by `evictl`.
+#
+# Changes in v1.1.0:
+# - Added auto_https off for manual TLS mode to fix TLS handshake errors
+# - Changed HTTP redirect to use port-based binding instead of domain-based
+#
+# Changes in v1.0.0:
+# - Initial reverse-proxy routing: / -> evi-fe, /api -> evi-be, HTTP->HTTPS redirect
+#
+
+{
+	# Global options rendered by evictl
+	{{EVI_CADDY_GLOBAL_OPTIONS}}
+}
+
+{{EVI_HTTP_REDIRECT_BLOCK}}
+
+{{EVI_TLS_SITE_BLOCK}}
+

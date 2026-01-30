@@ -1,0 +1,17 @@
+# Version: 1.0.0
+# Purpose: Podman Quadlet network definition for evi internal communication.
+# Deployment file: evi.network
+# Logic: Defines an isolated bridge network used by evi containers (proxy/fe/be/db).
+#
+# Changes in v1.0.0:
+# - Initial evi internal network definition
+#
+
+[Unit]
+Description=evi internal network (Podman)
+
+[Network]
+# Rendered by evictl
+NetworkName={{EVI_NETWORK}}
+
+

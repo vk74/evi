@@ -1,0 +1,13 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "evi-db ({{EVI_ADMIN_DB_USERNAME}})",
+      "Group": "evi",
+      "Host": "evi-db",
+      "Port": 5432,
+      "MaintenanceDB": "maindb",
+      "Username": "{{EVI_ADMIN_DB_USERNAME}}",
+      "SSLMode": "prefer"
+    }
+  }
+}
