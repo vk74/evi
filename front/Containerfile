@@ -1,7 +1,10 @@
 #
-# version: 1.1.0
+# version: 1.2.0
 # Purpose: Frontend container build for serving the SPA in production. FRONTEND file: Containerfile
 # Logic: Multi-stage build (Node for build → Nginx for runtime). Stateless, serves compiled assets from /usr/share/nginx/html.
+#
+# Changes in v1.2.0:
+# - ARG NODE_MEMORY_MB and ENV NODE_OPTIONS for Node heap limit during build (prevents OOM/SIGKILL); release.sh passes 8192 or 16384 based on host RAM.
 #
 
 # =========================
@@ -29,6 +32,10 @@ ENV VUE_APP_API_URL=${VUE_APP_API_URL}
 
 # Optional build flags (e.g. --no-parallel to save memory)
 ARG BUILD_FLAGS=""
+
+# Node heap limit for npm build (MB); passed by release.sh from host RAM (8–16 GB range)
+ARG NODE_MEMORY_MB=16384
+ENV NODE_OPTIONS="--max-old-space-size=${NODE_MEMORY_MB}"
 
 # Build production assets (cache webpack/babel caches)
 RUN --mount=type=cache,target=/app/node_modules/.cache \

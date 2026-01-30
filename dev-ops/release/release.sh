@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.3.7
+# Version: 1.3.8
 # Purpose: Developer release automation script for evi application.
 # Deployment file: release.sh
 # Logic:
@@ -8,6 +8,10 @@
 # - Builds multi-arch container images (linux/amd64, linux/arm64) for GHCR; publishes manifest lists; creates Git tags.
 # - Two modes: step-by-step (menu) and automatic (release command).
 # - Independent from install.sh and evictl (developer workflow only).
+#
+# Changes in v1.3.8:
+# - build_images: detect host RAM (get_ram_mb), set NODE_MEMORY_MB 8 or 16 GB (set_frontend_node_memory_from_ram), pass to frontend Containerfile to prevent OOM.
+# - Warnings when RAM < 32 GB (recommend 32 GB) and when RAM < 16 GB (frontend build may fail).
 #
 # Changes in v1.3.7:
 # - Removed evi-install repo: version sync now updates deploy/env/evi.template.env in same repo; full release is 4 steps (sync, build, publish, tag).
@@ -118,6 +122,44 @@ format_duration() {
   else
     printf '%ds' "${sec}"
   fi
+}
+
+# Get total system RAM in MB (for frontend build heap sizing). Returns 0 if detection fails.
+get_ram_mb() {
+  local ram_mb=0
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    local ram_bytes
+    ram_bytes=$(sysctl -n hw.memsize 2>/dev/null || echo 0)
+    ram_mb=$((ram_bytes / 1048576))
+  elif [[ -r /proc/meminfo ]]; then
+    local ram_kb
+    ram_kb=$(grep -E '^MemTotal:' /proc/meminfo 2>/dev/null | awk '{print $2}' || echo 0)
+    ram_mb=$((ram_kb / 1024))
+  fi
+  echo "${ram_mb}"
+}
+
+# Set NODE_MEMORY_MB (8 or 16 GB) from host RAM and print warnings. Call before building frontend.
+# Uses: get_ram_mb. Sets global NODE_MEMORY_MB; prints recommend/warning if RAM low.
+set_frontend_node_memory_from_ram() {
+  local ram_mb
+  ram_mb=$(get_ram_mb)
+  if [[ "${ram_mb}" -ge 32768 ]]; then
+    NODE_MEMORY_MB=16384
+  else
+    NODE_MEMORY_MB=8192
+  fi
+  if [[ "${ram_mb}" -lt 32768 ]] && [[ "${ram_mb}" -gt 0 ]]; then
+    warn "Recommended: at least 32 GB RAM for reliable multi-arch build. Current: ${ram_mb} MB."
+  fi
+  if [[ "${ram_mb}" -lt 16384 ]] && [[ "${ram_mb}" -gt 0 ]]; then
+    warn "System has less than 16 GB RAM; frontend build may fail with OOM."
+  fi
+  if [[ "${ram_mb}" -eq 0 ]]; then
+    NODE_MEMORY_MB=8192
+    warn "Could not detect system RAM; using NODE_MEMORY_MB=${NODE_MEMORY_MB}."
+  fi
+  info "Frontend build Node heap: ${NODE_MEMORY_MB} MB"
 }
 
 confirm() {
@@ -831,6 +873,8 @@ build_images() {
   info "Building for version: ${version} (namespace: ${GHCR_NAMESPACE})"
   info "Platforms: ${BUILD_PLATFORMS}"
   
+  set_frontend_node_memory_from_ram
+  
   local db_image="ghcr.io/${GHCR_NAMESPACE}/evi-db:${version}"
   local be_image="ghcr.io/${GHCR_NAMESPACE}/evi-be:${version}"
   local fe_image="ghcr.io/${GHCR_NAMESPACE}/evi-fe:${version}"
@@ -863,7 +907,7 @@ build_images() {
       pl_start=$(date +%s)
       
       if [[ "$name" == "fe" ]]; then
-        if ! podman build --platform "${pl}" --build-arg VUE_APP_API_URL=/api --build-arg "BUILD_FLAGS=--no-parallel" -t "${tag}" "${context}"; then
+        if ! podman build --platform "${pl}" --build-arg VUE_APP_API_URL=/api --build-arg "BUILD_FLAGS=--no-parallel" --build-arg "NODE_MEMORY_MB=${NODE_MEMORY_MB}" -t "${tag}" "${context}"; then
           err "Build failed: ${main_tag} for ${pl}"
           return 1
         fi
