@@ -27,7 +27,7 @@ Clone the repository to your home directory.
 ```bash
 sudo apt install git
 cd ~
-git clone https://vk74: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@github.com/vk74/evi.git ~/evi
+git clone https://vk74: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@github.com/vk74/evi-dev.git ~/evi-dev
 cd evi/dev-ops/dev-build
 ```
 
