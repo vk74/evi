@@ -818,7 +818,7 @@ sync_version_to_install_repo() {
   
   # Auto-discover sibling evi-install repo if not configured
   if [[ -z "${install_repo_path}" ]]; then
-    local sibling_path="${PROJECT_ROOT}/../evi"
+    local sibling_path="${PROJECT_ROOT}/../evi-install"
     if [[ -d "${sibling_path}" ]]; then
       install_repo_path="${sibling_path}"
       info "Auto-discovered evi-install repo at: ${install_repo_path}"
@@ -831,7 +831,7 @@ sync_version_to_install_repo() {
     if [[ -n "${resolved}" ]] && [[ -d "${resolved}" ]]; then
       install_repo_path="${resolved}"
     else
-      warn "EVI_INSTALL_REPO_PATH (${install_repo_path}) not found from dev-ops/release/ (use ../../evi if repo is sibling of evi-dev), skipping evi-install sync"
+      warn "EVI_INSTALL_REPO_PATH (${install_repo_path}) not found from dev-ops/release/ (use ../../evi-install if repo is sibling of evi), skipping evi-install sync"
       install_repo_path=""
     fi
   fi
