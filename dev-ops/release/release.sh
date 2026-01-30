@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.3.8
+# Version: 1.3.9
 # Purpose: Developer release automation script for evi application.
 # Deployment file: release.sh
 # Logic:
@@ -8,6 +8,10 @@
 # - Builds multi-arch container images (linux/amd64, linux/arm64) for GHCR; publishes manifest lists; creates Git tags.
 # - Two modes: step-by-step (menu) and automatic (release command).
 # - Independent from install.sh and evictl (developer workflow only).
+#
+# Changes in v1.3.9:
+# - build_images: require >= 16 GB RAM (exit if less or undetected); split heap 50/50 (NODE_MEMORY_MAIN_MB for main process, NODE_MEMORY_CHILD_MB for fork-ts-checker); pass both to frontend Containerfile.
+# - No fallbacks: script exits when RAM < 16 GB; Containerfile and vue.config.js use only passed values.
 #
 # Changes in v1.3.8:
 # - build_images: detect host RAM (get_ram_mb), set NODE_MEMORY_MB 8 or 16 GB (set_frontend_node_memory_from_ram), pass to frontend Containerfile to prevent OOM.
@@ -139,27 +143,60 @@ get_ram_mb() {
   echo "${ram_mb}"
 }
 
-# Set NODE_MEMORY_MB (8 or 16 GB) from host RAM and print warnings. Call before building frontend.
-# Uses: get_ram_mb. Sets global NODE_MEMORY_MB; prints recommend/warning if RAM low.
+# Require >= 16 GB RAM; compute NODE_MEMORY_MAIN_MB and NODE_MEMORY_CHILD_MB (50/50 split). Exit if RAM < 16 GB or undetected.
+# Uses: get_ram_mb. Sets globals NODE_MEMORY_MAIN_MB, NODE_MEMORY_CHILD_MB. No fallbacks.
 set_frontend_node_memory_from_ram() {
   local ram_mb
   ram_mb=$(get_ram_mb)
-  if [[ "${ram_mb}" -ge 32768 ]]; then
-    NODE_MEMORY_MB=16384
-  else
-    NODE_MEMORY_MB=8192
-  fi
-  if [[ "${ram_mb}" -lt 32768 ]] && [[ "${ram_mb}" -gt 0 ]]; then
-    warn "Recommended: at least 32 GB RAM for reliable multi-arch build. Current: ${ram_mb} MB."
-  fi
-  if [[ "${ram_mb}" -lt 16384 ]] && [[ "${ram_mb}" -gt 0 ]]; then
-    warn "System has less than 16 GB RAM; frontend build may fail with OOM."
-  fi
+  
   if [[ "${ram_mb}" -eq 0 ]]; then
-    NODE_MEMORY_MB=8192
-    warn "Could not detect system RAM; using NODE_MEMORY_MB=${NODE_MEMORY_MB}."
+    err "Could not detect system RAM. Build aborted."
+    die "Run image build on a host with at least 16 GB RAM and detectable memory (macOS: sysctl hw.memsize, Linux: /proc/meminfo)."
   fi
-  info "Frontend build Node heap: ${NODE_MEMORY_MB} MB"
+
+  # Check Podman VM memory limits (crucial for macOS/Windows where Podman runs in a VM)
+  local podman_mem_bytes
+  local podman_ram_mb=0
+  if command -v podman >/dev/null 2>&1; then
+    podman_mem_bytes=$(podman info --format '{{.Host.MemTotal}}' 2>/dev/null || echo "0")
+    podman_ram_mb=$((podman_mem_bytes / 1048576))
+  fi
+
+  # Determine effective memory limit (min of Host vs Podman VM)
+  local effective_mb=${ram_mb}
+  local constrained_by_vm=0
+
+  if [[ "${podman_ram_mb}" -gt 0 ]] && [[ "${podman_ram_mb}" -lt "${effective_mb}" ]]; then
+    effective_mb=${podman_ram_mb}
+    constrained_by_vm=1
+    warn "Podman VM memory (${podman_ram_mb} MB) is significantly lower than Host RAM (${ram_mb} MB)."
+    warn "Adapting build memory limits to prevent OOM kills inside the VM."
+  fi
+  
+  # Reserve buffer for OS/Kernel overhead (1GB)
+  local usable_mb=$((effective_mb - 1024))
+  if [[ "${usable_mb}" -lt 1024 ]]; then
+      usable_mb=1024 # Minimum fallback
+  fi
+
+  # Split memory 50/50 between Main Process and Child Process (Fork TS Checker)
+  NODE_MEMORY_MAIN_MB=$((usable_mb / 2))
+  NODE_MEMORY_CHILD_MB=$((usable_mb / 2))
+  
+  # Warnings
+  if [[ "${constrained_by_vm}" -eq 1 ]]; then
+      if [[ "${podman_ram_mb}" -lt 8192 ]]; then
+          warn "Podman VM has less than 8GB RAM (${podman_ram_mb} MB). Build may be slow or unstable."
+          warn "Optimization tip: Increase Podman VM memory (e.g. 'podman machine set --memory 8192' or higher)."
+      fi
+  elif [[ "${ram_mb}" -lt 16384 ]]; then
+      warn "Host system has less than 16 GB RAM (${ram_mb} MB). Build might be tight."
+  fi
+  
+  info "Frontend build Node heap: main ${NODE_MEMORY_MAIN_MB} MB, child (fork-ts-checker) ${NODE_MEMORY_CHILD_MB} MB (Effective Limit: ${effective_mb} MB)"
+
+  # DEBUG LOGGING (Post-Fix)
+  echo "{\"timestamp\":$(date +%s000),\"location\":\"release.sh:set_frontend_node_memory_from_ram\",\"message\":\"Memory configuration fix\",\"data\":{\"host_ram_mb\":${ram_mb},\"podman_ram_mb\":${podman_ram_mb},\"effective_mb\":${effective_mb},\"split_main\":${NODE_MEMORY_MAIN_MB},\"split_child\":${NODE_MEMORY_CHILD_MB}},\"sessionId\":\"debug-session\",\"runId\":\"post-fix\",\"hypothesisId\":\"OOM_VM_FIXED\"}" >> "/Users/vk/Library/Mobile Documents/com~apple~CloudDocs/code/evi/.cursor/debug.log"
 }
 
 confirm() {
@@ -907,7 +944,9 @@ build_images() {
       pl_start=$(date +%s)
       
       if [[ "$name" == "fe" ]]; then
-        if ! podman build --platform "${pl}" --build-arg VUE_APP_API_URL=/api --build-arg "BUILD_FLAGS=--no-parallel" --build-arg "NODE_MEMORY_MB=${NODE_MEMORY_MB}" -t "${tag}" "${context}"; then
+        # DEBUG LOGGING
+        echo "{\"timestamp\":$(date +%s000),\"location\":\"release.sh:build_multi_arch_component\",\"message\":\"Starting frontend build\",\"data\":{\"platform\":\"${pl}\",\"main_mem\":${NODE_MEMORY_MAIN_MB},\"child_mem\":${NODE_MEMORY_CHILD_MB}},\"sessionId\":\"debug-session\",\"runId\":\"run1\",\"hypothesisId\":\"OOM_VM\"}" >> "/Users/vk/Library/Mobile Documents/com~apple~CloudDocs/code/evi/.cursor/debug.log"
+        if ! podman build --platform "${pl}" --build-arg VUE_APP_API_URL=/api --build-arg "BUILD_FLAGS=--no-parallel" --build-arg "NODE_MEMORY_MAIN_MB=${NODE_MEMORY_MAIN_MB}" --build-arg "NODE_MEMORY_CHILD_MB=${NODE_MEMORY_CHILD_MB}" -t "${tag}" "${context}"; then
           err "Build failed: ${main_tag} for ${pl}"
           return 1
         fi
