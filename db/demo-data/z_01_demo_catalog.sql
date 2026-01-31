@@ -1,10 +1,16 @@
--- Version: 1.0.6
+-- Version: 1.0.7
 -- Description: Seeds the database with demo catalog data, including sections and services.
--- Backend file: 11_demo_catalog.sql
+-- Backend file: z_01_demo_catalog.sql
 
 -- This script populates the product/service catalog with a set of demo entries
 -- to provide a meaningful example for new users. It includes creating catalog
 -- sections and linking services to them. The script is idempotent.
+
+-- Changes in v1.0.7:
+-- - Simplified: 2 regions (reg-a, reg-b); reg-a uses RUB, reg-b uses KZT
+-- - 9 currencies in reference, only RUB and KZT used in price lists
+-- - 2 catalog pages (auto, medical); ~50% fewer products (auto, medical, tools)
+-- - More auto accessories kept so Business sedan has visible options
 
 -- Changes in v1.0.2:
 -- - Fixed invalid UUIDs: replaced 's' with 'a' for sections, 'm' with 'b' for medical products, 't' with 'c' for tools
@@ -39,8 +45,7 @@ DELETE FROM app.services;
 
 INSERT INTO app.regions (region_name) VALUES
 ('reg-a'),
-('reg-b'),
-('reg-c')
+('reg-b')
 ON CONFLICT (region_name) DO NOTHING;
 
 -- ===========================================
@@ -72,16 +77,14 @@ ON CONFLICT (code) DO UPDATE SET
 -- 5. Regional Tax Rates
 -- ===========================================
 
--- Get region and category IDs for tax rates
+-- Get region and category IDs for tax rates (2 regions only)
 DO $$
 DECLARE
     reg_a_id INTEGER;
     reg_b_id INTEGER;
-    reg_c_id INTEGER;
 BEGIN
     SELECT region_id INTO reg_a_id FROM app.regions WHERE region_name = 'reg-a';
     SELECT region_id INTO reg_b_id FROM app.regions WHERE region_name = 'reg-b';
-    SELECT region_id INTO reg_c_id FROM app.regions WHERE region_name = 'reg-c';
 
     -- reg-a: стандартные 20%, медицинские 0%
     IF NOT EXISTS (SELECT 1 FROM app.regions_taxable_categories WHERE region_id = reg_a_id AND category_name = 'стандартные товары') THEN
@@ -97,14 +100,6 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM app.regions_taxable_categories WHERE region_id = reg_b_id AND category_name = 'медицинские товары') THEN
         INSERT INTO app.regions_taxable_categories (region_id, category_name, vat_rate) VALUES (reg_b_id, 'медицинские товары', 5);
-    END IF;
-
-    -- reg-c: стандартные 17%, медицинские 5%
-    IF NOT EXISTS (SELECT 1 FROM app.regions_taxable_categories WHERE region_id = reg_c_id AND category_name = 'стандартные товары') THEN
-        INSERT INTO app.regions_taxable_categories (region_id, category_name, vat_rate) VALUES (reg_c_id, 'стандартные товары', 17);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM app.regions_taxable_categories WHERE region_id = reg_c_id AND category_name = 'медицинские товары') THEN
-        INSERT INTO app.regions_taxable_categories (region_id, category_name, vat_rate) VALUES (reg_c_id, 'медицинские товары', 5);
     END IF;
 END $$;
 
@@ -169,16 +164,13 @@ ON CONFLICT (group_id, user_id, is_active) DO NOTHING;
 -- 8. Automotive Products
 -- ===========================================
 
--- Products
+-- Products (2 types: Sedan, Jeep; + documents, keys; + accessories for options in Business sedan)
 INSERT INTO app.products (product_id, product_code, translation_key, is_published, status_code, created_by) VALUES
 ('a1111111-1111-1111-1111-111111111111', 'AUTO-01-12345', 'auto.sedan.business', true, 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a2222222-2222-2222-2222-222222222222', 'AUTO-02-67890', 'auto.jeep', true, 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a3333333-3333-3333-3333-333333333333', 'AUTO-03-11111', 'auto.documents', true, 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a4444444-4444-4444-4444-444444444444', 'AUTO-04-22222', 'auto.keys', true, 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a5555555-5555-5555-5555-555555555555', 'AUTO-05-33333', 'auto.sedan.accessories', true, 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a6666666-6666-6666-6666-666666666666', 'AUTO-06-44444', 'auto.jeep.accessories', true, 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a7777777-7777-7777-7777-777777777777', 'AUTO-07-55555', 'auto.winch', true, 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a8888888-8888-8888-8888-888888888888', 'AUTO-08-66666', 'auto.roof.rack', true, 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a9999999-9999-9999-9999-999999999999', 'AUTO-09-77777', 'auto.media.upgrade', true, 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'AUTO-10-88888', 'auto.mats', true, 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', 'AUTO-11-99999', 'auto.seat.covers', true, 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
@@ -205,15 +197,6 @@ INSERT INTO app.product_translations (product_id, language_code, name, short_des
 -- Sedan accessories
 ('a5555555-5555-5555-5555-555555555555', 'russian', 'Набор аксессуаров для седана', 'Комплект аксессуаров', 'Набор аксессуаров для седана: чехлы на сиденья, коврики, органайзер для багажника.', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a5555555-5555-5555-5555-555555555555', 'english', 'Sedan Accessories Set', 'Accessories kit', 'Sedan accessories set: seat covers, mats, trunk organizer.', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
--- Jeep accessories
-('a6666666-6666-6666-6666-666666666666', 'russian', 'Набор аксессуаров для джипа', 'Комплект аксессуаров', 'Набор аксессуаров для джипа: лебедка, багажник на крышу, защита днища.', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a6666666-6666-6666-6666-666666666666', 'english', 'Jeep Accessories Set', 'Accessories kit', 'Jeep accessories set: winch, roof rack, underbody protection.', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
--- Winch
-('a7777777-7777-7777-7777-777777777777', 'russian', 'Лебедка', 'Электрическая лебедка', 'Мощная электрическая лебедка для внедорожников. Грузоподъемность 3500 кг.', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a7777777-7777-7777-7777-777777777777', 'english', 'Winch', 'Electric winch', 'Powerful electric winch for SUVs. Load capacity 3500 kg.', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
--- Roof rack
-('a8888888-8888-8888-8888-888888888888', 'russian', 'Багажник на крышу', 'Крышной багажник', 'Универсальный багажник на крышу с креплениями. Вместимость до 75 кг.', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a8888888-8888-8888-8888-888888888888', 'english', 'Roof Rack', 'Roof luggage rack', 'Universal roof rack with mounts. Capacity up to 75 kg.', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 -- Media upgrade
 ('a9999999-9999-9999-9999-999999999999', 'russian', 'Апгрейд медиасистемы', 'Мультимедийная система', 'Обновление медиасистемы: большой сенсорный экран, навигация, Apple CarPlay, Android Auto.', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a9999999-9999-9999-9999-999999999999', 'english', 'Media System Upgrade', 'Multimedia system', 'Media system upgrade: large touchscreen, navigation, Apple CarPlay, Android Auto.', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
@@ -244,9 +227,6 @@ BEGIN
     ('a3333333-3333-3333-3333-333333333333', reg_b_id, std_cat_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
     ('a4444444-4444-4444-4444-444444444444', reg_b_id, std_cat_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
     ('a5555555-5555-5555-5555-555555555555', reg_b_id, std_cat_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-    ('a6666666-6666-6666-6666-666666666666', reg_b_id, std_cat_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-    ('a7777777-7777-7777-7777-777777777777', reg_b_id, std_cat_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-    ('a8888888-8888-8888-8888-888888888888', reg_b_id, std_cat_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
     ('a9999999-9999-9999-9999-999999999999', reg_b_id, std_cat_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
     ('aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', reg_b_id, std_cat_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
     ('aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', reg_b_id, std_cat_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
@@ -261,15 +241,12 @@ INSERT INTO app.product_users (product_id, user_id, role_type, created_by) VALUE
 ('a3333333-3333-3333-3333-333333333333', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7', 'owner', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a4444444-4444-4444-4444-444444444444', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7', 'owner', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a5555555-5555-5555-5555-555555555555', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7', 'owner', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a6666666-6666-6666-6666-666666666666', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7', 'owner', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a7777777-7777-7777-7777-777777777777', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7', 'owner', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a8888888-8888-8888-8888-888888888888', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7', 'owner', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a9999999-9999-9999-9999-999999999999', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7', 'owner', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7', 'owner', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7', 'owner', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
 ON CONFLICT (product_id, user_id, role_type) DO NOTHING;
 
--- Product pairing (Sedan)
+-- Product pairing (Sedan and Jeep: required docs/keys, optional accessories)
 INSERT INTO app.product_options (main_product_id, option_product_id, is_required, units_count, created_by) VALUES
 -- Sedan: required
 ('a1111111-1111-1111-1111-111111111111', 'a3333333-3333-3333-3333-333333333333', true, 1, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
@@ -283,11 +260,8 @@ INSERT INTO app.product_options (main_product_id, option_product_id, is_required
 ('a2222222-2222-2222-2222-222222222222', 'a3333333-3333-3333-3333-333333333333', true, 1, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a2222222-2222-2222-2222-222222222222', 'a4444444-4444-4444-4444-444444444444', true, 2, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 -- Jeep: optional
-('a2222222-2222-2222-2222-222222222222', 'a7777777-7777-7777-7777-777777777777', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a2222222-2222-2222-2222-222222222222', 'a8888888-8888-8888-8888-888888888888', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a2222222-2222-2222-2222-222222222222', 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a2222222-2222-2222-2222-222222222222', 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a2222222-2222-2222-2222-222222222222', 'a6666666-6666-6666-6666-666666666666', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
+('a2222222-2222-2222-2222-222222222222', 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
 ON CONFLICT (main_product_id, option_product_id) DO UPDATE SET
     is_required = EXCLUDED.is_required,
     units_count = EXCLUDED.units_count;
@@ -296,19 +270,14 @@ ON CONFLICT (main_product_id, option_product_id) DO UPDATE SET
 -- 9. Medical Products
 -- ===========================================
 
--- Products
+-- Products (2 types: Ultrasound, Patient Monitor; + gel, probes, electrodes, cable)
 INSERT INTO app.products (product_id, product_code, translation_key, is_published, status_code, created_by) VALUES
 ('b1111111-1111-1111-1111-111111111111', 'MED-01-12345', 'med.ultrasound', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('b2222222-2222-2222-2222-222222222222', 'MED-02-67890', 'med.patient.monitor', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b3333333-3333-3333-3333-333333333333', 'MED-03-11111', 'med.dental.equipment', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('b4444444-4444-4444-4444-444444444444', 'MED-04-22222', 'med.ultrasound.gel', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('b5555555-5555-5555-5555-555555555555', 'MED-05-33333', 'med.ultrasound.probes', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('b6666666-6666-6666-6666-666666666666', 'MED-06-44444', 'med.monitor.electrodes', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b7777777-7777-7777-7777-777777777777', 'MED-07-55555', 'med.monitor.cable', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b8888888-8888-8888-8888-888888888888', 'MED-08-66666', 'med.dental.tips', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b9999999-9999-9999-9999-999999999999', 'MED-09-77777', 'med.probe.covers', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('baaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'MED-10-88888', 'med.equipment.stand', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('baaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', 'MED-11-99999', 'med.monitor.protection', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+('b7777777-7777-7777-7777-777777777777', 'MED-07-55555', 'med.monitor.cable', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
 ON CONFLICT (product_id) DO UPDATE SET
     product_code = EXCLUDED.product_code,
     translation_key = EXCLUDED.translation_key,
@@ -323,9 +292,6 @@ INSERT INTO app.product_translations (product_id, language_code, name, short_des
 -- Patient Monitor
 ('b2222222-2222-2222-2222-222222222222', 'russian', 'Монитор пациента', 'Монитор жизненных показателей', 'Монитор для непрерывного контроля жизненных показателей пациента: пульс, давление, сатурация кислорода.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('b2222222-2222-2222-2222-222222222222', 'english', 'Patient Monitor', 'Vital signs monitor', 'Monitor for continuous monitoring of patient vital signs: pulse, blood pressure, oxygen saturation.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
--- Dental Equipment
-('b3333333-3333-3333-3333-333333333333', 'russian', 'Стоматологическое оборудование', 'Стоматологическая установка', 'Профессиональная стоматологическая установка с бормашиной и всеми необходимыми инструментами.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b3333333-3333-3333-3333-333333333333', 'english', 'Dental Equipment', 'Dental unit', 'Professional dental unit with drill and all necessary instruments.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 -- Ultrasound Gel
 ('b4444444-4444-4444-4444-444444444444', 'russian', 'Гель для УЗИ', 'Ультразвуковой гель', 'Специальный гель для ультразвуковых исследований. Обеспечивает хороший контакт датчика с кожей.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('b4444444-4444-4444-4444-444444444444', 'english', 'Ultrasound Gel', 'Ultrasound gel', 'Special gel for ultrasound examinations. Provides good contact between the probe and the skin.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
@@ -337,19 +303,7 @@ INSERT INTO app.product_translations (product_id, language_code, name, short_des
 ('b6666666-6666-6666-6666-666666666666', 'english', 'Monitor Electrodes', 'ECG electrodes', 'Disposable electrodes for connecting to patient monitor.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 -- Monitor Cable
 ('b7777777-7777-7777-7777-777777777777', 'russian', 'Кабель питания для монитора', 'Сетевой кабель', 'Кабель питания для подключения монитора пациента к сети.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b7777777-7777-7777-7777-777777777777', 'english', 'Monitor Power Cable', 'Power cable', 'Power cable for connecting patient monitor to the network.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
--- Dental Tips
-('b8888888-8888-8888-8888-888888888888', 'russian', 'Наконечники стоматологические', 'Стоматологические наконечники', 'Наконечники для стоматологической установки. Различные размеры и типы.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b8888888-8888-8888-8888-888888888888', 'english', 'Dental Tips', 'Dental handpiece tips', 'Tips for dental unit. Various sizes and types.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
--- Probe Covers
-('b9999999-9999-9999-9999-999999999999', 'russian', 'Чехлы для датчиков', 'Защитные чехлы', 'Защитные чехлы для ультразвуковых датчиков. Одноразовые, стерильные.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b9999999-9999-9999-9999-999999999999', 'english', 'Probe Covers', 'Protective covers', 'Protective covers for ultrasound probes. Disposable, sterile.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
--- Equipment Stand
-('baaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'russian', 'Стойка для оборудования', 'Медицинская стойка', 'Универсальная стойка для размещения медицинского оборудования. Регулируемая высота.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('baaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'english', 'Equipment Stand', 'Medical stand', 'Universal stand for medical equipment placement. Adjustable height.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
--- Monitor Protection
-('baaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', 'russian', 'Защитный чехол для монитора', 'Защитный чехол', 'Защитный чехол для монитора пациента. Защита от пыли и повреждений.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('baaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', 'english', 'Monitor Protection Cover', 'Protection cover', 'Protection cover for patient monitor. Protection from dust and damage.', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+('b7777777-7777-7777-7777-777777777777', 'english', 'Monitor Power Cable', 'Power cable', 'Power cable for connecting patient monitor to the network.', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
 ON CONFLICT (product_id, language_code) DO UPDATE SET
     name = EXCLUDED.name,
     short_desc = EXCLUDED.short_desc,
@@ -368,15 +322,10 @@ BEGIN
     INSERT INTO app.product_regions (product_id, region_id, taxable_category_id, created_by) VALUES
     ('b1111111-1111-1111-1111-111111111111', reg_b_id, med_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     ('b2222222-2222-2222-2222-222222222222', reg_b_id, med_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('b3333333-3333-3333-3333-333333333333', reg_b_id, med_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     ('b4444444-4444-4444-4444-444444444444', reg_b_id, med_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     ('b5555555-5555-5555-5555-555555555555', reg_b_id, med_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     ('b6666666-6666-6666-6666-666666666666', reg_b_id, med_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('b7777777-7777-7777-7777-777777777777', reg_b_id, med_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('b8888888-8888-8888-8888-888888888888', reg_b_id, med_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('b9999999-9999-9999-9999-999999999999', reg_b_id, med_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('baaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', reg_b_id, med_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('baaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', reg_b_id, med_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+    ('b7777777-7777-7777-7777-777777777777', reg_b_id, med_cat_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474')
     ON CONFLICT (product_id, region_id) DO UPDATE SET
         taxable_category_id = EXCLUDED.taxable_category_id;
 END $$;
@@ -385,33 +334,20 @@ END $$;
 INSERT INTO app.product_users (product_id, user_id, role_type, created_by) VALUES
 ('b1111111-1111-1111-1111-111111111111', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('b2222222-2222-2222-2222-222222222222', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b3333333-3333-3333-3333-333333333333', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('b4444444-4444-4444-4444-444444444444', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('b5555555-5555-5555-5555-555555555555', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('b6666666-6666-6666-6666-666666666666', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b7777777-7777-7777-7777-777777777777', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b8888888-8888-8888-8888-888888888888', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b9999999-9999-9999-9999-999999999999', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('baaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('baaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+('b7777777-7777-7777-7777-777777777777', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
 ON CONFLICT (product_id, user_id, role_type) DO NOTHING;
 
--- Product pairing (Medical)
+-- Product pairing (Medical: Ultrasound and Patient Monitor with their options)
 INSERT INTO app.product_options (main_product_id, option_product_id, is_required, units_count, created_by) VALUES
 -- Ultrasound: required
 ('b1111111-1111-1111-1111-111111111111', 'b4444444-4444-4444-4444-444444444444', true, 3, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('b1111111-1111-1111-1111-111111111111', 'b5555555-5555-5555-5555-555555555555', true, 1, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
--- Ultrasound: optional
-('b1111111-1111-1111-1111-111111111111', 'b9999999-9999-9999-9999-999999999999', false, NULL, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b1111111-1111-1111-1111-111111111111', 'baaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', false, NULL, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 -- Patient Monitor: required
 ('b2222222-2222-2222-2222-222222222222', 'b6666666-6666-6666-6666-666666666666', true, 10, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b2222222-2222-2222-2222-222222222222', 'b7777777-7777-7777-7777-777777777777', true, 1, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
--- Patient Monitor: optional
-('b2222222-2222-2222-2222-222222222222', 'baaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', false, NULL, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b2222222-2222-2222-2222-222222222222', 'baaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', false, NULL, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
--- Dental Equipment: required
-('b3333333-3333-3333-3333-333333333333', 'b8888888-8888-8888-8888-888888888888', true, 2, '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+('b2222222-2222-2222-2222-222222222222', 'b7777777-7777-7777-7777-777777777777', true, 1, '7ef9dce8-c832-40fe-a6ef-85afff37c474')
 ON CONFLICT (main_product_id, option_product_id) DO UPDATE SET
     is_required = EXCLUDED.is_required,
     units_count = EXCLUDED.units_count;
@@ -420,16 +356,12 @@ ON CONFLICT (main_product_id, option_product_id) DO UPDATE SET
 -- 10. Tools Products
 -- ===========================================
 
--- Products
+-- Products (4 tools: sterilizer, surgical set, wrench set, jack)
 INSERT INTO app.products (product_id, product_code, translation_key, is_published, status_code, created_by) VALUES
 ('c1111111-1111-1111-1111-111111111111', 'TOOL-01-12345', 'tool.sterilizer', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('c2222222-2222-2222-2222-222222222222', 'TOOL-02-67890', 'tool.surgical.set', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('c3333333-3333-3333-3333-333333333333', 'TOOL-03-11111', 'tool.multimeter', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('c4444444-4444-4444-4444-444444444444', 'TOOL-04-22222', 'tool.soldering.station', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('c5555555-5555-5555-5555-555555555555', 'TOOL-05-33333', 'tool.wrench.set', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('c6666666-6666-6666-6666-666666666666', 'TOOL-06-44444', 'tool.jack', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('c7777777-7777-7777-7777-777777777777', 'TOOL-07-55555', 'tool.screwdriver.set', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('c8888888-8888-8888-8888-888888888888', 'TOOL-08-66666', 'tool.hammer', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+('c6666666-6666-6666-6666-666666666666', 'TOOL-06-44444', 'tool.jack', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
 ON CONFLICT (product_id) DO UPDATE SET
     product_code = EXCLUDED.product_code,
     translation_key = EXCLUDED.translation_key,
@@ -444,72 +376,39 @@ INSERT INTO app.product_translations (product_id, language_code, name, short_des
 -- Surgical Set
 ('c2222222-2222-2222-2222-222222222222', 'russian', 'Набор хирургических инструментов', 'Хирургический набор', 'Комплект хирургических инструментов для различных операций.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('c2222222-2222-2222-2222-222222222222', 'english', 'Surgical Instruments Set', 'Surgical set', 'Set of surgical instruments for various operations.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
--- Multimeter
-('c3333333-3333-3333-3333-333333333333', 'russian', 'Мультиметр', 'Цифровой мультиметр', 'Цифровой мультиметр для измерения напряжения, тока и сопротивления.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('c3333333-3333-3333-3333-333333333333', 'english', 'Multimeter', 'Digital multimeter', 'Digital multimeter for measuring voltage, current and resistance.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
--- Soldering Station
-('c4444444-4444-4444-4444-444444444444', 'russian', 'Паяльная станция', 'Паяльник с регулировкой температуры', 'Паяльная станция с регулировкой температуры и защитой от перегрева.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('c4444444-4444-4444-4444-444444444444', 'english', 'Soldering Station', 'Temperature controlled soldering iron', 'Soldering station with temperature control and overheat protection.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 -- Wrench Set
 ('c5555555-5555-5555-5555-555555555555', 'russian', 'Набор ключей', 'Автомобильный набор ключей', 'Набор гаечных ключей различных размеров для автомобильного ремонта.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('c5555555-5555-5555-5555-555555555555', 'english', 'Wrench Set', 'Automotive wrench set', 'Set of wrenches of various sizes for automotive repair.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 -- Jack
 ('c6666666-6666-6666-6666-666666666666', 'russian', 'Домкрат', 'Гидравлический домкрат', 'Гидравлический домкрат для подъема автомобиля. Грузоподъемность 2 тонны.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('c6666666-6666-6666-6666-666666666666', 'english', 'Jack', 'Hydraulic jack', 'Hydraulic jack for lifting cars. Load capacity 2 tons.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
--- Screwdriver Set
-('c7777777-7777-7777-7777-777777777777', 'russian', 'Набор отверток', 'Комплект отверток', 'Набор отверток различных размеров и типов: плоские, крестовые, шестигранные.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('c7777777-7777-7777-7777-777777777777', 'english', 'Screwdriver Set', 'Screwdriver kit', 'Set of screwdrivers of various sizes and types: flat, Phillips, hex.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
--- Hammer
-('c8888888-8888-8888-8888-888888888888', 'russian', 'Молоток', 'Слесарный молоток', 'Профессиональный слесарный молоток с деревянной ручкой. Вес 500 г.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('c8888888-8888-8888-8888-888888888888', 'english', 'Hammer', 'Mechanic hammer', 'Professional mechanic hammer with wooden handle. Weight 500 g.', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+('c6666666-6666-6666-6666-666666666666', 'english', 'Jack', 'Hydraulic jack', 'Hydraulic jack for lifting cars. Load capacity 2 tons.', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
 ON CONFLICT (product_id, language_code) DO UPDATE SET
     name = EXCLUDED.name,
     short_desc = EXCLUDED.short_desc,
     long_desc = EXCLUDED.long_desc;
 
--- Product regions (all regions, standard category)
+-- Product regions (reg-a and reg-b only, standard category)
 DO $$
 DECLARE
     reg_a_id INTEGER;
     reg_b_id INTEGER;
-    reg_c_id INTEGER;
     reg_a_std_id INTEGER;
     reg_b_std_id INTEGER;
-    reg_c_std_id INTEGER;
 BEGIN
     SELECT region_id INTO reg_a_id FROM app.regions WHERE region_name = 'reg-a';
     SELECT region_id INTO reg_b_id FROM app.regions WHERE region_name = 'reg-b';
-    SELECT region_id INTO reg_c_id FROM app.regions WHERE region_name = 'reg-c';
-    
     SELECT id INTO reg_a_std_id FROM app.regions_taxable_categories WHERE region_id = reg_a_id AND category_name = 'стандартные товары';
     SELECT id INTO reg_b_std_id FROM app.regions_taxable_categories WHERE region_id = reg_b_id AND category_name = 'стандартные товары';
-    SELECT id INTO reg_c_std_id FROM app.regions_taxable_categories WHERE region_id = reg_c_id AND category_name = 'стандартные товары';
 
     INSERT INTO app.product_regions (product_id, region_id, taxable_category_id, created_by) VALUES
     ('c1111111-1111-1111-1111-111111111111', reg_a_id, reg_a_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     ('c1111111-1111-1111-1111-111111111111', reg_b_id, reg_b_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c1111111-1111-1111-1111-111111111111', reg_c_id, reg_c_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     ('c2222222-2222-2222-2222-222222222222', reg_a_id, reg_a_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     ('c2222222-2222-2222-2222-222222222222', reg_b_id, reg_b_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c2222222-2222-2222-2222-222222222222', reg_c_id, reg_c_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c3333333-3333-3333-3333-333333333333', reg_a_id, reg_a_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c3333333-3333-3333-3333-333333333333', reg_b_id, reg_b_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c3333333-3333-3333-3333-333333333333', reg_c_id, reg_c_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c4444444-4444-4444-4444-444444444444', reg_a_id, reg_a_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c4444444-4444-4444-4444-444444444444', reg_b_id, reg_b_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c4444444-4444-4444-4444-444444444444', reg_c_id, reg_c_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     ('c5555555-5555-5555-5555-555555555555', reg_a_id, reg_a_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     ('c5555555-5555-5555-5555-555555555555', reg_b_id, reg_b_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c5555555-5555-5555-5555-555555555555', reg_c_id, reg_c_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     ('c6666666-6666-6666-6666-666666666666', reg_a_id, reg_a_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c6666666-6666-6666-6666-666666666666', reg_b_id, reg_b_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c6666666-6666-6666-6666-666666666666', reg_c_id, reg_c_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c7777777-7777-7777-7777-777777777777', reg_a_id, reg_a_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c7777777-7777-7777-7777-777777777777', reg_b_id, reg_b_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c7777777-7777-7777-7777-777777777777', reg_c_id, reg_c_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c8888888-8888-8888-8888-888888888888', reg_a_id, reg_a_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c8888888-8888-8888-8888-888888888888', reg_b_id, reg_b_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('c8888888-8888-8888-8888-888888888888', reg_c_id, reg_c_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+    ('c6666666-6666-6666-6666-666666666666', reg_b_id, reg_b_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474')
     ON CONFLICT (product_id, region_id) DO UPDATE SET
         taxable_category_id = EXCLUDED.taxable_category_id;
 END $$;
@@ -518,12 +417,8 @@ END $$;
 INSERT INTO app.product_users (product_id, user_id, role_type, created_by) VALUES
 ('c1111111-1111-1111-1111-111111111111', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('c2222222-2222-2222-2222-222222222222', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('c3333333-3333-3333-3333-333333333333', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('c4444444-4444-4444-4444-444444444444', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('c5555555-5555-5555-5555-555555555555', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('c6666666-6666-6666-6666-666666666666', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('c7777777-7777-7777-7777-777777777777', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('c8888888-8888-8888-8888-888888888888', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+('c6666666-6666-6666-6666-666666666666', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
 ON CONFLICT (product_id, user_id, role_type) DO NOTHING;
 
 -- Product pairing (Tools with medical and auto products)
@@ -531,11 +426,9 @@ INSERT INTO app.product_options (main_product_id, option_product_id, is_required
 -- Sterilizer with medical equipment (required)
 ('b1111111-1111-1111-1111-111111111111', 'c1111111-1111-1111-1111-111111111111', true, 1, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('b2222222-2222-2222-2222-222222222222', 'c1111111-1111-1111-1111-111111111111', true, 1, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b3333333-3333-3333-3333-333333333333', 'c1111111-1111-1111-1111-111111111111', true, 1, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 -- Surgical set with medical equipment (optional)
 ('b1111111-1111-1111-1111-111111111111', 'c2222222-2222-2222-2222-222222222222', false, NULL, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('b2222222-2222-2222-2222-222222222222', 'c2222222-2222-2222-2222-222222222222', false, NULL, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b3333333-3333-3333-3333-333333333333', 'c2222222-2222-2222-2222-222222222222', false, NULL, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 -- Wrench set with cars (optional)
 ('a1111111-1111-1111-1111-111111111111', 'c5555555-5555-5555-5555-555555555555', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a2222222-2222-2222-2222-222222222222', 'c5555555-5555-5555-5555-555555555555', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
@@ -550,21 +443,18 @@ ON CONFLICT (main_product_id, option_product_id) DO UPDATE SET
 -- 11. Price Lists
 -- ===========================================
 
--- Price list info
+-- Price list info (reg-a RUB, reg-b KZT)
 DO $$
 DECLARE
     reg_a_id INTEGER;
     reg_b_id INTEGER;
-    reg_c_id INTEGER;
 BEGIN
     SELECT region_id INTO reg_a_id FROM app.regions WHERE region_name = 'reg-a';
     SELECT region_id INTO reg_b_id FROM app.regions WHERE region_name = 'reg-b';
-    SELECT region_id INTO reg_c_id FROM app.regions WHERE region_name = 'reg-c';
 
     INSERT INTO app.price_lists_info (name, description, currency_code, is_active, owner_id, region_id, created_by) VALUES
-    ('Прайслист RUB reg-b', 'Прайслист в российских рублях для региона reg-b', 'RUB', true, '7ef9dce8-c832-40fe-a6ef-85afff37c474', reg_b_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('Прайслист KZT reg-a', 'Прайслист в казахстанских тенге для региона reg-a', 'KZT', true, '7ef9dce8-c832-40fe-a6ef-85afff37c474', reg_a_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    ('Прайслист BYN reg-c', 'Прайслист в белорусских рублях для региона reg-c', 'BYN', false, '7ef9dce8-c832-40fe-a6ef-85afff37c474', reg_c_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+    ('Прайслист RUB reg-a', 'Прайслист в российских рублях для региона reg-a', 'RUB', true, '7ef9dce8-c832-40fe-a6ef-85afff37c474', reg_a_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('Прайслист KZT reg-b', 'Прайслист в казахстанских тенге для региона reg-b', 'KZT', true, '7ef9dce8-c832-40fe-a6ef-85afff37c474', reg_b_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474')
     ON CONFLICT (name) DO UPDATE SET
         description = EXCLUDED.description,
         currency_code = EXCLUDED.currency_code,
@@ -572,19 +462,15 @@ BEGIN
         region_id = EXCLUDED.region_id;
 END $$;
 
--- Price list items (all products in all price lists)
--- Note: We need to create partitions first, but for demo we'll use dynamic SQL
+-- Price list items (remaining products only; reg-a RUB, reg-b KZT)
 DO $$
 DECLARE
     pl_rub_id INTEGER;
     pl_kzt_id INTEGER;
-    pl_byn_id INTEGER;
 BEGIN
-    SELECT price_list_id INTO pl_rub_id FROM app.price_lists_info WHERE name = 'Прайслист RUB reg-b';
-    SELECT price_list_id INTO pl_kzt_id FROM app.price_lists_info WHERE name = 'Прайслист KZT reg-a';
-    SELECT price_list_id INTO pl_byn_id FROM app.price_lists_info WHERE name = 'Прайслист BYN reg-c';
+    SELECT price_list_id INTO pl_rub_id FROM app.price_lists_info WHERE name = 'Прайслист RUB reg-a';
+    SELECT price_list_id INTO pl_kzt_id FROM app.price_lists_info WHERE name = 'Прайслист KZT reg-b';
 
-    -- Create partitions if they don't exist
     BEGIN
         EXECUTE format('CREATE TABLE IF NOT EXISTS app.price_lists_%s PARTITION OF app.price_lists FOR VALUES IN (%s)', pl_rub_id, pl_rub_id);
     EXCEPTION WHEN OTHERS THEN NULL;
@@ -593,116 +479,51 @@ BEGIN
         EXECUTE format('CREATE TABLE IF NOT EXISTS app.price_lists_%s PARTITION OF app.price_lists FOR VALUES IN (%s)', pl_kzt_id, pl_kzt_id);
     EXCEPTION WHEN OTHERS THEN NULL;
     END;
-    BEGIN
-        EXECUTE format('CREATE TABLE IF NOT EXISTS app.price_lists_%s PARTITION OF app.price_lists FOR VALUES IN (%s)', pl_byn_id, pl_byn_id);
-    EXCEPTION WHEN OTHERS THEN NULL;
-    END;
 
-    -- Insert prices for all products (auto, medical, tools)
-    -- RUB prices (realistic prices in rubles)
+    -- RUB prices (reg-a)
     INSERT INTO app.price_lists (price_list_id, item_type, item_code, item_name, list_price, created_by) VALUES
     (pl_rub_id, 'product', 'AUTO-01-12345', 'Седан бизнес-класса', 3500000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_rub_id, 'product', 'AUTO-02-67890', 'Джип', 4200000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_rub_id, 'product', 'AUTO-03-11111', 'Документы на автомобиль', 5000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_rub_id, 'product', 'AUTO-04-22222', 'Ключи запасные', 15000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_rub_id, 'product', 'AUTO-05-33333', 'Набор аксессуаров для седана', 25000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_rub_id, 'product', 'AUTO-06-44444', 'Набор аксессуаров для джипа', 35000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_rub_id, 'product', 'AUTO-07-55555', 'Лебедка', 45000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_rub_id, 'product', 'AUTO-08-66666', 'Багажник на крышу', 18000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_rub_id, 'product', 'AUTO-09-77777', 'Апгрейд медиасистемы', 85000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_rub_id, 'product', 'AUTO-10-88888', 'Коврики автомобильные', 3500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_rub_id, 'product', 'AUTO-11-99999', 'Чехлы на сиденья', 5500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_rub_id, 'product', 'MED-01-12345', 'Аппарат УЗИ', 2500000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_rub_id, 'product', 'MED-02-67890', 'Монитор пациента', 180000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_rub_id, 'product', 'MED-03-11111', 'Стоматологическое оборудование', 1200000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_rub_id, 'product', 'MED-04-22222', 'Гель для УЗИ', 850.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_rub_id, 'product', 'MED-05-33333', 'Датчики УЗИ', 45000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_rub_id, 'product', 'MED-06-44444', 'Электроды для монитора', 120.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_rub_id, 'product', 'MED-07-55555', 'Кабель питания для монитора', 2500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_rub_id, 'product', 'MED-08-66666', 'Наконечники стоматологические', 3500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_rub_id, 'product', 'MED-09-77777', 'Чехлы для датчиков', 450.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_rub_id, 'product', 'MED-10-88888', 'Стойка для оборудования', 12000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_rub_id, 'product', 'MED-11-99999', 'Защитный чехол для монитора', 1800.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_rub_id, 'product', 'TOOL-01-12345', 'Стерилизатор', 85000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_rub_id, 'product', 'TOOL-02-67890', 'Набор хирургических инструментов', 125000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_rub_id, 'product', 'TOOL-03-11111', 'Мультиметр', 3500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_rub_id, 'product', 'TOOL-04-22222', 'Паяльная станция', 8500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_rub_id, 'product', 'TOOL-05-33333', 'Набор ключей', 4500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_rub_id, 'product', 'TOOL-06-44444', 'Домкрат', 3500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_rub_id, 'product', 'TOOL-07-55555', 'Набор отверток', 1200.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_rub_id, 'product', 'TOOL-08-66666', 'Молоток', 850.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+    (pl_rub_id, 'product', 'TOOL-06-44444', 'Домкрат', 3500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474')
     ON CONFLICT (price_list_id, item_type, item_code) DO UPDATE SET
         item_name = EXCLUDED.item_name,
         list_price = EXCLUDED.list_price;
 
-    -- KZT prices (realistic prices in tenge, approximately 1 RUB = 5 KZT)
+    -- KZT prices (reg-b, approximately 1 RUB = 5 KZT)
     INSERT INTO app.price_lists (price_list_id, item_type, item_code, item_name, list_price, created_by) VALUES
     (pl_kzt_id, 'product', 'AUTO-01-12345', 'Седан бизнес-класса', 17500000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_kzt_id, 'product', 'AUTO-02-67890', 'Джип', 21000000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_kzt_id, 'product', 'AUTO-03-11111', 'Документы на автомобиль', 25000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_kzt_id, 'product', 'AUTO-04-22222', 'Ключи запасные', 75000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_kzt_id, 'product', 'AUTO-05-33333', 'Набор аксессуаров для седана', 125000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_kzt_id, 'product', 'AUTO-06-44444', 'Набор аксессуаров для джипа', 175000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_kzt_id, 'product', 'AUTO-07-55555', 'Лебедка', 225000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_kzt_id, 'product', 'AUTO-08-66666', 'Багажник на крышу', 90000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_kzt_id, 'product', 'AUTO-09-77777', 'Апгрейд медиасистемы', 425000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_kzt_id, 'product', 'AUTO-10-88888', 'Коврики автомобильные', 17500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_kzt_id, 'product', 'AUTO-11-99999', 'Чехлы на сиденья', 27500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_kzt_id, 'product', 'MED-01-12345', 'Аппарат УЗИ', 12500000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_kzt_id, 'product', 'MED-02-67890', 'Монитор пациента', 900000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_kzt_id, 'product', 'MED-03-11111', 'Стоматологическое оборудование', 6000000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_kzt_id, 'product', 'MED-04-22222', 'Гель для УЗИ', 4250.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_kzt_id, 'product', 'MED-05-33333', 'Датчики УЗИ', 225000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_kzt_id, 'product', 'MED-06-44444', 'Электроды для монитора', 600.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_kzt_id, 'product', 'MED-07-55555', 'Кабель питания для монитора', 12500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_kzt_id, 'product', 'MED-08-66666', 'Наконечники стоматологические', 17500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_kzt_id, 'product', 'MED-09-77777', 'Чехлы для датчиков', 2250.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_kzt_id, 'product', 'MED-10-88888', 'Стойка для оборудования', 60000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_kzt_id, 'product', 'MED-11-99999', 'Защитный чехол для монитора', 9000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_kzt_id, 'product', 'TOOL-01-12345', 'Стерилизатор', 425000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_kzt_id, 'product', 'TOOL-02-67890', 'Набор хирургических инструментов', 625000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_kzt_id, 'product', 'TOOL-03-11111', 'Мультиметр', 17500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_kzt_id, 'product', 'TOOL-04-22222', 'Паяльная станция', 42500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_kzt_id, 'product', 'TOOL-05-33333', 'Набор ключей', 22500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_kzt_id, 'product', 'TOOL-06-44444', 'Домкрат', 17500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_kzt_id, 'product', 'TOOL-07-55555', 'Набор отверток', 6000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_kzt_id, 'product', 'TOOL-08-66666', 'Молоток', 4250.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474')
-    ON CONFLICT (price_list_id, item_type, item_code) DO UPDATE SET
-        item_name = EXCLUDED.item_name,
-        list_price = EXCLUDED.list_price;
-
-    -- BYN prices (realistic prices in belarusian rubles, approximately 1 RUB = 0.03 BYN)
-    INSERT INTO app.price_lists (price_list_id, item_type, item_code, item_name, list_price, created_by) VALUES
-    (pl_byn_id, 'product', 'AUTO-01-12345', 'Седан бизнес-класса', 105000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'AUTO-02-67890', 'Джип', 126000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'AUTO-03-11111', 'Документы на автомобиль', 150.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'AUTO-04-22222', 'Ключи запасные', 450.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'AUTO-05-33333', 'Набор аксессуаров для седана', 750.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'AUTO-06-44444', 'Набор аксессуаров для джипа', 1050.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'AUTO-07-55555', 'Лебедка', 1350.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'AUTO-08-66666', 'Багажник на крышу', 540.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'AUTO-09-77777', 'Апгрейд медиасистемы', 2550.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'AUTO-10-88888', 'Коврики автомобильные', 105.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'AUTO-11-99999', 'Чехлы на сиденья', 165.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'MED-01-12345', 'Аппарат УЗИ', 75000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'MED-02-67890', 'Монитор пациента', 5400.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'MED-03-11111', 'Стоматологическое оборудование', 36000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'MED-04-22222', 'Гель для УЗИ', 25.50, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'MED-05-33333', 'Датчики УЗИ', 1350.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'MED-06-44444', 'Электроды для монитора', 3.60, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'MED-07-55555', 'Кабель питания для монитора', 75.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'MED-08-66666', 'Наконечники стоматологические', 105.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'MED-09-77777', 'Чехлы для датчиков', 13.50, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'MED-10-88888', 'Стойка для оборудования', 360.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'MED-11-99999', 'Защитный чехол для монитора', 54.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'TOOL-01-12345', 'Стерилизатор', 2550.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'TOOL-02-67890', 'Набор хирургических инструментов', 3750.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'TOOL-03-11111', 'Мультиметр', 105.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'TOOL-04-22222', 'Паяльная станция', 255.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'TOOL-05-33333', 'Набор ключей', 135.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'TOOL-06-44444', 'Домкрат', 105.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'TOOL-07-55555', 'Набор отверток', 36.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_byn_id, 'product', 'TOOL-08-66666', 'Молоток', 25.50, '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+    (pl_kzt_id, 'product', 'TOOL-06-44444', 'Домкрат', 17500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474')
     ON CONFLICT (price_list_id, item_type, item_code) DO UPDATE SET
         item_name = EXCLUDED.item_name,
         list_price = EXCLUDED.list_price;
@@ -716,11 +537,10 @@ END $$;
 DELETE FROM app.section_products;
 DELETE FROM app.catalog_sections;
 
--- Insert new sections
+-- Insert new sections (2 pages: auto, medical)
 INSERT INTO app.catalog_sections (id, name, owner, description, status, is_public, "order", icon_name, color, created_by) VALUES
-('a1111111-1111-1111-1111-111111111111', 'main', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'Основная секция каталога', 'active', true, 1, 'Folder', '#F2ECE8', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('a2222222-2222-2222-2222-222222222222', 'auto', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7', 'Автомобильные продукты', 'active', true, 2, 'Car', '#E0E0F2', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a3333333-3333-3333-3333-333333333333', 'med', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'Медицинские продукты', 'active', true, 3, 'Medical', '#E0F2F2', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+('a2222222-2222-2222-2222-222222222222', 'auto', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7', 'Автомобильные продукты', 'active', true, 1, 'Car', '#E0E0F2', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('a3333333-3333-3333-3333-333333333333', 'med', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'Медицинские продукты', 'active', true, 2, 'Medical', '#E0F2F2', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
     description = EXCLUDED.description,
@@ -741,9 +561,6 @@ INSERT INTO app.section_products (section_id, product_id, published_by) VALUES
 ('a2222222-2222-2222-2222-222222222222', 'a3333333-3333-3333-3333-333333333333', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a2222222-2222-2222-2222-222222222222', 'a4444444-4444-4444-4444-444444444444', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a2222222-2222-2222-2222-222222222222', 'a5555555-5555-5555-5555-555555555555', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a2222222-2222-2222-2222-222222222222', 'a6666666-6666-6666-6666-666666666666', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a2222222-2222-2222-2222-222222222222', 'a7777777-7777-7777-7777-777777777777', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a2222222-2222-2222-2222-222222222222', 'a8888888-8888-8888-8888-888888888888', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a2222222-2222-2222-2222-222222222222', 'a9999999-9999-9999-9999-999999999999', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a2222222-2222-2222-2222-222222222222', 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a2222222-2222-2222-2222-222222222222', 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
@@ -753,27 +570,10 @@ ON CONFLICT (section_id, product_id) DO NOTHING;
 INSERT INTO app.section_products (section_id, product_id, published_by) VALUES
 ('a3333333-3333-3333-3333-333333333333', 'b1111111-1111-1111-1111-111111111111', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('a3333333-3333-3333-3333-333333333333', 'b2222222-2222-2222-2222-222222222222', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('a3333333-3333-3333-3333-333333333333', 'b3333333-3333-3333-3333-333333333333', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('a3333333-3333-3333-3333-333333333333', 'b4444444-4444-4444-4444-444444444444', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('a3333333-3333-3333-3333-333333333333', 'b5555555-5555-5555-5555-555555555555', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('a3333333-3333-3333-3333-333333333333', 'b6666666-6666-6666-6666-666666666666', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('a3333333-3333-3333-3333-333333333333', 'b7777777-7777-7777-7777-777777777777', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('a3333333-3333-3333-3333-333333333333', 'b8888888-8888-8888-8888-888888888888', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('a3333333-3333-3333-3333-333333333333', 'b9999999-9999-9999-9999-999999999999', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('a3333333-3333-3333-3333-333333333333', 'baaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('a3333333-3333-3333-3333-333333333333', 'baaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
-ON CONFLICT (section_id, product_id) DO NOTHING;
-
--- Publish tools products to main section
-INSERT INTO app.section_products (section_id, product_id, published_by) VALUES
-('a1111111-1111-1111-1111-111111111111', 'c1111111-1111-1111-1111-111111111111', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('a1111111-1111-1111-1111-111111111111', 'c2222222-2222-2222-2222-222222222222', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('a1111111-1111-1111-1111-111111111111', 'c3333333-3333-3333-3333-333333333333', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('a1111111-1111-1111-1111-111111111111', 'c4444444-4444-4444-4444-444444444444', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('a1111111-1111-1111-1111-111111111111', 'c5555555-5555-5555-5555-555555555555', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('a1111111-1111-1111-1111-111111111111', 'c6666666-6666-6666-6666-666666666666', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('a1111111-1111-1111-1111-111111111111', 'c7777777-7777-7777-7777-777777777777', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('a1111111-1111-1111-1111-111111111111', 'c8888888-8888-8888-8888-888888888888', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+('a3333333-3333-3333-3333-333333333333', 'b7777777-7777-7777-7777-777777777777', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
 ON CONFLICT (section_id, product_id) DO NOTHING;
 
 -- ===========================================
@@ -787,9 +587,6 @@ INSERT INTO app.product_groups (product_id, group_id, role_type, created_by) VAL
 ('a3333333-3333-3333-3333-333333333333', 'd4e5f6a7-b8c9-4012-d3e4-f5a6b7c8d9e0', 'product_specialists', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a4444444-4444-4444-4444-444444444444', 'd4e5f6a7-b8c9-4012-d3e4-f5a6b7c8d9e0', 'product_specialists', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a5555555-5555-5555-5555-555555555555', 'd4e5f6a7-b8c9-4012-d3e4-f5a6b7c8d9e0', 'product_specialists', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a6666666-6666-6666-6666-666666666666', 'd4e5f6a7-b8c9-4012-d3e4-f5a6b7c8d9e0', 'product_specialists', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a7777777-7777-7777-7777-777777777777', 'd4e5f6a7-b8c9-4012-d3e4-f5a6b7c8d9e0', 'product_specialists', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a8888888-8888-8888-8888-888888888888', 'd4e5f6a7-b8c9-4012-d3e4-f5a6b7c8d9e0', 'product_specialists', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a9999999-9999-9999-9999-999999999999', 'd4e5f6a7-b8c9-4012-d3e4-f5a6b7c8d9e0', 'product_specialists', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'd4e5f6a7-b8c9-4012-d3e4-f5a6b7c8d9e0', 'product_specialists', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', 'd4e5f6a7-b8c9-4012-d3e4-f5a6b7c8d9e0', 'product_specialists', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
@@ -799,25 +596,16 @@ ON CONFLICT (product_id, group_id, role_type) DO NOTHING;
 INSERT INTO app.product_groups (product_id, group_id, role_type, created_by) VALUES
 ('b1111111-1111-1111-1111-111111111111', 'c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('b2222222-2222-2222-2222-222222222222', 'c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b3333333-3333-3333-3333-333333333333', 'c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('b4444444-4444-4444-4444-444444444444', 'c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('b5555555-5555-5555-5555-555555555555', 'c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('b6666666-6666-6666-6666-666666666666', 'c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b7777777-7777-7777-7777-777777777777', 'c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b8888888-8888-8888-8888-888888888888', 'c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b9999999-9999-9999-9999-999999999999', 'c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('baaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('baaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', 'c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+('b7777777-7777-7777-7777-777777777777', 'c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
 ON CONFLICT (product_id, group_id, role_type) DO NOTHING;
 
 -- Assign groups to tools products
 INSERT INTO app.product_groups (product_id, group_id, role_type, created_by) VALUES
 ('c1111111-1111-1111-1111-111111111111', 'c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('c2222222-2222-2222-2222-222222222222', 'c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('c3333333-3333-3333-3333-333333333333', 'b2c3d4e5-f6a7-4890-b1c2-d3e4f5a6b7c8', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('c4444444-4444-4444-4444-444444444444', 'b2c3d4e5-f6a7-4890-b1c2-d3e4f5a6b7c8', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('c5555555-5555-5555-5555-555555555555', 'd4e5f6a7-b8c9-4012-d3e4-f5a6b7c8d9e0', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('c6666666-6666-6666-6666-666666666666', 'd4e5f6a7-b8c9-4012-d3e4-f5a6b7c8d9e0', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('c7777777-7777-7777-7777-777777777777', 'b2c3d4e5-f6a7-4890-b1c2-d3e4f5a6b7c8', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('c8888888-8888-8888-8888-888888888888', 'b2c3d4e5-f6a7-4890-b1c2-d3e4f5a6b7c8', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+('c6666666-6666-6666-6666-666666666666', 'd4e5f6a7-b8c9-4012-d3e4-f5a6b7c8d9e0', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
 ON CONFLICT (product_id, group_id, role_type) DO NOTHING;
