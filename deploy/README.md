@@ -2,7 +2,7 @@
 
 **EVI**  is a web application for building and managing products catalog. Users can browse products, configure them by selecting options and quantities, and generate cost estimations for their configurations. Administrators manage catalog sections, regional pricing, organizations, and application settings.
 
-This directory holds the deploy tree of the evi repository: scripts, documentation and other files for evi installation, upgrades and admin operations. You place this content in a directory named **evi** on your server (for example, in your home directory).
+This directory holds the deploy tree of the evi repository: scripts, documentation and other files for evi installation, upgrades and admin operations. You place this content in a directory named **evi** on your server (for example, in your home directory). Release notes are in this directory (RELEASE_NOTES.md) and are used by install.sh when deploying a given version.
 
 
 ## Disclaimer

@@ -13,7 +13,7 @@
 # Changes in v1.7.1:
 # - Backup location: option 1 = evi/backup, option 2 = custom path, 3+ = detected mount points
 # - get_mount_points accepts optional start_index; numbering is continuous (no gap)
-# - Distro archive and UI use evi (evi-v*.tar.gz, evi repo) instead of evi-install
+# - Distro archive and UI use evi (evi-v*.tar.gz, evi repo)
 #
 # Changes in v1.7.0:
 # - Added backup command with interactive directory selection and compression options

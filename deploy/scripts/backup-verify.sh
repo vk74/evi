@@ -10,7 +10,7 @@
 # - Reports verification status
 #
 # Changes in v1.0.1:
-# - Look for evi-v*.tar.gz and report "evi archive" instead of evi-install
+# - Look for evi-v*.tar.gz and report "evi archive"
 #
 # Exit codes:
 #   0 - Verification successful

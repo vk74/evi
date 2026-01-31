@@ -1,13 +1,24 @@
 #!/usr/bin/env bash
 #
-# Version: 1.3.9
-# Purpose: Developer release automation script for evi application.
-# Deployment file: release.sh
-# Logic:
+# version: 1.4.0
+# purpose: developer release automation script for evi application.
+# deployment file: release.sh
+# logic:
 # - Version sync: package.json (root, back, front), dev-ops/common/env/evi.template.env, db/init/02_schema.sql, deploy/env/evi.template.env.
 # - Builds multi-arch container images (linux/amd64, linux/arm64) for GHCR; publishes manifest lists; creates Git tags.
-# - Two modes: step-by-step (menu) and automatic (release command).
+# - Step-by-step (menu) and CLI commands only; end-user deploy tree is installed into directory evi in home directory (~/evi).
 # - Independent from install.sh and evictl (developer workflow only).
+# - Deploy directory contents (db migrations, demo-data) are produced by release scripts only; do not edit deploy manually.
+#
+# Changes in v1.4.0:
+# - option 1: "set version and prepare deploy files" (sync + prepare-deploy.sh); summary at end.
+# - sub-scripts in dev-ops/release/scripts: sync-version.sh, prepare-deploy.sh, update-release-notes.sh.
+# - update release notes: version, images, deploy files list (automatic find deploy).
+# - removed automatic full release (menu and command "release"); step-by-step only.
+# - single release notes file: deploy/RELEASE_NOTES.md (used by install.sh); updated in step "update release notes".
+# - prepare-deploy: do not overwrite existing files in deploy; copy only new; warn (red) when source differs; rollback = manual removal in deploy.
+# - removed all evi-install mentions; deploy tree installed into directory evi in home (~/evi).
+# - deploy directory produced by release scripts only; do not edit deploy manually.
 #
 # Changes in v1.3.9:
 # - build_images: require >= 16 GB RAM (exit if less or undetected); split heap 50/50 (NODE_MEMORY_MAIN_MB for main process, NODE_MEMORY_CHILD_MB for fork-ts-checker); pass both to frontend Containerfile.
@@ -18,7 +29,7 @@
 # - Warnings when RAM < 32 GB (recommend 32 GB) and when RAM < 16 GB (frontend build may fail).
 #
 # Changes in v1.3.7:
-# - Removed evi-install repo: version sync now updates deploy/env/evi.template.env in same repo; full release is 4 steps (sync, build, publish, tag).
+# - Version sync and deploy env live in same repo; deploy tree is prepared by release scripts.
 #
 # Changes in v1.3.6:
 # - build_images: added check for existing images (manifests and platform-specific tags) before build start to prevent artifacts from previous runs.
@@ -604,7 +615,7 @@ load_ghcr_credentials() {
 
 # Authenticate to GHCR using credentials from file
 authenticate_ghcr() {
-  log "Authenticating to GitHub Container Registry..."
+  log "authenticating to GitHub Container Registry..."
   
   # Load credentials from file
   if ! load_ghcr_credentials; then
@@ -782,7 +793,7 @@ check_and_cleanup_existing_images() {
 
 # Synchronize version across all files
 sync_versions() {
-  log "Starting version synchronization..."
+  log "starting version synchronization..."
   
   # Validate prerequisites
   if ! validate_prerequisites; then
@@ -795,7 +806,7 @@ sync_versions() {
   
   # Display version info and guidelines
   echo ""
-  info "Current Version: ${current_version}"
+  info "current version: ${current_version}"
   echo ""
   echo "Versioning Guidelines:"
   echo "  1. Stable versions: X.Y.Z (e.g. 1.2.0, 1.3.1)"
@@ -826,7 +837,7 @@ sync_versions() {
     fi
   done
   
-  info "Target version: ${version}"
+  info "target version: ${version}"
   
   local updates=0
   
@@ -875,17 +886,68 @@ sync_versions() {
   fi
   
   # Summary
-  log "Version synchronization completed"
+  log "version synchronization completed"
   if [[ ${updates} -eq 0 ]]; then
-    info "All files are already synchronized with version ${version}"
+    info "all files are already synchronized with version ${version}"
   else
-    info "Updated version in ${updates} file(s)"
+    info "updated version in ${updates} file(s)"
+  fi
+}
+
+# run prepare-deploy.sh (copy db/migrations and db/demo-data to deploy/db/)
+run_prepare_deploy() {
+  local script="${SCRIPT_DIR}/scripts/prepare-deploy.sh"
+  if [[ ! -x "${script}" ]]; then
+    err "script not found or not executable: ${script}"
+    return 1
+  fi
+  "${script}"
+}
+
+# option 1: set version and prepare deploy files (sync + prepare + summary)
+do_set_version_and_prepare_deploy() {
+  log "set version and prepare deploy files..."
+  local sync_ret=0 prepare_ret=0
+  local sync_updates=0
+
+  sync_versions || sync_ret=$?
+  # count updated files from sync (we don't have exact count without refactor; summary will say "version sync done" and "prepare deploy done")
+  if [[ ${sync_ret} -eq 0 ]]; then
+    info "version sync: done"
+  else
+    err "version sync failed (exit ${sync_ret})"
+  fi
+
+  run_prepare_deploy
+  prepare_ret=$?
+  if [[ ${prepare_ret} -eq 0 ]]; then
+    info "prepare deploy: done"
+  elif [[ ${prepare_ret} -eq 2 ]]; then
+    warn "prepare deploy: completed with warnings (source differs from deploy for some files; see above)"
+  else
+    err "prepare deploy failed (exit ${prepare_ret})"
+  fi
+
+  echo ""
+  log "summary"
+  if [[ ${sync_ret} -eq 0 ]] && [[ ${prepare_ret} -eq 0 ]]; then
+    info "version sync: success"
+    info "prepare deploy: success (new files copied to deploy/db/; existing unchanged)"
+    return 0
+  elif [[ ${sync_ret} -eq 0 ]] && [[ ${prepare_ret} -eq 2 ]]; then
+    info "version sync: success"
+    warn "prepare deploy: completed with warnings (some source files differ from deploy; not copied)"
+    return 0
+  else
+    [[ ${sync_ret} -ne 0 ]] && err "version sync: failed"
+    [[ ${prepare_ret} -ne 0 ]] && [[ ${prepare_ret} -ne 2 ]] && err "prepare deploy: failed"
+    return 1
   fi
 }
 
 # Build multi-arch container images (per platform, then manifest list)
 build_images() {
-  log "Building multi-arch container images..."
+  log "building multi-arch container images..."
   
   load_ghcr_config
   
@@ -1033,7 +1095,7 @@ build_images() {
   fi
   
   info "All multi-arch images built successfully"
-  log "Build statistics:"
+  log "build statistics:"
   local platform_count=0 platform_display="" first=1 p
   for p in $(echo "${BUILD_PLATFORMS}" | tr ',' ' '); do
     p=$(printf '%s' "${p}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
@@ -1123,12 +1185,12 @@ cleanup_local_images() {
 
 # Publish images to GHCR
 publish_images() {
-  log "Publishing images to GHCR..."
+  log "publishing images to GHCR..."
   
   load_ghcr_config
   
   # Ensure GHCR authentication (will authenticate automatically if needed)
-  log "Checking GHCR authentication..."
+  log "checking GHCR authentication..."
   if ! validate_ghcr_auth; then
     die "GHCR authentication failed"
   fi
@@ -1198,9 +1260,26 @@ publish_images() {
   cleanup_local_images "${version}"
 }
 
+# update dev-ops/release/RELEASE_NOTES.md (version, images, deploy files list)
+update_release_notes() {
+  log "updating release notes..."
+  local script="${SCRIPT_DIR}/scripts/update-release-notes.sh"
+  if [[ ! -x "${script}" ]]; then
+    err "script not found or not executable: ${script}"
+    return 1
+  fi
+  if "${script}"; then
+    info "release notes updated"
+    return 0
+  else
+    err "update release notes failed"
+    return 1
+  fi
+}
+
 # Create Git tag
 create_git_tag() {
-  log "Creating Git tag..."
+  log "creating git tag..."
   
   require_cmd git
   
@@ -1231,104 +1310,11 @@ create_git_tag() {
   # Create tag
   if git tag "${tag}"; then
     info "Created Git tag: ${tag}"
-    log "Tag information:"
+    log "tag information:"
     git show "${tag}" --no-patch --format="  Tag: %D%n  Commit: %H%n  Author: %an <%ae>%n  Date: %ad" 2>/dev/null || true
   else
     die "Failed to create Git tag: ${tag}"
   fi
-}
-
-# Full release cycle
-do_full_release() {
-  log "Starting full release cycle..."
-  
-  local start_time
-  start_time=$(date +%s)
-  
-  # Read version early to check for existing images
-  local version
-  version=$(read_version_from_package_json)
-  
-  if ! validate_version "${version}"; then
-    die "Version validation failed"
-  fi
-  
-  local sync_status="success"
-  local build_status="success"
-  local publish_status="success"
-  local tag_status="success"
-  
-  # Step 1: Sync versions
-  log "Step 1/4: Synchronizing versions..."
-  if sync_versions; then
-    info "${SYM_OK} Version synchronization completed"
-  else
-    err "${SYM_FAIL} Version synchronization failed"
-    sync_status="failed"
-    die "Release aborted: version synchronization failed"
-  fi
-  
-  # Step 2: Build images
-  log "Step 2/4: Building images..."
-  if build_images; then
-    info "${SYM_OK} Image build completed"
-  else
-    err "${SYM_FAIL} Image build failed"
-    build_status="failed"
-    die "Release aborted: image build failed"
-  fi
-  
-  # Step 3: Publish images
-  log "Step 3/4: Publishing images..."
-  if publish_images; then
-    info "${SYM_OK} Image publish completed"
-  else
-    err "${SYM_FAIL} Image publish failed"
-    publish_status="failed"
-    die "Release aborted: image publish failed"
-  fi
-  
-  # Step 4: Create Git tag
-  log "Step 4/4: Creating Git tag..."
-  if create_git_tag; then
-    info "${SYM_OK} Git tag creation completed"
-  else
-    err "${SYM_FAIL} Git tag creation failed"
-    tag_status="failed"
-    die "Release aborted: Git tag creation failed"
-  fi
-  
-  # Summary
-  local end_time
-  end_time=$(date +%s)
-  local duration=$((end_time - start_time))
-  local version
-  version=$(read_version_from_package_json)
-  
-  echo ""
-  log "=== Release Summary ==="
-  printf "  ${CYAN}Version:${NC} %s\n" "${version}"
-  printf "  ${CYAN}Duration:${NC} %s seconds\n" "${duration}"
-  echo ""
-  printf "  ${CYAN}Steps:${NC}\n"
-  printf "    ${SYM_OK} Version sync: ${GREEN}success${NC}\n"
-  printf "    ${SYM_OK} Build images: ${GREEN}success${NC}\n"
-  printf "    ${SYM_OK} Publish images: ${GREEN}success${NC}\n"
-  printf "    ${SYM_OK} Create tag: ${GREEN}success${NC}\n"
-  echo ""
-  printf "  ${CYAN}Published Images:${NC}\n"
-  printf "    ${GREEN}ghcr.io/${GHCR_NAMESPACE:-evi-app}/evi-db:${version}${NC}\n"
-  printf "    ${GREEN}ghcr.io/${GHCR_NAMESPACE:-evi-app}/evi-be:${version}${NC}\n"
-  printf "    ${GREEN}ghcr.io/${GHCR_NAMESPACE:-evi-app}/evi-fe:${version}${NC}\n"
-  echo ""
-  printf "  ${CYAN}View images at:${NC}\n"
-  if [[ "${GHCR_NAMESPACE:-evi-app}" == "evi-app" ]]; then
-    printf "    ${CYAN}https://github.com/orgs/evi-app/packages${NC}\n"
-  else
-    printf "    ${CYAN}https://github.com/${GHCR_NAMESPACE}?tab=packages${NC}\n"
-  fi
-  echo ""
-  info "Full release completed successfully!"
 }
 
 # --- Menu Interface ---
@@ -1336,14 +1322,14 @@ do_full_release() {
 show_menu() {
   echo ""
   echo "+--------------------------------------------------------------+"
-  echo "|           evi release manager, main menu                     |"
+  echo "|           evi release manager, main menu                      |"
   echo "+--------------------------------------------------------------+"
   echo ""
-  echo "  1) set app version for the release"
+  echo "  1) set version and prepare deploy files"
   echo "  2) build multi-arch container images from source code"
   echo "  3) push images to GHCR"
-  echo "  4) create git version tag"
-  echo "  5) automatic full release: version + build + push + tag"
+  echo "  4) update release notes"
+  echo "  5) create git version tag"
   echo "  6) exit"
   echo ""
 }
@@ -1354,7 +1340,7 @@ main_menu() {
     read -r -p "select: " opt
     case $opt in
       1)
-        sync_versions
+        do_set_version_and_prepare_deploy
         echo ""
         read -r -p "press enter to continue..."
         ;;
@@ -1369,12 +1355,12 @@ main_menu() {
         read -r -p "press enter to continue..."
         ;;
       4)
-        create_git_tag
+        update_release_notes
         echo ""
         read -r -p "press enter to continue..."
         ;;
       5)
-        do_full_release
+        create_git_tag
         echo ""
         read -r -p "press enter to continue..."
         ;;
@@ -1395,23 +1381,22 @@ show_help() {
   cat << EOF
 evi release manager
 
-Usage:
+usage:
   ./release.sh [command]
 
-Commands:
-  menu      Show interactive menu (default)
-  sync      Synchronize app version across all related files
-  build     Build container images from source
-  publish   Publish images to GHCR
-  tag       Create Git tag for current version
-  release   Full automatic release cycle
-  help      Show this help message
+commands:
+  menu            show interactive menu (default)
+  prepare         set version and prepare deploy files (sync + copy db to deploy)
+  build           build container images from source
+  publish         publish images to GHCR
+  release_notes   update dev-ops/release/RELEASE_NOTES.md
+  tag             create git tag for current version
+  help            show this help message
 
-Examples:
-  ./release.sh              # Show interactive menu
-  ./release.sh sync          # Sync versions only
-  ./release.sh build         # Build images only
-  ./release.sh release       # Full automatic release
+examples:
+  ./release.sh              # show interactive menu
+  ./release.sh prepare       # set version and prepare deploy files
+  ./release.sh build         # build images only
 
 EOF
 }
@@ -1419,14 +1404,20 @@ EOF
 # --- Main Entry Point ---
 
 main() {
+  # internal: sync only (used by scripts/sync-version.sh)
+  if [[ "${1:-}" == "__sync_only__" ]]; then
+    sync_versions
+    exit $?
+  fi
+
   local command="${1:-menu}"
-  
+
   case "${command}" in
     menu)
       main_menu
       ;;
-    sync)
-      sync_versions
+    prepare)
+      do_set_version_and_prepare_deploy
       ;;
     build)
       build_images
@@ -1434,22 +1425,22 @@ main() {
     publish)
       publish_images
       ;;
+    release_notes)
+      update_release_notes
+      ;;
     tag)
       create_git_tag
-      ;;
-    release)
-      do_full_release
       ;;
     help|--help|-h)
       show_help
       ;;
     *)
-      err "Unknown command: ${command}"
+      err "unknown command: ${command}"
       show_help
       exit 1
       ;;
   esac
 }
 
-# Run main function
+# run main
 main "$@"

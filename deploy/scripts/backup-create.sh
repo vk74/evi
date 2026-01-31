@@ -14,7 +14,7 @@
 # - Generates README-RESTORE-STEP-BY-STEP.md with server info
 #
 # Changes in v1.0.2:
-# - Archive and README use evi (evi-v*.tar.gz, cd evi) instead of evi-install
+# - Archive and README use evi (evi-v*.tar.gz, cd evi)
 #
 # Changes in v1.0.1:
 # - Added server IP addresses to README
