@@ -1,17 +1,17 @@
--- Version: 1.0
+-- Version: 1.0.1
 -- Description: Future migrations placeholder
 -- Backend file: future_migrations
 -- 
--- ВНИМАНИЕ: Этот файл предназначен для будущих миграций схемы БД.
+-- ATTENTION: This file is intended for future database schema migrations.
 -- 
--- При разработке новой функциональности, требующей изменений в схеме БД:
--- 1. Создайте новый файл миграции с номером больше текущего
--- 2. Добавьте описание изменений в комментарии
--- 3. Убедитесь, что миграция может быть применена к существующей БД
--- 4. Протестируйте миграцию на копии данных
+-- When developing new functionality that requires database schema changes:
+-- 1. Create a new migration file with a number greater than the current one
+-- 2. Add a description of the changes in the comments
+-- 3. Ensure the migration can be applied to an existing database
+-- 4. Test the migration on a copy of the data
 -- 
--- Пример структуры миграции:
--- -- Version: 2.0
+-- Migration structure example:
+-- -- Version: 1.7.3
 -- -- Description: Add new table for feature X
 -- -- Backend file: add_feature_x_table
 -- 
@@ -21,6 +21,6 @@
 --     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 -- );
 -- 
--- -- Добавьте запись о примененной миграции
+-- -- Add a record of the applied migration
 -- INSERT INTO app.schema_migrations (version, description, checksum) 
 -- VALUES ('002', 'Add new table for feature X', 'checksum_here');
