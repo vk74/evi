@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.7.1
+# Version: 1.7.2
 # Purpose: evi production deployment controller (rootless Podman + Quadlet).
 # Deployment file: evictl
 # Logic:
@@ -9,6 +9,9 @@
 # - Shows container status table on menu entry
 # - Renders Quadlet units from templates, renders Caddyfile, and manages secrets
 # - Supports full backup and restore of EVI environment
+#
+# Changes in v1.7.2:
+# - Menu: exit option moved to digit 0, kept at last place
 #
 # Changes in v1.7.1:
 # - Backup location: option 1 = evi/backup, option 2 = custom path, 3+ = detected mount points
@@ -1380,7 +1383,7 @@ menu() {
     echo "12) environment info (includes certificate info)"
     echo "13) cockpit & pgadmin help"
     echo ""
-    echo "14) exit"
+    echo "0) exit"
     echo ""
     
     read -r -p "select option: " choice
@@ -1408,7 +1411,7 @@ menu() {
       11) cmd_restore ;;
       12) cmd_env_info ;;
       13) cmd_info ;;
-      14) exit 0 ;;
+      0) exit 0 ;;
       *) warn "invalid option." ;;
     esac
   done

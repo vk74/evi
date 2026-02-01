@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
 #
-# Version: 1.7.2
+# Version: 1.8.0
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
 # - First run: prerequisites, guided env setup, deploy from pre-built images (init via evi-deploy-init.sh, then pull + systemctl start in install.sh).
 # - Subsequent runs: do not overwrite evi.env/evi.secrets.env; menu: deploy again, reconfigure (edit existing files), run evictl, exit.
 # - No podman build; no Manage submenu (use ./evictl directly for status, logs, restart, update).
+#
+# Changes in v1.8.0:
+# - Menu numbering: exit/back options moved to position 0 in all menus for consistency
+# - Guided setup: removed demo data question (Step 4); EVI_SEED_DEMO_DATA remains from template (false)
+# - Guided setup: changed confirmation prompt to "save and apply this configuration?"
 #
 # Changes in v1.7.2:
 # - Improved get_container_status to use 'podman inspect' for more reliable status detection.
@@ -25,8 +30,6 @@
 #
 # Changes in v1.5.4:
 # - Unified numbering: replaced letters with numbers in option 2 (environment configuration) for consistency with option 1
-# - Added step 4 in guided setup: "deploy sample catalog and data?" question
-# - EVI_SEED_DEMO_DATA variable now set based on user choice during guided setup
 # - All guided setup questions now use numeric options (1/2/3) instead of letters for better consistency
 #
 # Changes in v1.5.3:
@@ -639,14 +642,14 @@ menu_prerequisites() {
     check_podman || true
     check_ports || true
     echo ""
+    echo "0) back to main menu"
     echo "1) install core prerequisites (mandatory, requires sudo)"
     echo "2) install admin tools (optional, requires sudo)"
-    echo "3) back to main menu"
-    read -r -p "select: " opt
+    read -r -p "select [0-2]: " opt
     case $opt in
+      0) break ;;
       1) install_core_prerequisites ;;
       2) install_gui_tools ;;
-      3) break ;;
       *) warn "invalid option" ;;
     esac
   done
@@ -877,29 +880,6 @@ guided_setup() {
     info "passwords will be auto-generated."
   fi
   
-  # Step 4: Demo data
-  echo ""
-  echo "step 4: deploy sample data?"
-  echo ""
-  echo "  1) yes, deploy sample data"
-  echo "  2) no demo data, just clean install"
-  echo ""
-  
-  local demo_data_choice=""
-  while [[ -z "${demo_data_choice}" ]]; do
-    read -r -p "select [1-2]: " demo_data_choice
-    case "${demo_data_choice}" in
-      1) demo_data_choice="yes" ;;
-      2) demo_data_choice="no" ;;
-      *) demo_data_choice=""; warn "please select 1 or 2" ;;
-    esac
-  done
-  
-  local seed_demo_data="false"
-  if [[ "${demo_data_choice}" == "yes" ]]; then
-    seed_demo_data="true"
-  fi
-  
   # Summary
   echo ""
   log "=== configuration summary ==="
@@ -916,10 +896,9 @@ guided_setup() {
     printf "  certificates:  let's encrypt (automatic)\n"
   fi
   printf "  db passwords:  %s\n" "${pass_choice}"
-  printf "  demo data:     %s\n" "${demo_data_choice}"
   echo ""
   
-  if ! confirm "save this configuration?"; then
+  if ! confirm "save and apply this configuration?"; then
     warn "configuration cancelled."
     return
   fi
@@ -943,13 +922,6 @@ guided_setup() {
   sed -i "s|^EVI_POSTGRES_PASSWORD=.*|EVI_POSTGRES_PASSWORD=${pg_password}|" "${TARGET_SECRETS}"
   sed -i "s|^EVI_APP_DB_PASSWORD=.*|EVI_APP_DB_PASSWORD=${app_password}|" "${TARGET_SECRETS}"
   sed -i "s|^EVI_ADMIN_DB_PASSWORD=.*|EVI_ADMIN_DB_PASSWORD=${admin_password}|" "${TARGET_SECRETS}"
-  
-  # Update EVI_SEED_DEMO_DATA
-  if grep -q "^EVI_SEED_DEMO_DATA=" "${TARGET_ENV}"; then
-    sed -i "s|^EVI_SEED_DEMO_DATA=.*|EVI_SEED_DEMO_DATA=${seed_demo_data}|" "${TARGET_ENV}"
-  else
-    echo "EVI_SEED_DEMO_DATA=${seed_demo_data}" >> "${TARGET_ENV}"
-  fi
   
   info "configuration saved to evi.env and evi.secrets.env"
   
@@ -1095,22 +1067,22 @@ menu_manual_config() {
     printf "  secrets:     %s\n" "$(check_secrets_status)"
     printf "  tls:         %s\n" "$(check_tls_status)"
     echo ""
+    echo "0) back"
     echo "1) edit environment (evi.env)"
     echo "2) edit secrets (evi.secrets.env)"
     echo "3) auto-generate missing secrets"
     echo "4) generate tls certificates"
     echo "5) view certificate info"
     echo "6) client certificate instructions"
-    echo "7) back"
-    read -r -p "select: " opt
+    read -r -p "select [0-6]: " opt
     case $opt in
+      0) break ;;
       1) edit_file "${TARGET_ENV}" ;;
       2) edit_file "${TARGET_SECRETS}" ;;
       3) apply_auto_secrets ;;
       4) tls_generate ;;
       5) tls_show_info ;;
       6) tls_client_instructions ;;
-      7) break ;;
       *) warn "invalid option" ;;
     esac
   done
@@ -1121,15 +1093,15 @@ menu_env_config() {
     echo ""
     log "=== containers environment configuration ==="
     echo ""
+    echo "0) back to main menu"
     echo "1) guided setup (recommended for first-time setup)"
     echo "2) manual configuration (advanced)"
-    echo "3) back to main menu"
     echo ""
-    read -r -p "select: " opt
+    read -r -p "select [0-2]: " opt
     case $opt in
+      0) break ;;
       1) guided_setup ;;
       2) menu_manual_config ;;
-      3) break ;;
       *) warn "invalid option" ;;
     esac
   done
@@ -1862,17 +1834,17 @@ main_menu() {
     
     display_status
     
+    echo "  0) exit"
     echo "  1) prerequisites"
     echo "  2) environment configuration"
     echo "  3) deploy"
-    echo "  4) exit"
     echo ""
-    read -r -p "select: " opt
+    read -r -p "select [0-3]: " opt
     case $opt in
+      0) log "bye!"; exit 0 ;;
       1) menu_prerequisites ;;
       2) menu_env_config ;;
       3) deploy_up ;;
-      4) log "bye!"; exit 0 ;;
       *) warn "invalid option" ;;
     esac
   done
