@@ -1,9 +1,9 @@
 services:
   # evi Database
   evi-database:
-    # Build the image from the local Containerfile in the 'db' directory
+    # Build the image from the local Containerfile in the 'db' directory (repo root)
     build:
-      context: ../db
+      context: ../../db
       dockerfile: Containerfile
     container_name: evi-db
     restart: unless-stopped
@@ -49,9 +49,9 @@ services:
 
   # evi Backend API
   evi-backend:
-    # Build the image from the local Containerfile in the 'back' directory
+    # Build the image from the local Containerfile in the 'back' directory (repo root)
     build:
-      context: ../back
+      context: ../../back
       dockerfile: Containerfile
     container_name: evi-backend-local
     restart: unless-stopped
@@ -83,9 +83,9 @@ services:
 
   # evi Frontend
   evi-frontend:
-    # Build the image from the local Containerfile in the 'front' directory
+    # Build the image from the local Containerfile in the 'front' directory (repo root)
     build:
-      context: ../front
+      context: ../../front
       dockerfile: Containerfile
       args:
         VUE_APP_API_URL: ${FRONTEND_API_URL:-http://localhost:3000}

@@ -1,20 +1,15 @@
 #!/usr/bin/env node
 
 // evi Local Podman Build & Management Script
-// Version: 2.2.0 (Fixes and Improvements)
+// Version: 1.3.0 (Fixes and Improvements)
 // Description: A streamlined Node.js script to manage the local Podman environment for evi.
 // Interactive menu system with submenus for container management operations.
 //
-// Changes in v2.2.0:
-// - COMPOSE_FILE path updated for dev-ops layout (path.join(__dirname, 'podman-compose-dev.yml'))
+// Changes in v1.3.0:
+// - Main menu now re-displayed after each command (1–4) instead of exiting
+// - Exit option changed from [5] to [0], kept at the end of the menu
+// - Invalid option returns to main menu instead of exiting
 //
-// Changes in v2.1.0:
-// - Fixed container detection and statistics logic (handling JSON Array vs JSON Lines output)
-// - Improved cross-platform PATH resolution (Mac/Linux), including Homebrew paths
-// - Added automatic detection of 'podman-compose' vs 'podman compose'
-// - Robust JSON parsing for Podman output
-// - Enhanced error reporting and command execution checks
-
 const { execSync, spawnSync } = require('child_process');
 const readline = require('readline');
 const fs = require('fs');
@@ -994,19 +989,36 @@ ${colors.yellow}[1]${colors.reset} 📋 Show current containers details
 ${colors.yellow}[2]${colors.reset} 🗑️  Delete container(s) / volume(s)
 ${colors.yellow}[3]${colors.reset} 🔨 Build container(s)
 ${colors.yellow}[4]${colors.reset} 🚀 Run container(s)
-${colors.yellow}[5]${colors.reset} Exit
+${colors.yellow}[0]${colors.reset} Exit
 `;
   console.log(menu);
   rl.question('Select option: ', async (option) => {
     rl.close();
     try {
       switch (option.trim()) {
-        case '1': showContainersDetails(); break;
-        case '2': await showSubMenu('delete'); break;
-        case '3': await showSubMenu('build'); break;
-        case '4': await showSubMenu('run'); break;
-        case '5': log('👋 Exiting.', colors.yellow); return;
-        default: log('❌ Invalid option.', colors.red, true); return;
+        case '1':
+          showContainersDetails();
+          mainMenu();
+          break;
+        case '2':
+          await showSubMenu('delete');
+          mainMenu();
+          break;
+        case '3':
+          await showSubMenu('build');
+          mainMenu();
+          break;
+        case '4':
+          await showSubMenu('run');
+          mainMenu();
+          break;
+        case '0':
+          log('👋 Exiting.', colors.yellow);
+          return;
+        default:
+          log('❌ Invalid option.', colors.red, true);
+          mainMenu();
+          break;
       }
     } catch (e) {
       log(`\n❌ Script failed: ${e.message}`, colors.red, true);
