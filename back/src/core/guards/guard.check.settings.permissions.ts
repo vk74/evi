@@ -30,7 +30,7 @@ const SECTION_PERMISSION_MAP: Record<string, string> = {
   'AdminPricing': 'adminPricing:settings',
   'AdminCatalog': 'adminCatalog:settings',
   'AdminServices': 'adminCatalog:settings', // Services share adminCatalog settings
-  'OrganizationManagement': 'adminOrg:settings',
+  'AdminOrgMgmt': 'adminOrg:settings',
 
   // System-wide Sections (Restricted to sysadmins)
   'Application': 'system:settings',
