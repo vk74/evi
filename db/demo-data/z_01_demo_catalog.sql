@@ -1,10 +1,16 @@
--- Version: 1.0.7
+-- Version: 1.0.8
 -- Description: Seeds the database with demo catalog data, including sections and services.
 -- Backend file: z_01_demo_catalog.sql
 
 -- This script populates the product/service catalog with a set of demo entries
 -- to provide a meaningful example for new users. It includes creating catalog
 -- sections and linking services to them. The script is idempotent.
+
+-- Changes in v1.0.8:
+-- - User groups renamed from Cyrillic to English (sales, tech-support, medical-specialists, auto-specialists, finance, procurement)
+-- - Added demo users tech.sup.guy, sales.rep, med.spec and assigned them to respective user groups
+-- - All products set to draft and unpublished except Business sedan (active, published, reg-a and reg-b, related options unchanged)
+-- - Catalog section_products: only Business sedan published in auto section; no products in med section
 
 -- Changes in v1.0.7:
 -- - Simplified: 2 regions (reg-a, reg-b); reg-a uses RUB, reg-b uses KZT
@@ -111,7 +117,13 @@ INSERT INTO app.users (user_id, username, hashed_password, email, is_staff, acco
 -- Test user t1 (active) - for testing purposes
 ('7ef9dce8-c832-40fe-a6ef-85afff37c474', 't1', '$2b$10$USKBfWFGWHx8oIG3O2GxWej0cFtgDY4DGKzBn4vH7VGNxqQZhDBGy', 't1@evi.team', false, 'active', 'Test', 'User', NOW(), NULL, NULL, false),
 -- Test user t2 (active) - for testing purposes
-('c2cbae6f-89b9-4fa8-be9b-a8391526ead7', 't2', '$2b$10$USKBfWFGWHx8oIG3O2GxWej0cFtgDY4DGKzBn4vH7VGNxqQZhDBGy', 't2@evi.team', false, 'active', 'Test', 'User Two', NOW(), NULL, NULL, false)
+('c2cbae6f-89b9-4fa8-be9b-a8391526ead7', 't2', '$2b$10$USKBfWFGWHx8oIG3O2GxWej0cFtgDY4DGKzBn4vH7VGNxqQZhDBGy', 't2@evi.team', false, 'active', 'Test', 'User Two', NOW(), NULL, NULL, false),
+-- Demo user: tech-support member
+('d1111111-1111-1111-1111-111111111111', 'tech.sup.guy', '$2b$10$USKBfWFGWHx8oIG3O2GxWej0cFtgDY4DGKzBn4vH7VGNxqQZhDBGy', 'tech.sup.guy@evi.team', false, 'active', 'Tech', 'Support Guy', NOW(), NULL, NULL, false),
+-- Demo user: sales member
+('d2222222-2222-2222-2222-222222222222', 'sales.rep', '$2b$10$USKBfWFGWHx8oIG3O2GxWej0cFtgDY4DGKzBn4vH7VGNxqQZhDBGy', 'sales.rep@evi.team', false, 'active', 'Sales', 'Rep', NOW(), NULL, NULL, false),
+-- Demo user: medical-specialists member
+('d3333333-3333-3333-3333-333333333333', 'med.spec', '$2b$10$USKBfWFGWHx8oIG3O2GxWej0cFtgDY4DGKzBn4vH7VGNxqQZhDBGy', 'med.spec@evi.team', false, 'active', 'Med', 'Spec', NOW(), NULL, NULL, false)
 ON CONFLICT (user_id) DO UPDATE SET
     username = EXCLUDED.username,
     email = EXCLUDED.email,
@@ -128,12 +140,12 @@ ON CONFLICT (user_id) DO UPDATE SET
 -- ===========================================
 
 INSERT INTO app.groups (group_id, group_name, group_status, group_owner, is_system, group_description, group_email, group_created_by) VALUES
-('a1b2c3d4-e5f6-4789-a0b1-c2d3e4f5a6b7', 'Продажи', 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474', false, 'Отдел продаж', 'sales@evi.team', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b2c3d4e5-f6a7-4890-b1c2-d3e4f5a6b7c8', 'Техническая поддержка', 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474', false, 'Отдел технической поддержки', 'support@evi.team', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'Медицинские специалисты', 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474', false, 'Группа медицинских специалистов', 'medical@evi.team', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('d4e5f6a7-b8c9-4012-d3e4-f5a6b7c8d9e0', 'Автомобильные специалисты', 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7', false, 'Группа автомобильных специалистов', 'auto@evi.team', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('e5f6a7b8-c9d0-4123-e4f5-a6b7c8d9e0f1', 'Финансовый отдел', 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474', false, 'Финансовый отдел', 'finance@evi.team', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('f6a7b8c9-d0e1-4234-f5a6-b7c8d9e0f1a2', 'Отдел закупок', 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7', false, 'Отдел закупок', 'procurement@evi.team', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
+('a1b2c3d4-e5f6-4789-a0b1-c2d3e4f5a6b7', 'sales', 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474', false, 'Отдел продаж', 'sales@evi.team', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('b2c3d4e5-f6a7-4890-b1c2-d3e4f5a6b7c8', 'tech-support', 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474', false, 'Отдел технической поддержки', 'support@evi.team', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'medical-specialists', 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474', false, 'Группа медицинских специалистов', 'medical@evi.team', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('d4e5f6a7-b8c9-4012-d3e4-f5a6b7c8d9e0', 'auto-specialists', 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7', false, 'Группа автомобильных специалистов', 'auto@evi.team', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('e5f6a7b8-c9d0-4123-e4f5-a6b7c8d9e0f1', 'finance', 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474', false, 'Финансовый отдел', 'finance@evi.team', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('f6a7b8c9-d0e1-4234-f5a6-b7c8d9e0f1a2', 'procurement', 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7', false, 'Отдел закупок', 'procurement@evi.team', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
 ON CONFLICT (group_id) DO UPDATE SET
     group_name = EXCLUDED.group_name,
     group_status = EXCLUDED.group_status,
@@ -152,7 +164,11 @@ INSERT INTO app.group_members (group_id, user_id, added_by) VALUES
 ('c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('d4e5f6a7-b8c9-4012-d3e4-f5a6b7c8d9e0', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('e5f6a7b8-c9d0-4123-e4f5-a6b7c8d9e0f1', '7ef9dce8-c832-40fe-a6ef-85afff37c474', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('f6a7b8c9-d0e1-4234-f5a6-b7c8d9e0f1a2', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
+('f6a7b8c9-d0e1-4234-f5a6-b7c8d9e0f1a2', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+-- Demo users in user groups
+('b2c3d4e5-f6a7-4890-b1c2-d3e4f5a6b7c8', 'd1111111-1111-1111-1111-111111111111', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('a1b2c3d4-e5f6-4789-a0b1-c2d3e4f5a6b7', 'd2222222-2222-2222-2222-222222222222', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'd3333333-3333-3333-3333-333333333333', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
 ON CONFLICT (group_id, user_id, is_active) DO NOTHING;
 
 -- Add test user t1 to sysadmins group
@@ -164,16 +180,16 @@ ON CONFLICT (group_id, user_id, is_active) DO NOTHING;
 -- 8. Automotive Products
 -- ===========================================
 
--- Products (2 types: Sedan, Jeep; + documents, keys; + accessories for options in Business sedan)
+-- Products (2 types: Sedan, Jeep; + documents, keys; + accessories for options in Business sedan). Only Business sedan is active and published.
 INSERT INTO app.products (product_id, product_code, translation_key, is_published, status_code, created_by) VALUES
 ('a1111111-1111-1111-1111-111111111111', 'AUTO-01-12345', 'auto.sedan.business', true, 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a2222222-2222-2222-2222-222222222222', 'AUTO-02-67890', 'auto.jeep', true, 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a3333333-3333-3333-3333-333333333333', 'AUTO-03-11111', 'auto.documents', true, 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a4444444-4444-4444-4444-444444444444', 'AUTO-04-22222', 'auto.keys', true, 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a5555555-5555-5555-5555-555555555555', 'AUTO-05-33333', 'auto.sedan.accessories', true, 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a9999999-9999-9999-9999-999999999999', 'AUTO-09-77777', 'auto.media.upgrade', true, 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'AUTO-10-88888', 'auto.mats', true, 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', 'AUTO-11-99999', 'auto.seat.covers', true, 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
+('a2222222-2222-2222-2222-222222222222', 'AUTO-02-67890', 'auto.jeep', false, 'draft', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('a3333333-3333-3333-3333-333333333333', 'AUTO-03-11111', 'auto.documents', false, 'draft', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('a4444444-4444-4444-4444-444444444444', 'AUTO-04-22222', 'auto.keys', false, 'draft', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('a5555555-5555-5555-5555-555555555555', 'AUTO-05-33333', 'auto.sedan.accessories', false, 'draft', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('a9999999-9999-9999-9999-999999999999', 'AUTO-09-77777', 'auto.media.upgrade', false, 'draft', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'AUTO-10-88888', 'auto.mats', false, 'draft', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', 'AUTO-11-99999', 'auto.seat.covers', false, 'draft', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
 ON CONFLICT (product_id) DO UPDATE SET
     product_code = EXCLUDED.product_code,
     translation_key = EXCLUDED.translation_key,
@@ -211,17 +227,23 @@ ON CONFLICT (product_id, language_code) DO UPDATE SET
     short_desc = EXCLUDED.short_desc,
     long_desc = EXCLUDED.long_desc;
 
--- Product regions (reg-b only, standard category)
+-- Product regions (Business sedan: reg-a and reg-b; other auto: reg-b only, standard category)
 DO $$
 DECLARE
+    reg_a_id INTEGER;
     reg_b_id INTEGER;
+    reg_a_std_id INTEGER;
     std_cat_id INTEGER;
 BEGIN
+    SELECT region_id INTO reg_a_id FROM app.regions WHERE region_name = 'reg-a';
     SELECT region_id INTO reg_b_id FROM app.regions WHERE region_name = 'reg-b';
+    SELECT id INTO reg_a_std_id FROM app.regions_taxable_categories 
+    WHERE region_id = reg_a_id AND category_name = 'стандартные товары';
     SELECT id INTO std_cat_id FROM app.regions_taxable_categories 
     WHERE region_id = reg_b_id AND category_name = 'стандартные товары';
 
     INSERT INTO app.product_regions (product_id, region_id, taxable_category_id, created_by) VALUES
+    ('a1111111-1111-1111-1111-111111111111', reg_a_id, reg_a_std_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
     ('a1111111-1111-1111-1111-111111111111', reg_b_id, std_cat_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
     ('a2222222-2222-2222-2222-222222222222', reg_b_id, std_cat_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
     ('a3333333-3333-3333-3333-333333333333', reg_b_id, std_cat_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
@@ -270,14 +292,14 @@ ON CONFLICT (main_product_id, option_product_id) DO UPDATE SET
 -- 9. Medical Products
 -- ===========================================
 
--- Products (2 types: Ultrasound, Patient Monitor; + gel, probes, electrodes, cable)
+-- Products (2 types: Ultrasound, Patient Monitor; + gel, probes, electrodes, cable). All draft and unpublished.
 INSERT INTO app.products (product_id, product_code, translation_key, is_published, status_code, created_by) VALUES
-('b1111111-1111-1111-1111-111111111111', 'MED-01-12345', 'med.ultrasound', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b2222222-2222-2222-2222-222222222222', 'MED-02-67890', 'med.patient.monitor', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b4444444-4444-4444-4444-444444444444', 'MED-04-22222', 'med.ultrasound.gel', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b5555555-5555-5555-5555-555555555555', 'MED-05-33333', 'med.ultrasound.probes', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b6666666-6666-6666-6666-666666666666', 'MED-06-44444', 'med.monitor.electrodes', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('b7777777-7777-7777-7777-777777777777', 'MED-07-55555', 'med.monitor.cable', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+('b1111111-1111-1111-1111-111111111111', 'MED-01-12345', 'med.ultrasound', false, 'draft', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('b2222222-2222-2222-2222-222222222222', 'MED-02-67890', 'med.patient.monitor', false, 'draft', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('b4444444-4444-4444-4444-444444444444', 'MED-04-22222', 'med.ultrasound.gel', false, 'draft', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('b5555555-5555-5555-5555-555555555555', 'MED-05-33333', 'med.ultrasound.probes', false, 'draft', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('b6666666-6666-6666-6666-666666666666', 'MED-06-44444', 'med.monitor.electrodes', false, 'draft', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('b7777777-7777-7777-7777-777777777777', 'MED-07-55555', 'med.monitor.cable', false, 'draft', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
 ON CONFLICT (product_id) DO UPDATE SET
     product_code = EXCLUDED.product_code,
     translation_key = EXCLUDED.translation_key,
@@ -356,12 +378,12 @@ ON CONFLICT (main_product_id, option_product_id) DO UPDATE SET
 -- 10. Tools Products
 -- ===========================================
 
--- Products (4 tools: sterilizer, surgical set, wrench set, jack)
+-- Products (4 tools: sterilizer, surgical set, wrench set, jack). All draft and unpublished.
 INSERT INTO app.products (product_id, product_code, translation_key, is_published, status_code, created_by) VALUES
-('c1111111-1111-1111-1111-111111111111', 'TOOL-01-12345', 'tool.sterilizer', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('c2222222-2222-2222-2222-222222222222', 'TOOL-02-67890', 'tool.surgical.set', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('c5555555-5555-5555-5555-555555555555', 'TOOL-05-33333', 'tool.wrench.set', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('c6666666-6666-6666-6666-666666666666', 'TOOL-06-44444', 'tool.jack', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+('c1111111-1111-1111-1111-111111111111', 'TOOL-01-12345', 'tool.sterilizer', false, 'draft', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('c2222222-2222-2222-2222-222222222222', 'TOOL-02-67890', 'tool.surgical.set', false, 'draft', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('c5555555-5555-5555-5555-555555555555', 'TOOL-05-33333', 'tool.wrench.set', false, 'draft', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('c6666666-6666-6666-6666-666666666666', 'TOOL-06-44444', 'tool.jack', false, 'draft', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
 ON CONFLICT (product_id) DO UPDATE SET
     product_code = EXCLUDED.product_code,
     translation_key = EXCLUDED.translation_key,
@@ -554,26 +576,9 @@ ON CONFLICT (id) DO UPDATE SET
 -- 13. Publish Products to Sections
 -- ===========================================
 
--- Publish automotive products to auto section
+-- Publish only Business sedan to auto section (all other products are draft/unpublished)
 INSERT INTO app.section_products (section_id, product_id, published_by) VALUES
-('a2222222-2222-2222-2222-222222222222', 'a1111111-1111-1111-1111-111111111111', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a2222222-2222-2222-2222-222222222222', 'a2222222-2222-2222-2222-222222222222', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a2222222-2222-2222-2222-222222222222', 'a3333333-3333-3333-3333-333333333333', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a2222222-2222-2222-2222-222222222222', 'a4444444-4444-4444-4444-444444444444', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a2222222-2222-2222-2222-222222222222', 'a5555555-5555-5555-5555-555555555555', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a2222222-2222-2222-2222-222222222222', 'a9999999-9999-9999-9999-999999999999', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a2222222-2222-2222-2222-222222222222', 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a2222222-2222-2222-2222-222222222222', 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
-ON CONFLICT (section_id, product_id) DO NOTHING;
-
--- Publish medical products to med section
-INSERT INTO app.section_products (section_id, product_id, published_by) VALUES
-('a3333333-3333-3333-3333-333333333333', 'b1111111-1111-1111-1111-111111111111', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('a3333333-3333-3333-3333-333333333333', 'b2222222-2222-2222-2222-222222222222', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('a3333333-3333-3333-3333-333333333333', 'b4444444-4444-4444-4444-444444444444', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('a3333333-3333-3333-3333-333333333333', 'b5555555-5555-5555-5555-555555555555', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('a3333333-3333-3333-3333-333333333333', 'b6666666-6666-6666-6666-666666666666', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('a3333333-3333-3333-3333-333333333333', 'b7777777-7777-7777-7777-777777777777', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+('a2222222-2222-2222-2222-222222222222', 'a1111111-1111-1111-1111-111111111111', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
 ON CONFLICT (section_id, product_id) DO NOTHING;
 
 -- ===========================================

@@ -11,7 +11,7 @@
 # - Supports full backup and restore of EVI environment
 #
 # Changes in v1.7.2:
-# - Menu: exit option moved to digit 0, kept at last place
+# - Menu: exit option moved to digit 0, displayed first (after status table)
 #
 # Changes in v1.7.1:
 # - Backup location: option 1 = evi/backup, option 2 = custom path, 3+ = detected mount points
@@ -1351,6 +1351,8 @@ menu() {
     
     display_container_status_table
     
+    echo "0) exit"
+    echo ""
     echo "container management:"
     echo "1) start containers"
     echo "2) stop containers"
@@ -1382,8 +1384,6 @@ menu() {
     echo "information:"
     echo "12) environment info (includes certificate info)"
     echo "13) cockpit & pgadmin help"
-    echo ""
-    echo "0) exit"
     echo ""
     
     read -r -p "select option: " choice
