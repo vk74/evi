@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# version: 1.4.0
+# version: 1.5.1
 # purpose: developer release automation script for evi application.
 # deployment file: release.sh
 # logic:
@@ -9,6 +9,18 @@
 # - Step-by-step (menu) and CLI commands only; end-user deploy tree is installed into directory evi in home directory (~/evi).
 # - Independent from install.sh and evictl (developer workflow only).
 # - Deploy directory contents (db migrations, demo-data) are produced by release scripts only; do not edit deploy manually.
+#
+# Changes in v1.5.0:
+# - Split build into three options: build evi-fe, build evi-be, build evi-db (menu 2-4; CLI build-fe, build-be, build-db).
+# - Split push into three options: push evi-fe, push evi-be, push evi-db to GHCR (menu 5-7; CLI push-fe, push-be, push-db).
+# - Removed combined build_images() and publish_images(); developers can release individual images.
+# - Helpers: check_and_cleanup_existing_images(version, context, [component]); validate_images_built(version, [component]); cleanup_local_images(version, [component]).
+# - cleanup_local_images: after removing evi-* manifests/images, run podman image prune -f for dangling layers; removed pre-build snapshot logic (RELEASE_PRE_BUILD_SNAPSHOT_FILE).
+# - show_help: added note for full cleanup (podman image prune -a -f). Menu 10 options; release_notes at 8, tag at 9, exit at 10.
+#
+# Changes in v1.5.1:
+# - Removed option and command "update release notes" (menu, CLI, update_release_notes function).
+# - Exit menu option reassigned from 10 to 0; "create git version tag" renumbered from 9 to 8. Menu 9 options.
 #
 # Changes in v1.4.0:
 # - option 1: "set version and prepare deploy files" (sync + prepare-deploy.sh); summary at end.
@@ -100,10 +112,6 @@ GHCR_CREDENTIALS_FILE="${SCRIPT_DIR}/ghcr.io"
 # Multi-arch: platforms to build (comma-separated for podman build --platform)
 BUILD_PLATFORMS="${BUILD_PLATFORMS:-linux/amd64,linux/arm64}"
 
-# Pre-build snapshot: path to file with image IDs saved before build; used in cleanup to avoid removing pre-existing images.
-RELEASE_SNAPSHOT_FILE_PATH="${SCRIPT_DIR}/.release-pre-build-images.list"
-RELEASE_PRE_BUILD_SNAPSHOT_FILE=""
-
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -117,9 +125,6 @@ SYM_OK="${GREEN}[✓]${NC}"
 SYM_FAIL="${RED}[✗]${NC}"
 SYM_WARN="${YELLOW}[!]${NC}"
 SYM_PENDING="${GRAY}[○]${NC}"
-
-# Reset pre-build snapshot from any previous run so no artifacts remain
-rm -f "${RELEASE_SNAPSHOT_FILE_PATH}"
 
 # --- Helper Functions ---
 
@@ -674,46 +679,57 @@ print_ghcr_permission_troubleshooting() {
   err "  - Create or check token: https://github.com/settings/tokens — see dev-ops/release/ghcr.io.example"
 }
 
+# Validate that required image(s) are built. If component is given (fe, be, db), validate only that image.
 validate_images_built() {
   local version="$1"
+  local component="${2:-}"  # optional: fe, be, db; empty = all three
   local missing=0
   local ns="${GHCR_NAMESPACE:-evi-app}"
-  local images=(
-    "ghcr.io/${ns}/evi-db:${version}"
-    "ghcr.io/${ns}/evi-be:${version}"
-    "ghcr.io/${ns}/evi-fe:${version}"
-  )
-  
+  local images=()
+  if [[ -z "${component}" ]]; then
+    images=(
+      "ghcr.io/${ns}/evi-db:${version}"
+      "ghcr.io/${ns}/evi-be:${version}"
+      "ghcr.io/${ns}/evi-fe:${version}"
+    )
+  else
+    images=("ghcr.io/${ns}/evi-${component}:${version}")
+  fi
+
   for image in "${images[@]}"; do
     if ! podman manifest exists "${image}" >/dev/null 2>&1; then
       err "Manifest not found: ${image} (run build first)"
       missing=$((missing + 1))
     fi
   done
-  
+
   if [[ ${missing} -gt 0 ]]; then
-    err "Some images are not built. Run 'build' command first."
+    err "Some images are not built. Run build command first."
     return 1
   fi
-  
+
   return 0
 }
 
-# ... (existing content) ...
-
-# Check for existing images with current version and ask to remove them
+# Check for existing images with current version and ask to remove them. If component is given (fe, be, db), check only that image.
 check_and_cleanup_existing_images() {
   local version="$1"
   local context="$2"  # "build", "publish", or "release"
+  local component="${3:-}"  # optional: fe, be, db; empty = all three
   local ns="${GHCR_NAMESPACE:-evi-app}"
-  local images=(
-    "ghcr.io/${ns}/evi-db:${version}"
-    "ghcr.io/${ns}/evi-be:${version}"
-    "ghcr.io/${ns}/evi-fe:${version}"
-  )
-  
+  local images=()
+  if [[ -z "${component}" ]]; then
+    images=(
+      "ghcr.io/${ns}/evi-db:${version}"
+      "ghcr.io/${ns}/evi-be:${version}"
+      "ghcr.io/${ns}/evi-fe:${version}"
+    )
+  else
+    images=("ghcr.io/${ns}/evi-${component}:${version}")
+  fi
+
   local existing_images=()
-  
+
   # Check which images/manifests exist
   for image in "${images[@]}"; do
     if podman manifest exists "${image}" >/dev/null 2>&1 || podman image exists "${image}" >/dev/null 2>&1; then
@@ -945,193 +961,178 @@ do_set_version_and_prepare_deploy() {
   fi
 }
 
-# Build multi-arch container images (per platform, then manifest list)
-build_images() {
-  log "building multi-arch container images..."
-  
+# Build one component for all platforms and create manifest list (multi-arch). Used by build_image_fe/be/db.
+build_multi_arch_component() {
+  local name="$1"
+  local main_tag="$2"
+  local context="$3"
+  local platform_list
+  IFS=',' read -ra platform_list <<< "${BUILD_PLATFORMS}"
+  local tags=()
+  local platform_times=""
+  local first_pl=1
+
+  for pl in "${platform_list[@]}"; do
+    pl=$(printf '%s' "${pl}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    [[ -z "${pl}" ]] && continue
+    local suffix=""
+    case "${pl}" in
+      linux/amd64) suffix=amd64 ;;
+      linux/arm64) suffix=arm64 ;;
+      linux/arm/v7) suffix=armv7 ;;
+      *) suffix=$(echo "${pl}" | tr '/' '_' | tr -d ' ') ;;
+    esac
+    local tag="${main_tag}-${suffix}"
+    tags+=("${tag}")
+    log "Building ${main_tag} for ${pl}..."
+    local pl_start pl_end pl_sec
+    pl_start=$(date +%s)
+
+    if [[ "$name" == "fe" ]]; then
+      if ! podman build --platform "${pl}" --build-arg VUE_APP_API_URL=/api --build-arg "BUILD_FLAGS=--no-parallel" --build-arg "NODE_MEMORY_MAIN_MB=${NODE_MEMORY_MAIN_MB}" --build-arg "NODE_MEMORY_CHILD_MB=${NODE_MEMORY_CHILD_MB}" -t "${tag}" "${context}"; then
+        err "Build failed: ${main_tag} for ${pl}"
+        return 1
+      fi
+    else
+      if ! podman build --platform "${pl}" -t "${tag}" "${context}"; then
+        err "Build failed: ${main_tag} for ${pl}"
+        return 1
+      fi
+    fi
+
+    pl_end=$(date +%s)
+    pl_sec=$((pl_end - pl_start))
+    if [[ "${first_pl}" -eq 1 ]]; then
+      platform_times="${suffix} ${pl_sec}s"
+      first_pl=0
+    else
+      platform_times="${platform_times}, ${suffix} ${pl_sec}s"
+    fi
+  done
+
+  if [[ -n "${platform_times}" ]]; then
+    info "  evi-${name}: ${platform_times}"
+  fi
+  log "Creating manifest list: ${main_tag}"
+  if podman manifest exists "${main_tag}" >/dev/null 2>&1; then
+    podman manifest rm "${main_tag}" || true
+  fi
+  podman manifest create "${main_tag}" "${tags[@]}" || { err "Manifest create failed: ${main_tag}"; return 1; }
+  info "Built and assembled ${main_tag} (${#tags[@]} platforms)"
+  return 0
+}
+
+# Build evi-fe multi-arch image only
+build_image_fe() {
+  log "building evi-fe multi-arch image..."
   load_ghcr_config
-  
   if ! validate_prerequisites; then
     die "Prerequisites validation failed"
   fi
-  
   local version
   version=$(read_version_from_package_json)
   if ! validate_version "${version}"; then
     die "Version validation failed"
   fi
-  
-  check_and_cleanup_existing_images "${version}" "build"
-  
-  RELEASE_PRE_BUILD_SNAPSHOT_FILE="${RELEASE_SNAPSHOT_FILE_PATH}"
-  podman images -a --format '{{.ID}}' | sort -u > "${RELEASE_PRE_BUILD_SNAPSHOT_FILE}"
-  local snapshot_count
-  snapshot_count=$(wc -l < "${RELEASE_PRE_BUILD_SNAPSHOT_FILE}" | tr -d ' ')
-  info "Saved pre-build image snapshot (${snapshot_count} image IDs)"
-  
-  info "Building for version: ${version} (namespace: ${GHCR_NAMESPACE})"
+  check_and_cleanup_existing_images "${version}" "build" "fe"
+  info "Building for version: ${version} (namespace: ${GHCR_NAMESPACE}), component: evi-fe"
   info "Platforms: ${BUILD_PLATFORMS}"
-  
   set_frontend_node_memory_from_ram
-  
-  local db_image="ghcr.io/${GHCR_NAMESPACE}/evi-db:${version}"
-  local be_image="ghcr.io/${GHCR_NAMESPACE}/evi-be:${version}"
   local fe_image="ghcr.io/${GHCR_NAMESPACE}/evi-fe:${version}"
-  
-  # Build one component for all platforms and create manifest list (always multi-arch, no single-arch path)
-  build_multi_arch_component() {
-    local name="$1"
-    local main_tag="$2"
-    local context="$3"
-    local platform_list
-    IFS=',' read -ra platform_list <<< "${BUILD_PLATFORMS}"
-    local tags=()
-    local platform_times=""
-    local first_pl=1
-    
-    for pl in "${platform_list[@]}"; do
-      pl=$(printf '%s' "${pl}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-      [[ -z "${pl}" ]] && continue
-      local suffix=""
-      case "${pl}" in
-        linux/amd64) suffix=amd64 ;;
-        linux/arm64) suffix=arm64 ;;
-        linux/arm/v7) suffix=armv7 ;;
-        *) suffix=$(echo "${pl}" | tr '/' '_' | tr -d ' ') ;;
-      esac
-      local tag="${main_tag}-${suffix}"
-      tags+=("${tag}")
-      log "Building ${main_tag} for ${pl}..."
-      local pl_start pl_end pl_sec
-      pl_start=$(date +%s)
-      
-      if [[ "$name" == "fe" ]]; then
-        # DEBUG LOGGING
-        echo "{\"timestamp\":$(date +%s000),\"location\":\"release.sh:build_multi_arch_component\",\"message\":\"Starting frontend build\",\"data\":{\"platform\":\"${pl}\",\"main_mem\":${NODE_MEMORY_MAIN_MB},\"child_mem\":${NODE_MEMORY_CHILD_MB}},\"sessionId\":\"debug-session\",\"runId\":\"run1\",\"hypothesisId\":\"OOM_VM\"}" >> "/Users/vk/Library/Mobile Documents/com~apple~CloudDocs/code/evi/.cursor/debug.log"
-        if ! podman build --platform "${pl}" --build-arg VUE_APP_API_URL=/api --build-arg "BUILD_FLAGS=--no-parallel" --build-arg "NODE_MEMORY_MAIN_MB=${NODE_MEMORY_MAIN_MB}" --build-arg "NODE_MEMORY_CHILD_MB=${NODE_MEMORY_CHILD_MB}" -t "${tag}" "${context}"; then
-          err "Build failed: ${main_tag} for ${pl}"
-          return 1
-        fi
-      else
-        if ! podman build --platform "${pl}" -t "${tag}" "${context}"; then
-          err "Build failed: ${main_tag} for ${pl}"
-          return 1
-        fi
-      fi
-      
-      pl_end=$(date +%s)
-      pl_sec=$((pl_end - pl_start))
-      if [[ "${first_pl}" -eq 1 ]]; then
-        platform_times="${suffix} ${pl_sec}s"
-        first_pl=0
-      else
-        platform_times="${platform_times}, ${suffix} ${pl_sec}s"
-      fi
-    done
-    
-    if [[ -n "${platform_times}" ]]; then
-      info "  evi-${name}: ${platform_times}"
-    fi
-    log "Creating manifest list: ${main_tag}"
-    if podman manifest exists "${main_tag}" >/dev/null 2>&1; then
-      podman manifest rm "${main_tag}" || true
-    fi
-    podman manifest create "${main_tag}" "${tags[@]}" || { err "Manifest create failed: ${main_tag}"; return 1; }
-    info "Built and assembled ${main_tag} (${#tags[@]} platforms)"
-    return 0
-  }
-  
-  local build_errors=0
-  local build_total_start build_total_end total_build_sec
-  local db_sec=0 be_sec=0 fe_sec=0
-  local comp_start comp_end
-
-  build_total_start=$(date +%s)
-
-  if [[ -d "${PROJECT_ROOT}/db" ]]; then
-    comp_start=$(date +%s)
-    if ! build_multi_arch_component "db" "${db_image}" "${PROJECT_ROOT}/db"; then
-      build_errors=$((build_errors + 1))
-    else
-      comp_end=$(date +%s)
-      db_sec=$((comp_end - comp_start))
-    fi
-  else
-    err "DB source directory not found: ${PROJECT_ROOT}/db"
-    build_errors=$((build_errors + 1))
-  fi
-
-  if [[ -d "${PROJECT_ROOT}/back" ]]; then
-    comp_start=$(date +%s)
-    if ! build_multi_arch_component "be" "${be_image}" "${PROJECT_ROOT}/back"; then
-      build_errors=$((build_errors + 1))
-    else
-      comp_end=$(date +%s)
-      be_sec=$((comp_end - comp_start))
-    fi
-  else
-    err "Backend source directory not found: ${PROJECT_ROOT}/back"
-    build_errors=$((build_errors + 1))
-  fi
-
-  if [[ -d "${PROJECT_ROOT}/front" ]]; then
-    comp_start=$(date +%s)
-    if ! build_multi_arch_component "fe" "${fe_image}" "${PROJECT_ROOT}/front"; then
-      build_errors=$((build_errors + 1))
-    else
-      comp_end=$(date +%s)
-      fe_sec=$((comp_end - comp_start))
-    fi
-  else
+  local comp_start comp_end comp_sec
+  comp_start=$(date +%s)
+  if [[ ! -d "${PROJECT_ROOT}/front" ]]; then
     err "Frontend source directory not found: ${PROJECT_ROOT}/front"
-    build_errors=$((build_errors + 1))
+    return 1
   fi
-
-  build_total_end=$(date +%s)
-  total_build_sec=$((build_total_end - build_total_start))
-  
-  if [[ ${build_errors} -gt 0 ]]; then
-    die "Build failed: ${build_errors} component(s) failed"
+  if ! build_multi_arch_component "fe" "${fe_image}" "${PROJECT_ROOT}/front"; then
+    die "Build failed: evi-fe"
   fi
-  
-  info "All multi-arch images built successfully"
-  log "build statistics:"
-  local platform_count=0 platform_display="" first=1 p
-  for p in $(echo "${BUILD_PLATFORMS}" | tr ',' ' '); do
-    p=$(printf '%s' "${p}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-    [[ -z "${p}" ]] && continue
-    platform_count=$((platform_count + 1))
-    if [[ "${first}" -eq 1 ]]; then
-      platform_display="${p}"
-      first=0
-    else
-      platform_display="${platform_display}, ${p}"
-    fi
-  done
-  printf "  ${CYAN}Platforms:${NC} %s (%s)\n" "${platform_count}" "${platform_display}"
-  printf "  ${CYAN}evi-db:${NC}  %s\n" "$(format_duration "${db_sec}")"
-  printf "  ${CYAN}evi-be:${NC}  %s\n" "$(format_duration "${be_sec}")"
-  printf "  ${CYAN}evi-fe:${NC}  %s\n" "$(format_duration "${fe_sec}")"
-  printf "  ${CYAN}Total build time:${NC} %s\n" "$(format_duration "${total_build_sec}")"
-  echo ""
-  info "Local manifest lists:"
-  printf "    ${CYAN}ghcr.io/${GHCR_NAMESPACE}/evi-db:${version}${NC}\n"
-  printf "    ${CYAN}ghcr.io/${GHCR_NAMESPACE}/evi-be:${version}${NC}\n"
-  printf "    ${CYAN}ghcr.io/${GHCR_NAMESPACE}/evi-fe:${version}${NC}\n"
+  comp_end=$(date +%s)
+  comp_sec=$((comp_end - comp_start))
+  info "evi-fe build completed in $(format_duration "${comp_sec}")"
+  printf "  ${CYAN}ghcr.io/${GHCR_NAMESPACE}/evi-fe:${version}${NC}\n"
 }
 
-# Remove local manifest lists, per-arch images, and any images added during build so Podman returns to pre-build state.
-# Removes only images that were not in the pre-build snapshot (including base images pulled by build, e.g. node, nginx, postgres).
-# Does not remove containers/volumes/build cache.
+# Build evi-be multi-arch image only
+build_image_be() {
+  log "building evi-be multi-arch image..."
+  load_ghcr_config
+  if ! validate_prerequisites; then
+    die "Prerequisites validation failed"
+  fi
+  local version
+  version=$(read_version_from_package_json)
+  if ! validate_version "${version}"; then
+    die "Version validation failed"
+  fi
+  check_and_cleanup_existing_images "${version}" "build" "be"
+  info "Building for version: ${version} (namespace: ${GHCR_NAMESPACE}), component: evi-be"
+  info "Platforms: ${BUILD_PLATFORMS}"
+  local be_image="ghcr.io/${GHCR_NAMESPACE}/evi-be:${version}"
+  local comp_start comp_end comp_sec
+  comp_start=$(date +%s)
+  if [[ ! -d "${PROJECT_ROOT}/back" ]]; then
+    err "Backend source directory not found: ${PROJECT_ROOT}/back"
+    return 1
+  fi
+  if ! build_multi_arch_component "be" "${be_image}" "${PROJECT_ROOT}/back"; then
+    die "Build failed: evi-be"
+  fi
+  comp_end=$(date +%s)
+  comp_sec=$((comp_end - comp_start))
+  info "evi-be build completed in $(format_duration "${comp_sec}")"
+  printf "  ${CYAN}ghcr.io/${GHCR_NAMESPACE}/evi-be:${version}${NC}\n"
+}
+
+# Build evi-db multi-arch image only
+build_image_db() {
+  log "building evi-db multi-arch image..."
+  load_ghcr_config
+  if ! validate_prerequisites; then
+    die "Prerequisites validation failed"
+  fi
+  local version
+  version=$(read_version_from_package_json)
+  if ! validate_version "${version}"; then
+    die "Version validation failed"
+  fi
+  check_and_cleanup_existing_images "${version}" "build" "db"
+  info "Building for version: ${version} (namespace: ${GHCR_NAMESPACE}), component: evi-db"
+  info "Platforms: ${BUILD_PLATFORMS}"
+  local db_image="ghcr.io/${GHCR_NAMESPACE}/evi-db:${version}"
+  local comp_start comp_end comp_sec
+  comp_start=$(date +%s)
+  if [[ ! -d "${PROJECT_ROOT}/db" ]]; then
+    err "Database source directory not found: ${PROJECT_ROOT}/db"
+    return 1
+  fi
+  if ! build_multi_arch_component "db" "${db_image}" "${PROJECT_ROOT}/db"; then
+    die "Build failed: evi-db"
+  fi
+  comp_end=$(date +%s)
+  comp_sec=$((comp_end - comp_start))
+  info "evi-db build completed in $(format_duration "${comp_sec}")"
+  printf "  ${CYAN}ghcr.io/${GHCR_NAMESPACE}/evi-db:${version}${NC}\n"
+}
+
+# Remove local manifest lists and per-arch images for evi-* (version/component), then run podman image prune -f for dangling layers.
+# If component is given (fe, be, db), remove only that image; otherwise all three. Does not remove containers/volumes/build cache.
 cleanup_local_images() {
   local version="$1"
+  local component="${2:-}"  # optional: fe, be, db; empty = all three
   local ns="${GHCR_NAMESPACE:-evi-app}"
-  local images=(
-    "ghcr.io/${ns}/evi-db:${version}"
-    "ghcr.io/${ns}/evi-be:${version}"
-    "ghcr.io/${ns}/evi-fe:${version}"
-  )
-  
+  local images=()
+  if [[ -z "${component}" ]]; then
+    images=(
+      "ghcr.io/${ns}/evi-db:${version}"
+      "ghcr.io/${ns}/evi-be:${version}"
+      "ghcr.io/${ns}/evi-fe:${version}"
+    )
+  else
+    images=("ghcr.io/${ns}/evi-${component}:${version}")
+  fi
+
   echo ""
   if confirm "Do you want to remove local images and manifests to start fresh next time?" "n"; then
     log "Removing local manifests and images..."
@@ -1158,124 +1159,63 @@ cleanup_local_images() {
     if [[ ${removed} -gt 0 ]]; then
       info "Removed ${removed} local image(s)/manifest(s)"
     fi
-
-    # Remove any images present now that were not in pre-build snapshot (base images pulled during build + dangling layers)
-    if [[ -n "${RELEASE_PRE_BUILD_SNAPSHOT_FILE:-}" ]] && [[ -f "${RELEASE_PRE_BUILD_SNAPSHOT_FILE}" ]]; then
-      local pass max_pass=10 pass_removed total_extra_removed=0 id
-      for (( pass=1; pass<=max_pass; pass++ )); do
-        pass_removed=0
-        while IFS= read -r id; do
-          [[ -z "${id}" ]] && continue
-          grep -qFx "${id}" "${RELEASE_PRE_BUILD_SNAPSHOT_FILE}" 2>/dev/null && continue
-          if podman rmi "${id}" >/dev/null 2>&1; then
-            pass_removed=$((pass_removed + 1))
-          fi
-        done < <(podman images -a --format '{{.ID}}' 2>/dev/null | sort -u)
-        total_extra_removed=$((total_extra_removed + pass_removed))
-        [[ ${pass_removed} -eq 0 ]] && break
-      done
-      if [[ ${total_extra_removed} -gt 0 ]]; then
-        info "Removed ${total_extra_removed} image(s) added during build (Podman restored to pre-build state)"
-      fi
+    log "Pruning dangling images..."
+    if podman image prune -f >/dev/null 2>&1; then
+      info "Dangling images pruned (podman image prune -f)"
     fi
   else
     info "Keeping local images"
   fi
 }
 
-# Publish images to GHCR
-publish_images() {
-  log "publishing images to GHCR..."
-  
+# Publish single image to GHCR. component: fe, be, or db
+publish_image_component() {
+  local component="$1"
+  log "pushing evi-${component} to GHCR..."
   load_ghcr_config
-  
-  # Ensure GHCR authentication (will authenticate automatically if needed)
   log "checking GHCR authentication..."
   if ! validate_ghcr_auth; then
     die "GHCR authentication failed"
   fi
-  
-  # Read version
   local version
   version=$(read_version_from_package_json)
-  
   if ! validate_version "${version}"; then
     die "Version validation failed"
   fi
-  
-  # If using personal namespace but only evi-app manifests exist locally, create namespace manifest from evi-app arch images
   if [[ "${GHCR_NAMESPACE}" != "evi-app" ]]; then
-    local name
-    for name in evi-db evi-be evi-fe; do
-      local src="ghcr.io/evi-app/${name}:${version}"
-      local dst="ghcr.io/${GHCR_NAMESPACE}/${name}:${version}"
-      if podman manifest exists "${src}" >/dev/null 2>&1 && ! podman manifest exists "${dst}" >/dev/null 2>&1; then
-        if podman manifest exists "${dst}" >/dev/null 2>&1; then podman manifest rm "${dst}" 2>/dev/null || true; fi
-        podman manifest create "${dst}" "ghcr.io/evi-app/${name}:${version}-amd64" "ghcr.io/evi-app/${name}:${version}-arm64" 2>/dev/null && info "Created manifest ${dst} from evi-app arch images"
-      fi
-    done
-  fi
-  
-  if ! validate_images_built "${version}"; then
-    die "Images validation failed"
-  fi
-  
-  info "Publishing multi-arch images for version: ${version} (namespace: ${GHCR_NAMESPACE})"
-  
-  local images=(
-    "ghcr.io/${GHCR_NAMESPACE}/evi-db:${version}"
-    "ghcr.io/${GHCR_NAMESPACE}/evi-be:${version}"
-    "ghcr.io/${GHCR_NAMESPACE}/evi-fe:${version}"
-  )
-  
-  local push_errors=0
-  
-  for image in "${images[@]}"; do
-    log "Pushing manifest list (all platforms): ${image}..."
-    local push_output
-    local push_ret
-    set +e
-    push_output=$(podman manifest push --all "${image}" "docker://${image}" 2>&1)
-    push_ret=$?
-    set -e
-    printf '%s\n' "${push_output}"
-    if [[ ${push_ret} -ne 0 ]]; then
-      err "Failed to push ${image}"
-      if printf '%s' "${push_output}" | grep -qE 'permission_denied|create_package'; then
-        print_ghcr_permission_troubleshooting
-      fi
-      push_errors=$((push_errors + 1))
-    else
-      info "Successfully pushed ${image} (multi-arch)"
+    local src="ghcr.io/evi-app/evi-${component}:${version}"
+    local dst="ghcr.io/${GHCR_NAMESPACE}/evi-${component}:${version}"
+    if podman manifest exists "${src}" >/dev/null 2>&1 && ! podman manifest exists "${dst}" >/dev/null 2>&1; then
+      if podman manifest exists "${dst}" >/dev/null 2>&1; then podman manifest rm "${dst}" 2>/dev/null || true; fi
+      podman manifest create "${dst}" "ghcr.io/evi-app/evi-${component}:${version}-amd64" "ghcr.io/evi-app/evi-${component}:${version}-arm64" 2>/dev/null && info "Created manifest ${dst} from evi-app arch images"
     fi
-  done
-  
-  if [[ ${push_errors} -gt 0 ]]; then
-    die "Publish failed: ${push_errors} image(s) failed to push"
   fi
-  
-  info "All images published successfully"
-  
-  # Ask if user wants to remove local images
-  cleanup_local_images "${version}"
+  if ! validate_images_built "${version}" "${component}"; then
+    die "Image evi-${component} not built. Run build-${component} first."
+  fi
+  local image="ghcr.io/${GHCR_NAMESPACE}/evi-${component}:${version}"
+  info "Publishing evi-${component} for version: ${version} (namespace: ${GHCR_NAMESPACE})"
+  log "Pushing manifest list (all platforms): ${image}..."
+  local push_output push_ret
+  set +e
+  push_output=$(podman manifest push --all "${image}" "docker://${image}" 2>&1)
+  push_ret=$?
+  set -e
+  printf '%s\n' "${push_output}"
+  if [[ ${push_ret} -ne 0 ]]; then
+    err "Failed to push ${image}"
+    if printf '%s' "${push_output}" | grep -qE 'permission_denied|create_package'; then
+      print_ghcr_permission_troubleshooting
+    fi
+    die "Publish evi-${component} failed"
+  fi
+  info "Successfully pushed ${image} (multi-arch)"
+  cleanup_local_images "${version}" "${component}"
 }
 
-# update dev-ops/release/RELEASE_NOTES.md (version, images, deploy files list)
-update_release_notes() {
-  log "updating release notes..."
-  local script="${SCRIPT_DIR}/scripts/update-release-notes.sh"
-  if [[ ! -x "${script}" ]]; then
-    err "script not found or not executable: ${script}"
-    return 1
-  fi
-  if "${script}"; then
-    info "release notes updated"
-    return 0
-  else
-    err "update release notes failed"
-    return 1
-  fi
-}
+publish_image_fe() { publish_image_component "fe"; }
+publish_image_be() { publish_image_component "be"; }
+publish_image_db() { publish_image_component "db"; }
 
 # Create Git tag
 create_git_tag() {
@@ -1322,15 +1262,18 @@ create_git_tag() {
 show_menu() {
   echo ""
   echo "+--------------------------------------------------------------+"
-  echo "|           evi release manager, main menu                      |"
+  echo "|           evi release manager, main menu                     |"
   echo "+--------------------------------------------------------------+"
   echo ""
   echo "  1) set version and prepare deploy files"
-  echo "  2) build multi-arch container images from source code"
-  echo "  3) push images to GHCR"
-  echo "  4) update release notes"
-  echo "  5) create git version tag"
-  echo "  6) exit"
+  echo "  2) build evi-fe image"
+  echo "  3) build evi-be image"
+  echo "  4) build evi-db image"
+  echo "  5) push evi-fe to GHCR"
+  echo "  6) push evi-be to GHCR"
+  echo "  7) push evi-db to GHCR"
+  echo "  8) create git version tag"
+  echo "  0) exit"
   echo ""
 }
 
@@ -1345,26 +1288,41 @@ main_menu() {
         read -r -p "press enter to continue..."
         ;;
       2)
-        build_images
+        build_image_fe
         echo ""
         read -r -p "press enter to continue..."
         ;;
       3)
-        publish_images
+        build_image_be
         echo ""
         read -r -p "press enter to continue..."
         ;;
       4)
-        update_release_notes
+        build_image_db
         echo ""
         read -r -p "press enter to continue..."
         ;;
       5)
-        create_git_tag
+        publish_image_fe
         echo ""
         read -r -p "press enter to continue..."
         ;;
       6)
+        publish_image_be
+        echo ""
+        read -r -p "press enter to continue..."
+        ;;
+      7)
+        publish_image_db
+        echo ""
+        read -r -p "press enter to continue..."
+        ;;
+      8)
+        create_git_tag
+        echo ""
+        read -r -p "press enter to continue..."
+        ;;
+      0)
         log "bye!"
         exit 0
         ;;
@@ -1387,16 +1345,23 @@ usage:
 commands:
   menu            show interactive menu (default)
   prepare         set version and prepare deploy files (sync + copy db to deploy)
-  build           build container images from source
-  publish         publish images to GHCR
-  release_notes   update dev-ops/release/RELEASE_NOTES.md
+  build-fe        build evi-fe container image only
+  build-be        build evi-be container image only
+  build-db        build evi-db container image only
+  push-fe         push evi-fe to GHCR
+  push-be         push evi-be to GHCR
+  push-db         push evi-db to GHCR
   tag             create git tag for current version
   help            show this help message
 
 examples:
   ./release.sh              # show interactive menu
-  ./release.sh prepare       # set version and prepare deploy files
-  ./release.sh build         # build images only
+  ./release.sh prepare      # set version and prepare deploy files
+  ./release.sh build-fe      # build frontend image only
+  ./release.sh push-fe       # push frontend image to GHCR
+
+For full cleanup of unused images (including base images pulled during build), run manually:
+  podman image prune -a -f
 
 EOF
 }
@@ -1419,14 +1384,23 @@ main() {
     prepare)
       do_set_version_and_prepare_deploy
       ;;
-    build)
-      build_images
+    build-fe)
+      build_image_fe
       ;;
-    publish)
-      publish_images
+    build-be)
+      build_image_be
       ;;
-    release_notes)
-      update_release_notes
+    build-db)
+      build_image_db
+      ;;
+    push-fe)
+      publish_image_fe
+      ;;
+    push-be)
+      publish_image_be
+      ;;
+    push-db)
+      publish_image_db
       ;;
     tag)
       create_git_tag
