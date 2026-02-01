@@ -17,6 +17,7 @@
     "@vueuse/core": "^13.9.0",
     "axios": "^1.11.0",
     "core-js": "^3.45.1",
+    "exceljs": "^4.4.0",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
     "pinia": "^3.0.3",

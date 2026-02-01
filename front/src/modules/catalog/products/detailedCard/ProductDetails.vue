@@ -1,5 +1,5 @@
 <!--
-version: 1.17.0
+version: 1.18.0
 Frontend file for product details view component.
 Displays extended info as an opened product card format.
 File: ProductDetails.vue
@@ -96,6 +96,11 @@ Changes in v1.17.0:
 - Tech specs section button and content shown/hidden based on is_visible_tech_specs flag
 - Updated hasTechSpecs computed property to check is_visible_tech_specs flag
 - Pass is_visible_owner and is_visible_groups props to ProductContacts component
+
+Changes in v1.18.0:
+- Added CREATE ESTIMATION button functionality
+- Button now exports product data to Excel file using ExcelJS library
+- Excel contains: Product Name, Unit Price, VAT amount, Quantity, Total Cost
 -->
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
@@ -118,6 +123,7 @@ import {
   fetchProductVatByProductUuid, 
   fetchProductsVatByProductUuids 
 } from '@/core/helpers/fetch.product.vat.by.product.uuid'
+import { exportEstimationToExcel } from '@/core/helpers/helper.export.estimation'
 
 // Props (MVP): accept productId from parent context/navigation state
 interface Props { 
@@ -256,6 +262,17 @@ function handleOptionsSumChanged(sum: number) {
   // Reload VAT rates when options sum changes (units might have changed)
   // This ensures VAT rates are loaded for options with units_count > 0
   loadVatRatesForOptions()
+}
+
+// Handler for CREATE ESTIMATION button - exports product data to Excel
+async function handleCreateEstimation() {
+  await exportEstimationToExcel({
+    productName: details.value?.name ?? '',
+    unitPrice: productPrice.value?.price ?? 0,
+    vatAmount: vatForMainProduct.value,
+    quantity: mainProductUnitsCount.value,
+    totalCost: productsSum.value
+  })
 }
 
 async function loadDetails() {
@@ -752,7 +769,7 @@ watch(() => options.value, () => {
               </template>
               {{ t('catalog.productDetails.clearOptions') }}
             </v-btn>
-            <v-btn block variant="outlined" color="teal" :prepend-icon="undefined">
+            <v-btn block variant="outlined" color="teal" :prepend-icon="undefined" @click="handleCreateEstimation">
               <template #prepend>
                 <PhMicrosoftExcelLogo :size="20" color="teal" />
               </template>
