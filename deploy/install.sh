@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.8.0
+# Version: 1.8.1
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
@@ -8,9 +8,11 @@
 # - Subsequent runs: do not overwrite evi.env/evi.secrets.env; menu: deploy again, reconfigure (edit existing files), run evictl, exit.
 # - No podman build; no Manage submenu (use ./evictl directly for status, logs, restart, update).
 #
+# Changes in v1.8.1:
+# - Restored Step 4 (demo data question) in guided setup
+#
 # Changes in v1.8.0:
 # - Menu numbering: exit/back options moved to position 0 in all menus for consistency
-# - Guided setup: removed demo data question (Step 4); EVI_SEED_DEMO_DATA remains from template (false)
 # - Guided setup: changed confirmation prompt to "save and apply this configuration?"
 #
 # Changes in v1.7.2:
@@ -880,6 +882,29 @@ guided_setup() {
     info "passwords will be auto-generated."
   fi
   
+  # Step 4: Demo data
+  echo ""
+  echo "step 4: deploy demo data?"
+  echo ""
+  echo "  1) yes, deploy demo data"
+  echo "  2) no demo data, just clean install"
+  echo ""
+  
+  local demo_data_choice=""
+  while [[ -z "${demo_data_choice}" ]]; do
+    read -r -p "select [1-2]: " demo_data_choice
+    case "${demo_data_choice}" in
+      1) demo_data_choice="yes" ;;
+      2) demo_data_choice="no" ;;
+      *) demo_data_choice=""; warn "please select 1 or 2" ;;
+    esac
+  done
+  
+  local seed_demo_data="false"
+  if [[ "${demo_data_choice}" == "yes" ]]; then
+    seed_demo_data="true"
+  fi
+  
   # Summary
   echo ""
   log "=== configuration summary ==="
@@ -896,6 +921,7 @@ guided_setup() {
     printf "  certificates:  let's encrypt (automatic)\n"
   fi
   printf "  db passwords:  %s\n" "${pass_choice}"
+  printf "  demo data:     %s\n" "${demo_data_choice}"
   echo ""
   
   if ! confirm "save and apply this configuration?"; then
@@ -922,6 +948,13 @@ guided_setup() {
   sed -i "s|^EVI_POSTGRES_PASSWORD=.*|EVI_POSTGRES_PASSWORD=${pg_password}|" "${TARGET_SECRETS}"
   sed -i "s|^EVI_APP_DB_PASSWORD=.*|EVI_APP_DB_PASSWORD=${app_password}|" "${TARGET_SECRETS}"
   sed -i "s|^EVI_ADMIN_DB_PASSWORD=.*|EVI_ADMIN_DB_PASSWORD=${admin_password}|" "${TARGET_SECRETS}"
+  
+  # Update EVI_SEED_DEMO_DATA
+  if grep -q "^EVI_SEED_DEMO_DATA=" "${TARGET_ENV}"; then
+    sed -i "s|^EVI_SEED_DEMO_DATA=.*|EVI_SEED_DEMO_DATA=${seed_demo_data}|" "${TARGET_ENV}"
+  else
+    echo "EVI_SEED_DEMO_DATA=${seed_demo_data}" >> "${TARGET_ENV}"
+  fi
   
   info "configuration saved to evi.env and evi.secrets.env"
   

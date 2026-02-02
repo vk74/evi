@@ -1,5 +1,5 @@
 <!--
-version: 1.7.1
+version: 1.10.0
 Frontend file for catalog module.
 Catalog interface with sections, filters, and service/product cards.
 File: ModuleCatalog.vue
@@ -54,6 +54,12 @@ Changes in v1.9.0:
 - Location must be determined before loading any cards (products, services, sections)
 - Added region parameter to fetchActiveProducts call
 - Added placeholder comment in loadActiveServices for future region filtering
+
+Changes in v1.10.0:
+- Extracted loadCatalogWhenLocationReady() for full catalog load (sections, services, products, prices)
+- onMounted uses loadCatalogWhenLocationReady() when userLocation exists
+- Watch on getUserLocation: when location is set and sections.length === 0 run full load; when sections already loaded run only loadActiveProducts (products and prices)
+- Modal shown until location appears; no reload when user closes modal without saving
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
@@ -243,6 +249,17 @@ async function refreshCatalogSections() {
   await loadCatalogSections();
 }
 
+/**
+ * Full catalog load when user location is set.
+ * Used on mount (when location exists) and on any location change (first set or region switch).
+ * Reloads sections, services, products, and prices.
+ */
+async function loadCatalogWhenLocationReady() {
+  await loadCatalogSections();
+  await loadActiveServices();
+  await loadActiveProducts();
+}
+
 async function loadActiveServices() {
   try {
     // TODO: Region filtering for services will be added later
@@ -406,15 +423,13 @@ watch(filteredProducts, () => {
   }
 }, { deep: true });
 
-// Watch for user location changes
+// Watch for user location changes: full load when sections not yet loaded, else only products and prices
 watch(() => appStore.getUserLocation, async (newLocation) => {
-  // Reload products when location changes (they need to be filtered by new region)
-  if (newLocation && selectedSectionId.value) {
+  if (!newLocation) return;
+  if (sections.value.length === 0) {
+    await loadCatalogWhenLocationReady();
+  } else {
     await loadActiveProducts();
-  }
-  // Reload prices when location changes
-  if (filteredProducts.value.length > 0) {
-    loadProductPrices();
   }
 });
 
@@ -492,14 +507,8 @@ onMounted(async () => {
     return;
   }
   
-  // Step 2: Load sections after location is determined
-  await loadCatalogSections();
-  
-  // Step 3: Load services (placeholder - all services for now, region filtering will be added later)
-  await loadActiveServices();
-  
-  // Step 4: Load products filtered by user region
-  await loadActiveProducts();
+  // Step 2: Load catalog (sections, services, products, prices) when location is set
+  await loadCatalogWhenLocationReady();
   
   // Load Phosphor icons (non-blocking for data correctness)
   loadPhosphorIcons();
