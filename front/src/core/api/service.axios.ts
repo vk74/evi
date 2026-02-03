@@ -1,10 +1,14 @@
 /**
  * @file service.axios.ts
- * Version: 1.1.0
+ * Version: 1.2.0
  * Service for handling HTTP requests with axios and automatic token refresh.
  * Frontend file that creates configured axios instance with request/response interceptors,
  * manages authentication headers, handles network errors, and implements reactive token refresh
  * on 401 errors to maintain seamless user experience.
+ *
+ * Changes in v1.2.0:
+ * - Request interceptor now checks userStore.isAuthenticated (instead of just jwt) before attaching token
+ * - Prevents "zombie sessions" where backend accepts requests from users who are technically logged out
  */
 
 import axios, { AxiosInstance, AxiosError, AxiosRequestConfig } from 'axios';
@@ -52,7 +56,9 @@ const createAxiosInstance = (): AxiosInstance => {
   instance.interceptors.request.use((config) => {
     const userStore = useUserAuthStore();
     
-    if (userStore.jwt) {
+    // Only send token if user is officially authenticated (loggedIn + jwt)
+    // This prevents sending tokens when app considers user logged out
+    if (userStore.isAuthenticated) {
       config.headers.Authorization = `Bearer ${userStore.jwt}`;
       console.log('Request prepared:', config.url);
     }
@@ -81,6 +87,14 @@ const createAxiosInstance = (): AxiosInstance => {
 
     // Handle 401 Unauthorized with automatic token refresh
     if (error.response.status === 401 && !originalRequest._retry) {
+      const userStore = useUserAuthStore();
+      
+      // Security check: Don't attempt refresh if user is not officially logged in
+      // This prevents "zombie sessions" from auto-refreshing when the app thinks user is logged out
+      if (!userStore.isAuthenticated) {
+        return Promise.reject(error);
+      }
+
       if (isRefreshing) {
         // If refresh is already in progress, queue this request
         return new Promise((resolve, reject) => {
@@ -88,7 +102,7 @@ const createAxiosInstance = (): AxiosInstance => {
         }).then(() => {
           // Retry the original request with new token
           const userStore = useUserAuthStore();
-          if (userStore.jwt) {
+          if (userStore.isAuthenticated) {
             originalRequest.headers!.Authorization = `Bearer ${userStore.jwt}`;
           }
           return instance(originalRequest);
@@ -110,7 +124,7 @@ const createAxiosInstance = (): AxiosInstance => {
           
           // Retry the original request with new token
           const userStore = useUserAuthStore();
-          if (userStore.jwt) {
+          if (userStore.isAuthenticated) {
             originalRequest.headers!.Authorization = `Bearer ${userStore.jwt}`;
           }
           return instance(originalRequest);
