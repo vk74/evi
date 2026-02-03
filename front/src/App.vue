@@ -1,6 +1,6 @@
 <!--
 App.vue 
-Version: 1.3.7
+Version: 1.3.8
 Root component of the application that defines the main interface structure.
 Contains:
 - App Bar with primary controls (language switching, account management)
@@ -25,6 +25,9 @@ Changes in v1.3.5:
 
 Changes in v1.3.7:
 - Admin module visibility now requires isLoggedIn && canAny(...) so unauthenticated users never see Admin menu
+
+Changes in v1.3.8:
+- Added v-if="isLoggedIn" to location selection menu item so it is only visible to logged-in users
 
 Changes in v1.3.6:
 - Added permission checks for Admin module visibility using canAny
@@ -1138,7 +1141,7 @@ onMounted(async () => {
           </div>
           
           <!-- Location selection - using click trigger -->
-          <div class="menu-wrapper">
+          <div class="menu-wrapper" v-if="isLoggedIn">
             <v-list-item
               v-tooltip="{
                 text: $t('navigation.tooltips.location'),
