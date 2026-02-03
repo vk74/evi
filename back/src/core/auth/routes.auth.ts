@@ -38,10 +38,6 @@ router.post('/api/auth/refresh', checkRateLimit, checkRequestSecurityHard, refre
 router.post('/api/auth/logout', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, logoutController);
 
 // Existing routes (updated imports)
-router.post('/api/auth/change-password', checkRateLimit, checkRequestSecurityHard, (req, res) => {
-    // TODO: Replace with serviceChangePassword when created
-    res.status(501).json({ error: 'Change password service not implemented yet' });
-});
 router.get('/api/auth/profile', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, fetchUserProfileController);
 router.post('/api/auth/profile', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, updateUserProfileController);
 router.get('/api/auth/permissions', checkRateLimit, checkRequestSecurityHard, validateJWT, checkIsUserStatusActive, getPermissionsController);

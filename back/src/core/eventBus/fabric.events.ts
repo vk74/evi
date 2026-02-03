@@ -1,6 +1,6 @@
 /**
  * fabric.events.ts - backend file
- * version: 1.1.0
+ * version: 1.1.2
  * 
  * Event Factory for creating standardized event instances
  * that conform to BaseEvent interface.
@@ -14,6 +14,8 @@
  * for each step of event creation and enrichment.
  * 
  * Updated: Uses local timezone from application settings for timestamp generation
+ * Changes in v1.1.2:
+ * - Added /api/auth/refresh to PUBLIC_ROUTES to prevent unnecessary warnings
  */
 
 import { v4 as uuidv4 } from 'uuid';
@@ -33,7 +35,10 @@ const PUBLIC_ROUTES = [
   '/api/auth/login',
   '/api/public/password-policies',
   '/api/public/registration-status',
-  '/api/admin/users/register'
+  '/api/admin/users/register',
+  '/api/public/validation-rules',
+  '/api/public/settings',
+  '/api/auth/refresh'
 ];
 
 /**
