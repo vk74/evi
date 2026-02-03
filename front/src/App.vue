@@ -1,6 +1,6 @@
 <!--
 App.vue 
-Version: 1.3.6
+Version: 1.3.7
 Root component of the application that defines the main interface structure.
 Contains:
 - App Bar with primary controls (language switching, account management)
@@ -22,6 +22,9 @@ Changes in v1.3.4:
 Changes in v1.3.5:
 - Added ModuleAbout component for landing page
 - Added 'About' module to navigation menu
+
+Changes in v1.3.7:
+- Admin module visibility now requires isLoggedIn && canAny(...) so unauthenticated users never see Admin menu
 
 Changes in v1.3.6:
 - Added permission checks for Admin module visibility using canAny
@@ -810,7 +813,7 @@ onMounted(async () => {
         
         <!-- Enhanced Admin accordion section -->
         <div
-          v-if="canAny(['adminProducts:module:access', 'adminPricing:module:access', 'adminCatalog:module:access', 'adminServices:module:access', 'adminOrg:module:access', 'system:settings:access'])"
+          v-if="isLoggedIn && canAny(['adminProducts:module:access', 'adminPricing:module:access', 'adminCatalog:module:access', 'adminServices:module:access', 'adminOrg:module:access', 'system:settings:access'])"
           class="admin-accordion-container"
         >
           <!-- Admin header with toggle -->

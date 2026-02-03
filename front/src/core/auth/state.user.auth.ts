@@ -1,10 +1,13 @@
 /**
  * @file state.user.auth.ts
- * Version: 1.4.0
+ * Version: 1.4.1
  * TypeScript state management for user authentication.
  * Frontend file that manages user authentication state with persistence and integration with auth services.
  * Updated to support device fingerprinting and new database structure.
- * 
+ *
+ * Changes in v1.4.1:
+ * - loadPersistedState: clear permissions when user is not logged in (no jwt) to prevent Admin module visibility for unauthenticated users
+ *
  * Changes in v1.4.0:
  * - Removed language normalization function - now uses full language names directly throughout the application
  * - Language fallback now retrieved from Application.RegionalSettings.fallback.language setting
@@ -124,8 +127,10 @@ function loadPersistedState(): UserState {
       const parsed = JSON.parse(persistedState)
       console.log('[User Auth State] Loaded persisted state')
       
-      // Convert permissions array back to Set
-      if (parsed.permissions && Array.isArray(parsed.permissions)) {
+      // Convert permissions array back to Set; clear if user is not logged in (prevents stale permissions for unauthenticated users)
+      if (parsed.loggedIn !== true || !parsed.jwt) {
+        parsed.permissions = new Set()
+      } else if (parsed.permissions && Array.isArray(parsed.permissions)) {
         parsed.permissions = new Set(parsed.permissions)
       } else {
         parsed.permissions = new Set()

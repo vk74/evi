@@ -1,8 +1,13 @@
 /**
  * @file service.update.settings.ts
- * Version: 1.0.0
+ * Version: 1.1.0
  * Service for updating application settings.
  * Frontend file that communicates with backend API to update settings and shows feedback via snackbars.
+ * 
+ * Changes in v1.1.0:
+ * - Added optimistic UI update rollback mechanism
+ * - updateSetting now accepts optional originalValue to restore if API call fails
+ * - updateSettingFromComponent captures original value before optimistic update
  */
 
 import { api } from '@/core/api/service.axios';
@@ -17,12 +22,14 @@ import { useDebounceFn } from '@vueuse/core';
  * @param sectionPath - The section path of the setting to update
  * @param settingName - The name of the setting to update
  * @param value - The new value for the setting
+ * @param originalValue - The original value to restore if update fails (optional)
  * @returns Promise resolving to the updated setting or null if update failed
  */
 export async function updateSetting(
   sectionPath: string, 
   settingName: string, 
-  value: any
+  value: any,
+  originalValue?: any
 ): Promise<AppSetting | null> {
   console.log('🔥 updateSetting called:', { sectionPath, settingName, value });
   const store = useAppSettingsStore();
@@ -60,6 +67,12 @@ export async function updateSetting(
       const errorMessage = response.data.error || 'Unknown error';
       console.error(`Failed to update setting ${sectionPath}.${settingName}:`, errorMessage);
       
+      // Rollback optimistic update if original value provided
+      if (originalValue !== undefined) {
+        console.warn(`Restoring original value for ${sectionPath}.${settingName}`);
+        store.rollbackSetting(sectionPath, settingName, originalValue);
+      }
+      
       // Show error message
       uiStore.showErrorSnackbar(`Error updating setting: ${errorMessage}`);
       
@@ -69,6 +82,12 @@ export async function updateSetting(
     // Handle exception
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error(`Exception updating setting ${sectionPath}.${settingName}:`, error);
+    
+    // Rollback optimistic update if original value provided
+    if (originalValue !== undefined) {
+      console.warn(`Restoring original value for ${sectionPath}.${settingName}`);
+      store.rollbackSetting(sectionPath, settingName, originalValue);
+    }
     
     // Show error message
     uiStore.showErrorSnackbar(`Error updating setting: ${errorMessage}`);
@@ -99,13 +118,25 @@ export function updateSettingFromComponent(
   console.log('🚀 updateSettingFromComponent called:', { sectionPath, settingName, value });
   const store = useAppSettingsStore();
   
+  // Capture original value for rollback BEFORE updating store
+  let originalValue = undefined;
+  const cachedSettings = store.getCachedSettings(sectionPath);
+  if (cachedSettings) {
+    const setting = cachedSettings.find(s => s.setting_name === settingName);
+    if (setting) {
+      // Clone value if object/array to avoid reference issues, otherwise primitive is fine
+      // For simple settings primitive copy is enough
+      originalValue = setting.value;
+    }
+  }
+
   // Update local store immediately for responsive UI
   console.log('💾 Updating local store...');
   store.setSetting(sectionPath, settingName, value);
   
   // Debounce the actual API update
   console.log('⏰ Scheduling debounced API update...');
-  debouncedUpdateSetting(sectionPath, settingName, value);
+  debouncedUpdateSetting(sectionPath, settingName, value, originalValue);
 }
 
 /**
