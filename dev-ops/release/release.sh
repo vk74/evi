@@ -1041,8 +1041,8 @@ do_set_version_and_prepare_deploy() {
     err "version sync failed (exit ${sync_ret})"
   fi
 
-  run_prepare_deploy
-  prepare_ret=$?
+  prepare_ret=0
+  run_prepare_deploy || prepare_ret=$?
   if [[ ${prepare_ret} -eq 0 ]]; then
     info "prepare deploy: done"
   elif [[ ${prepare_ret} -eq 2 ]]; then
@@ -1059,7 +1059,7 @@ do_set_version_and_prepare_deploy() {
     return 0
   elif [[ ${sync_ret} -eq 0 ]] && [[ ${prepare_ret} -eq 2 ]]; then
     info "version sync: success"
-    warn "prepare deploy: completed with warnings (some source files differ from deploy; not copied)"
+    warn "prepare deploy: completed with warnings — some files in deploy/db/ were not updated because their content differs from source (see list above). To use the source version for those files: remove them under deploy/db/ and run option 1 again."
     return 0
   else
     [[ ${sync_ret} -ne 0 ]] && err "version sync: failed"
@@ -1496,6 +1496,7 @@ main() {
       ;;
     prepare)
       do_set_version_and_prepare_deploy
+      main_menu
       ;;
     build-fe)
       build_image_fe

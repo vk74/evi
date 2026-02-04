@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 #
-# version: 1.1.0
+# version: 1.2.0
 # purpose: copy new db migrations and demo-data from db/ to deploy/; never overwrite existing files in deploy.
 # file: prepare-deploy.sh (dev-ops/release/scripts)
 # logic: for each file in db/migrations and db/demo-data: if not in deploy -> copy; if in deploy and same content -> skip;
-#        if in deploy and different content -> do not copy, warn (red); summary with copied/unchanged/differ. exit 2 when any differ.
+#        if in deploy and different content -> do not copy, warn with clear action hint; summary lists copied, unchanged, not updated.
 #
+# changes in v1.2.0:
+# - Clear messages: for each file not updated (content differs) explain that deploy was left as-is and how to apply source (remove file, run prepare again).
+# - Summary lists copied files, unchanged count, and not-updated files with one-line action hint. Exit 2 when any differ.
 # changes in v1.1.0:
 # - priority to deploy: do not overwrite existing files; compare by content (cmp); red warning when source differs; copy only new files.
-# - summary: X copied, Y unchanged, Z differ (not copied); exit 2 when Z > 0 so release.sh can show red reminder.
 # changes in v1.0.0:
 # - initial: copy db/migrations and db/demo-data to deploy/db/
 
@@ -43,6 +45,9 @@ mkdir -p "${DST_DEMO_DATA}"
 copied=0
 skipped_unchanged=0
 skipped_differ=0
+# Paths relative to PROJECT_ROOT for output (deploy/db/...)
+copied_files=()
+differ_files=()
 
 process_dir() {
   local src_dir="$1"
@@ -55,13 +60,15 @@ process_dir() {
     if [[ ! -f "${dst}" ]]; then
       mkdir -p "$(dirname "${dst}")"
       cp -f "$f" "${dst}"
-      info "  ${label}/${rel} (copied)"
+      copied_files+=("${label}/${rel}")
+      info "  ${label}/${rel} — copied (new file in deploy)"
       copied=$((copied + 1))
     else
       if cmp -s "$f" "${dst}"; then
         skipped_unchanged=$((skipped_unchanged + 1))
       else
-        warn_diff "  ${label}/${rel}: source differs from deploy; not copied (may affect upgrade consistency)"
+        differ_files+=("${label}/${rel}")
+        warn_diff "  ${label}/${rel} — content in deploy differs from source; deploy file was NOT updated (to avoid overwriting). To use source version: remove ${label}/${rel} and run option 1 again."
         skipped_differ=$((skipped_differ + 1))
       fi
     fi
@@ -71,9 +78,25 @@ process_dir() {
 process_dir "${SRC_MIGRATIONS}" "${DST_MIGRATIONS}" "deploy/db/migrations"
 process_dir "${SRC_DEMO_DATA}" "${DST_DEMO_DATA}" "deploy/db/demo-data"
 
-info "prepare deploy: ${copied} copied, ${skipped_unchanged} unchanged, ${skipped_differ} differ (not copied)"
+# Summary block
+echo ""
+info "--- Prepare deploy summary ---"
+if [[ ${copied} -gt 0 ]]; then
+  info "Copied to deploy (new files): ${copied}"
+  for item in "${copied_files[@]}"; do
+    info "  • ${item}"
+  done
+fi
+if [[ ${skipped_unchanged} -gt 0 ]]; then
+  info "Unchanged (already identical in deploy): ${skipped_unchanged} file(s)"
+fi
 if [[ ${skipped_differ} -gt 0 ]]; then
-  warn_diff "source has different content than deploy for ${skipped_differ} file(s); deploy was not updated for those files"
+  warn_diff "Not updated (deploy left as-is, content differs from source): ${skipped_differ} file(s)"
+  for item in "${differ_files[@]}"; do
+    warn_diff "  • ${item}"
+  done
+  warn_diff "To use the source version for the above: remove the file(s) under deploy/db/ and run option 1 (set versions and prepare deploy) again."
   exit 2
 fi
+info "All deploy/db files are in sync with source."
 exit 0
