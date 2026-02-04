@@ -1,5 +1,5 @@
 <!--
-version: 1.10.0
+version: 1.11.0
 Frontend file for catalog module.
 Catalog interface with sections, filters, and service/product cards.
 File: ModuleCatalog.vue
@@ -60,6 +60,10 @@ Changes in v1.10.0:
 - onMounted uses loadCatalogWhenLocationReady() when userLocation exists
 - Watch on getUserLocation: when location is set and sections.length === 0 run full load; when sections already loaded run only loadActiveProducts (products and prices)
 - Modal shown until location appears; no reload when user closes modal without saving
+
+Changes in v1.11.0:
+- Clear price cache on user location change so currency and price format update from new region pricelist
+- Watch on getUserLocation now calls clearPriceCache() before reloading products and prices
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
@@ -93,7 +97,8 @@ import {
   resetCatalogView,
   getCachedPrice,
   cachePrice,
-  isPriceCacheValid
+  isPriceCacheValid,
+  clearPriceCache
 } from './state.catalog';
 import { fetchPricesByCodes } from './service.catalog.fetch.prices.by.codes';
 import { getPricelistByRegion } from './service.catalog.get.pricelist.by.region';
@@ -426,6 +431,7 @@ watch(filteredProducts, () => {
 // Watch for user location changes: full load when sections not yet loaded, else only products and prices
 watch(() => appStore.getUserLocation, async (newLocation) => {
   if (!newLocation) return;
+  clearPriceCache();
   if (sections.value.length === 0) {
     await loadCatalogWhenLocationReady();
   } else {
