@@ -101,6 +101,9 @@ Changes in v1.18.0:
 - Added CREATE ESTIMATION button functionality
 - Button now exports product data to Excel file using ExcelJS library
 - Excel contains: Product Name, Unit Price, VAT amount, Quantity, Total Cost
+
+Changes in v1.19.0:
+- Estimation export: main product + options (qty > 0); column A empty, data in B–I; catalog number = product_code; description = short_description; formulas for VAT and costs
 -->
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
@@ -264,14 +267,20 @@ function handleOptionsSumChanged(sum: number) {
   loadVatRatesForOptions()
 }
 
-// Handler for CREATE ESTIMATION button - exports product data to Excel
+// Handler for CREATE ESTIMATION button - exports main product + options (qty > 0) to Excel with formulas
 async function handleCreateEstimation() {
-  await exportEstimationToExcel({
-    productName: details.value?.name ?? '',
-    unitPrice: productPrice.value?.price ?? 0,
-    vatAmount: vatForMainProduct.value,
+  const mainRow = {
+    catalogNumber: details.value?.product_code ?? '',
+    name: details.value?.name ?? '',
     quantity: mainProductUnitsCount.value,
-    totalCost: productsSum.value
+    unitPrice: productPrice.value?.price ?? 0,
+    vatRate: vatRate.value ?? 0,
+    description: details.value?.short_description ?? ''
+  }
+  const optionRows = optionsTableRef.value?.getEstimationRows?.(vatRatesForOptions.value) ?? []
+  await exportEstimationToExcel({
+    rows: [mainRow, ...optionRows],
+    currency: productPrice.value?.currencySymbol
   })
 }
 

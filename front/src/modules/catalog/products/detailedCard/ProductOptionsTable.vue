@@ -67,6 +67,9 @@ Changes in v1.9.0:
 - Maximum nesting level: 10 levels
 - Sub-options cached using state.catalog.ts cache functions
 - Sub-options automatically removed when parent units count becomes 0
+
+Changes in v1.10.0:
+- Added getEstimationRows(vatRates) for estimation export: returns options with quantity > 0 (catalog number = product_code, name, quantity, unit price, vat rate, description empty)
 -->
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
@@ -788,7 +791,28 @@ function getOptionPrices() {
   return optionPrices.value
 }
 
-defineExpose({ clearSelections, getUnitsById, getOptionPrices })
+/** Returns estimation rows for options with quantity > 0 (catalog number = product_code). Used by parent for Excel export. */
+function getEstimationRows(vatRates: Map<string, number | null>): Array<{ catalogNumber: string; name: string; quantity: number; unitPrice: number; vatRate: number; description?: string }> {
+  const result: Array<{ catalogNumber: string; name: string; quantity: number; unitPrice: number; vatRate: number; description?: string }> = []
+  for (const opt of allOptionsWithLevel.value) {
+    const qty = unitsById.value[opt.product_id] ?? 0
+    if (qty <= 0) continue
+    const priceInfo = opt.product_code ? optionPrices.value.get(opt.product_code) : undefined
+    const unitPrice = priceInfo?.price ?? 0
+    const vatRate = vatRates.get(opt.product_id) ?? 0
+    result.push({
+      catalogNumber: opt.product_code ?? '',
+      name: formatOptionNameWithPrefix(opt),
+      quantity: qty,
+      unitPrice,
+      vatRate,
+      description: ''
+    })
+  }
+  return result
+}
+
+defineExpose({ clearSelections, getUnitsById, getOptionPrices, getEstimationRows })
 </script>
 
 <template>
