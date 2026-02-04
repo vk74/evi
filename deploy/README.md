@@ -4,13 +4,16 @@
 
 This directory holds the deploy tree of the evi repository: scripts, documentation and other files for evi installation, upgrades and admin operations. You place this content in a directory named **evi** on your server (for example, in your home directory). Release notes are in this directory (RELEASE_NOTES.md) and are used by install.sh when deploying a given version.
 
+Current contaiber versions:
+evi-db: 0.9.12
+evi-be: 0.9.13
+evi-fe: 0.9.13
 
 ## Disclaimer
 
 The software is provided "as is", without any warranties. Use at your own risk.
 
-License and list of components are available in the application menu: **About → Components**.
-
+License and list of components will be available soon in the application menu: **About → Components**.
 
 
 ## About the app and host server requirements
