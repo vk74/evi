@@ -1,14 +1,20 @@
 #!/usr/bin/env bash
 #
-# version: 1.5.1
+# version: 1.6.0
 # purpose: developer release automation script for evi application.
 # deployment file: release.sh
 # logic:
-# - Version sync: package.json (root, back, front), dev-ops/common/env/evi.template.env, db/init/02_schema.sql, deploy/env/evi.template.env.
-# - Builds multi-arch container images (linux/amd64, linux/arm64) for GHCR; publishes manifest lists; creates Git tags.
+# - Version sync: root package.json (eviDbVersion, eviFeVersion, eviBeVersion), dev-ops and deploy env templates, db/init/02_schema.sql (evi-db version only).
+# - Builds multi-arch container images (linux/amd64, linux/arm64) for GHCR; publishes manifest lists; creates Git tags per component.
 # - Step-by-step (menu) and CLI commands only; end-user deploy tree is installed into directory evi in home directory (~/evi).
 # - Independent from install.sh and evictl (developer workflow only).
 # - Deploy directory contents (db migrations, demo-data) are produced by release scripts only; do not edit deploy manually.
+#
+# Changes in v1.6.0:
+# - Multi-version support: evi-db, evi-fe, evi-be can have different versions. Root package.json holds eviDbVersion, eviFeVersion, eviBeVersion.
+# - Sync (option 1): prompts for three versions separately, shows current version per container; updates package.json and env templates; 02_schema.sql uses evi-db version only.
+# - Build/push/tag use read_component_version(component). Git tags: evi-db/vX.Y.Z, evi-fe/vX.Y.Z, evi-be/vX.Y.Z (three separate tags).
+# - Menu and help text updated for evi-db, evi-fe, evi-be.
 #
 # Changes in v1.5.0:
 # - Split build into three options: build evi-fe, build evi-be, build evi-db (menu 2-4; CLI build-fe, build-be, build-db).
@@ -251,6 +257,46 @@ read_version_from_package_json() {
   echo "${version}"
 }
 
+# Read version for a container component (db, fe, be) from root package.json (eviDbVersion, eviFeVersion, eviBeVersion).
+# Fallback: env template EVI_*_IMAGE tag, then root .version.
+read_component_version() {
+  local component="$1"
+  local field=""
+  local env_var=""
+  case "${component}" in
+    db)  field="eviDbVersion";  env_var="EVI_DB_IMAGE" ;;
+    fe)  field="eviFeVersion";  env_var="EVI_FE_IMAGE" ;;
+    be)  field="eviBeVersion";  env_var="EVI_BE_IMAGE" ;;
+    *)   err "read_component_version: invalid component ${component}"; return 1 ;;
+  esac
+  local version=""
+  if require_cmd jq 2>/dev/null; then
+    version=$(jq -r --arg f "${field}" '.[$f] // .version' "${ROOT_PACKAGE_JSON}" 2>/dev/null || echo "")
+  elif require_cmd node 2>/dev/null; then
+    version=$(node -e "
+      const p = require('${ROOT_PACKAGE_JSON}');
+      const v = p['${field}'] || p.version;
+      console.log(v || '');
+    " 2>/dev/null || echo "")
+  else
+    die "Neither jq nor node found. Install one of them to read package.json"
+  fi
+  if [[ -z "${version}" ]] || [[ "${version}" == "null" ]]; then
+    # Fallback: read from env template
+    if [[ -f "${TEMPLATE_ENV}" ]]; then
+      local line
+      line=$(grep -E "^${env_var}=" "${TEMPLATE_ENV}" 2>/dev/null || true)
+      if [[ -n "${line}" ]]; then
+        version=$(extract_version_from_image_tag "${line}")
+      fi
+    fi
+  fi
+  if [[ -z "${version}" ]]; then
+    version=$(read_version_from_package_json)
+  fi
+  echo "${version}"
+}
+
 # Validate version format: X.Y.Z (stable) or X.Y.Z-suffix (intermediate: alpha, beta, rcN)
 validate_version_format() {
   local version="$1"
@@ -431,6 +477,76 @@ update_env_template_version() {
     info "All image tags already up to date in ${file_path}: ${new_version}"
     return 0
   fi
+}
+
+# Update version for a single component's image line in evi.template.env. component: db, fe, or be.
+update_env_template_version_for_component() {
+  local file_path="$1"
+  local component="$2"
+  local new_version="$3"
+  local env_var=""
+  case "${component}" in
+    db)  env_var="EVI_DB_IMAGE" ;;
+    fe)  env_var="EVI_FE_IMAGE" ;;
+    be)  env_var="EVI_BE_IMAGE" ;;
+    *)   err "update_env_template_version_for_component: invalid component ${component}"; return 1 ;;
+  esac
+  if [[ ! -f "${file_path}" ]]; then
+    err "File not found: ${file_path}"
+    return 1
+  fi
+  local temp_file
+  temp_file=$(mktemp)
+  local changes=0
+  while IFS= read -r line || [[ -n "${line}" ]]; do
+    if [[ "${line}" =~ ^${env_var}= ]]; then
+      local old_version
+      old_version=$(extract_version_from_image_tag "${line}")
+      if [[ -n "${old_version}" ]] && [[ "${old_version}" != "${new_version}" ]]; then
+        line=$(echo "${line}" | sed "s/:${old_version}/:${new_version}/")
+        changes=$((changes + 1))
+        info "Updated ${env_var}: ${old_version} → ${new_version}"
+      fi
+    fi
+    echo "${line}" >> "${temp_file}"
+  done < "${file_path}"
+  if [[ ${changes} -gt 0 ]]; then
+    mv "${temp_file}" "${file_path}"
+    return 0
+  else
+    rm -f "${temp_file}"
+    return 0
+  fi
+}
+
+# Set eviDbVersion, eviFeVersion, eviBeVersion in root package.json.
+update_root_package_json_component_versions() {
+  local version_db="$1"
+  local version_fe="$2"
+  local version_be="$3"
+  if [[ ! -f "${ROOT_PACKAGE_JSON}" ]]; then
+    err "File not found: ${ROOT_PACKAGE_JSON}"
+    return 1
+  fi
+  if require_cmd jq 2>/dev/null; then
+    local temp_file
+    temp_file=$(mktemp)
+    jq ".eviDbVersion = \"${version_db}\" | .eviFeVersion = \"${version_fe}\" | .eviBeVersion = \"${version_be}\"" "${ROOT_PACKAGE_JSON}" > "${temp_file}"
+    mv "${temp_file}" "${ROOT_PACKAGE_JSON}"
+  elif require_cmd node 2>/dev/null; then
+    node -e "
+      const fs = require('fs');
+      const data = JSON.parse(fs.readFileSync('${ROOT_PACKAGE_JSON}', 'utf8'));
+      data.eviDbVersion = '${version_db}';
+      data.eviFeVersion = '${version_fe}';
+      data.eviBeVersion = '${version_be}';
+      fs.writeFileSync('${ROOT_PACKAGE_JSON}', JSON.stringify(data, null, 2) + '\n');
+    "
+  else
+    die "Neither jq nor node found"
+  fi
+  info "Updated root package.json: evi-db ${version_db}, evi-fe ${version_fe}, evi-be ${version_be}"
+  return 0
 }
 
 # Update version in db/init/02_schema.sql INSERT (version, schema_version) — single version, no v prefix
@@ -807,107 +923,98 @@ check_and_cleanup_existing_images() {
 
 # --- Main Functions ---
 
-# Synchronize version across all files
+# Synchronize versions for evi-db, evi-fe, evi-be across package.json, env templates, and 02_schema.sql.
 sync_versions() {
   log "starting version synchronization..."
   
-  # Validate prerequisites
   if ! validate_prerequisites; then
     die "Prerequisites validation failed"
   fi
-  
-  # Read current version from root package.json
-  local current_version
-  current_version=$(read_version_from_package_json)
-  
-  # Display version info and guidelines
-  echo ""
-  info "current version: ${current_version}"
+
   echo ""
   echo "Versioning Guidelines:"
-  echo "  1. Stable versions: X.Y.Z (e.g. 1.2.0, 1.3.1)"
-  echo "     - Use for production-ready releases."
-  echo "     - Must not have any suffix."
-  echo ""
-  echo "  2. Intermediate versions: X.Y.Z-suffix (e.g. 1.3.0-beta, 1.3.0-rc1)"
-  echo "     - Use for testing, development, or release candidates."
-  echo "     - Suffix can be alpha, beta, rc, etc."
-  echo ""
-  echo "  Note: Do NOT include a leading 'v' in package.json version."
-  echo "        The script will automatically add 'v' when creating Git tags (e.g. v1.2.0)."
+  echo "  - Stable: X.Y.Z (e.g. 1.2.0). Intermediate: X.Y.Z-suffix (e.g. 1.3.0-rc1)."
+  echo "  - Do NOT include a leading 'v'; Git tags will add it (e.g. evi-fe/v1.2.0)."
   echo ""
 
-  # Prompt for new version
-  local version=""
+  local current_db current_fe current_be
+  current_db=$(read_component_version "db")
+  current_fe=$(read_component_version "fe")
+  current_be=$(read_component_version "be")
+
+  local version_db version_fe version_be
+
+  # Prompt for evi-db version
   while true; do
-    read -r -p "Enter new version (or press Enter to keep ${current_version}): " version
-    if [[ -z "${version}" ]]; then
-      version="${current_version}"
+    read -r -p "Current evi-db version: ${current_db}. Enter new version (or press Enter to keep ${current_db}): " version_db
+    if [[ -z "${version_db}" ]]; then
+      version_db="${current_db}"
       break
     fi
-    
-    if validate_version_format "${version}"; then
+    if validate_version_format "${version_db}"; then
       break
-    else
-      err "Invalid version format. Please use X.Y.Z or X.Y.Z-suffix."
     fi
+    err "Invalid version format. Please use X.Y.Z or X.Y.Z-suffix."
   done
-  
-  info "target version: ${version}"
-  
-  local updates=0
-  
-  # Update root package.json first (source of truth)
-  log "Updating root package.json..."
-  if update_package_json_version "${ROOT_PACKAGE_JSON}" "${version}"; then
-    updates=$((updates + 1))
-  fi
-  
-  # Update back/package.json
-  log "Updating back/package.json..."
-  if update_package_json_version "${BACK_PACKAGE_JSON}" "${version}"; then
-    updates=$((updates + 1))
-  fi
-  
-  # Update front/package.json
-  log "Updating front/package.json..."
-  if update_package_json_version "${FRONT_PACKAGE_JSON}" "${version}"; then
-    updates=$((updates + 1))
-  fi
-  
+
+  # Prompt for evi-fe version
+  while true; do
+    read -r -p "Current evi-fe version: ${current_fe}. Enter new version (or press Enter to keep ${current_fe}): " version_fe
+    if [[ -z "${version_fe}" ]]; then
+      version_fe="${current_fe}"
+      break
+    fi
+    if validate_version_format "${version_fe}"; then
+      break
+    fi
+    err "Invalid version format. Please use X.Y.Z or X.Y.Z-suffix."
+  done
+
+  # Prompt for evi-be version
+  while true; do
+    read -r -p "Current evi-be version: ${current_be}. Enter new version (or press Enter to keep ${current_be}): " version_be
+    if [[ -z "${version_be}" ]]; then
+      version_be="${current_be}"
+      break
+    fi
+    if validate_version_format "${version_be}"; then
+      break
+    fi
+    err "Invalid version format. Please use X.Y.Z or X.Y.Z-suffix."
+  done
+
+  info "target versions: evi-db ${version_db}, evi-fe ${version_fe}, evi-be ${version_be}"
+
+  # Update root package.json (source of truth for container versions)
+  log "Updating root package.json (eviDbVersion, eviFeVersion, eviBeVersion)..."
+  update_root_package_json_component_versions "${version_db}" "${version_fe}" "${version_be}"
+
   # Update dev-ops/common/env/evi.template.env
   log "Updating dev-ops/common/env/evi.template.env..."
-  if update_env_template_version "${TEMPLATE_ENV}" "${version}"; then
-    updates=$((updates + 1))
-  fi
-  
-  # Update db/init/02_schema.sql (version and schema_version, no v prefix)
-  if [[ -f "${SCHEMA_SQL}" ]]; then
-    log "Updating db/init/02_schema.sql..."
-    if update_schema_sql_version "${SCHEMA_SQL}" "${version}"; then
-      updates=$((updates + 1))
-    fi
-  else
-    warn "Schema file not found: ${SCHEMA_SQL}, skipping"
-  fi
-  
-  # Update deploy/env/evi.template.env (install tree for end users)
+  update_env_template_version_for_component "${TEMPLATE_ENV}" "db" "${version_db}"
+  update_env_template_version_for_component "${TEMPLATE_ENV}" "fe" "${version_fe}"
+  update_env_template_version_for_component "${TEMPLATE_ENV}" "be" "${version_be}"
+
+  # Update deploy/env/evi.template.env
   if [[ -f "${PROJECT_ROOT}/deploy/env/evi.template.env" ]]; then
     log "Updating deploy/env/evi.template.env..."
-    if update_env_template_version "${PROJECT_ROOT}/deploy/env/evi.template.env" "${version}"; then
-      updates=$((updates + 1))
-    fi
+    update_env_template_version_for_component "${PROJECT_ROOT}/deploy/env/evi.template.env" "db" "${version_db}"
+    update_env_template_version_for_component "${PROJECT_ROOT}/deploy/env/evi.template.env" "fe" "${version_fe}"
+    update_env_template_version_for_component "${PROJECT_ROOT}/deploy/env/evi.template.env" "be" "${version_be}"
   else
     warn "deploy/env/evi.template.env not found, skipping"
   fi
-  
-  # Summary
-  log "version synchronization completed"
-  if [[ ${updates} -eq 0 ]]; then
-    info "all files are already synchronized with version ${version}"
+
+  # Update db/init/02_schema.sql (evi-db version only)
+  if [[ -f "${SCHEMA_SQL}" ]]; then
+    log "Updating db/init/02_schema.sql..."
+    update_schema_sql_version "${SCHEMA_SQL}" "${version_db}"
   else
-    info "updated version in ${updates} file(s)"
+    warn "Schema file not found: ${SCHEMA_SQL}, skipping"
   fi
+
+  log "version synchronization completed"
+  info "evi-db: ${version_db}, evi-fe: ${version_fe}, evi-be: ${version_be}"
 }
 
 # run prepare-deploy.sh (copy db/migrations and db/demo-data to deploy/db/)
@@ -1030,7 +1137,7 @@ build_image_fe() {
     die "Prerequisites validation failed"
   fi
   local version
-  version=$(read_version_from_package_json)
+  version=$(read_component_version "fe")
   if ! validate_version "${version}"; then
     die "Version validation failed"
   fi
@@ -1062,7 +1169,7 @@ build_image_be() {
     die "Prerequisites validation failed"
   fi
   local version
-  version=$(read_version_from_package_json)
+  version=$(read_component_version "be")
   if ! validate_version "${version}"; then
     die "Version validation failed"
   fi
@@ -1093,7 +1200,7 @@ build_image_db() {
     die "Prerequisites validation failed"
   fi
   local version
-  version=$(read_version_from_package_json)
+  version=$(read_component_version "db")
   if ! validate_version "${version}"; then
     die "Version validation failed"
   fi
@@ -1178,7 +1285,7 @@ publish_image_component() {
     die "GHCR authentication failed"
   fi
   local version
-  version=$(read_version_from_package_json)
+  version=$(read_component_version "${component}")
   if ! validate_version "${version}"; then
     die "Version validation failed"
   fi
@@ -1217,44 +1324,50 @@ publish_image_fe() { publish_image_component "fe"; }
 publish_image_be() { publish_image_component "be"; }
 publish_image_db() { publish_image_component "db"; }
 
-# Create Git tag
-create_git_tag() {
-  log "creating git tag..."
-  
-  require_cmd git
-  
-  # Read version
-  local version
-  version=$(read_version_from_package_json)
-  
-  if ! validate_version "${version}"; then
-    die "Version validation failed"
-  fi
-  
-  local tag="v${version}"
-  
-  # Check if tag already exists
+# Create one Git tag for a component (evi-db/vX.Y.Z, evi-fe/vX.Y.Z, evi-be/vX.Y.Z).
+create_one_git_tag() {
+  local component="$1"
+  local version="$2"
+  local tag="${component}/v${version}"
   if git tag -l "${tag}" | grep -q "^${tag}$"; then
     warn "Git tag ${tag} already exists"
-    if ! confirm "Do you want to recreate it?" "n"; then
-      info "Tag creation cancelled"
+    if ! confirm "Recreate tag ${tag}?" "n"; then
+      info "Skipping tag ${tag}"
       return 0
     fi
-    # Delete existing tag
     git tag -d "${tag}" 2>/dev/null || true
-    if git ls-remote --tags origin "${tag}" | grep -q "${tag}"; then
+    if git ls-remote --tags origin "${tag}" 2>/dev/null | grep -q "${tag}"; then
       warn "Tag ${tag} exists on remote. You may need to delete it manually."
     fi
   fi
-  
-  # Create tag
   if git tag "${tag}"; then
     info "Created Git tag: ${tag}"
-    log "tag information:"
     git show "${tag}" --no-patch --format="  Tag: %D%n  Commit: %H%n  Author: %an <%ae>%n  Date: %ad" 2>/dev/null || true
   else
-    die "Failed to create Git tag: ${tag}"
+    err "Failed to create Git tag: ${tag}"
+    return 1
   fi
+  return 0
+}
+
+# Create Git tags for evi-db, evi-fe, evi-be (evi-db/vX.Y.Z, evi-fe/vX.Y.Z, evi-be/vX.Y.Z).
+create_git_tag() {
+  log "creating git tags for evi-db, evi-fe, evi-be..."
+  require_cmd git
+  local version_db version_fe version_be
+  version_db=$(read_component_version "db")
+  version_fe=$(read_component_version "fe")
+  version_be=$(read_component_version "be")
+  for v in "${version_db}" "${version_fe}" "${version_be}"; do
+    if ! validate_version "${v}"; then
+      die "Invalid version in package.json (eviDbVersion, eviFeVersion, eviBeVersion)"
+    fi
+  done
+  info "Tags to create: evi-db/v${version_db}, evi-fe/v${version_fe}, evi-be/v${version_be}"
+  create_one_git_tag "evi-db" "${version_db}"
+  create_one_git_tag "evi-fe" "${version_fe}"
+  create_one_git_tag "evi-be" "${version_be}"
+  log "git tag creation completed"
 }
 
 # --- Menu Interface ---
@@ -1265,14 +1378,14 @@ show_menu() {
   echo "|           evi release manager, main menu                     |"
   echo "+--------------------------------------------------------------+"
   echo ""
-  echo "  1) set version and prepare deploy files"
+  echo "  1) set versions (evi-db, evi-fe, evi-be) and prepare deploy files"
   echo "  2) build evi-fe image"
   echo "  3) build evi-be image"
   echo "  4) build evi-db image"
   echo "  5) push evi-fe to GHCR"
   echo "  6) push evi-be to GHCR"
   echo "  7) push evi-db to GHCR"
-  echo "  8) create git version tag"
+  echo "  8) create git version tags (evi-db, evi-fe, evi-be)"
   echo "  0) exit"
   echo ""
 }
@@ -1344,19 +1457,19 @@ usage:
 
 commands:
   menu            show interactive menu (default)
-  prepare         set version and prepare deploy files (sync + copy db to deploy)
+  prepare         set versions (evi-db, evi-fe, evi-be) and prepare deploy files (sync + copy db to deploy)
   build-fe        build evi-fe container image only
   build-be        build evi-be container image only
   build-db        build evi-db container image only
   push-fe         push evi-fe to GHCR
   push-be         push evi-be to GHCR
   push-db         push evi-db to GHCR
-  tag             create git tag for current version
+  tag             create git tags for evi-db, evi-fe, evi-be (from package.json)
   help            show this help message
 
 examples:
   ./release.sh              # show interactive menu
-  ./release.sh prepare      # set version and prepare deploy files
+  ./release.sh prepare       # set versions and prepare deploy files
   ./release.sh build-fe      # build frontend image only
   ./release.sh push-fe       # push frontend image to GHCR
 

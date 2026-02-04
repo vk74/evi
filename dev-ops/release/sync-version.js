@@ -1,24 +1,26 @@
 #!/usr/bin/env node
 
 // evi Version Synchronization Script
-// Version: 1.1.0
-// Description: Centralized version synchronization script for evi application.
+// Version: 1.2.0
+// Description: Propagates container versions from root package.json to env templates (no interactive prompts).
 // Backend file: sync-version.js
-// Logic: Reads version from root package.json and synchronizes it to all target files (back/package.json, front/package.json, dev-ops/common/env/evi.template.env).
-// Validates version format (only digits and dots), checks for version decrease with user confirmation, and updates all target files.
+// Logic: Reads eviDbVersion, eviFeVersion, eviBeVersion from root package.json (fallback to .version) and updates
+// dev-ops/common/env/evi.template.env and deploy/env/evi.template.env. For full interactive sync (prompts, 02_schema), use release.sh prepare.
+//
+// Changes in v1.2.0:
+// - Multi-version: read eviDbVersion, eviFeVersion, eviBeVersion from root package.json; update each EVI_*_IMAGE line with its version.
+// - No longer updates back/package.json or front/package.json. Deploy env template added. Version format allows X.Y.Z-suffix (same as release.sh).
 //
 // Changes in v1.1.0:
 // - Paths updated for dev-ops layout: package.json and env template relative to dev-ops/release/
 
 const fs = require('fs');
 const path = require('path');
-const readline = require('readline');
 
 // --- Configuration ---
 const ROOT_PACKAGE_JSON = path.join(__dirname, '..', '..', 'package.json');
-const BACK_PACKAGE_JSON = path.join(__dirname, '..', '..', 'back', 'package.json');
-const FRONT_PACKAGE_JSON = path.join(__dirname, '..', '..', 'front', 'package.json');
 const ENV_TEMPLATE = path.join(__dirname, '..', 'common', 'env', 'evi.template.env');
+const DEPLOY_ENV_TEMPLATE = path.join(__dirname, '..', '..', 'deploy', 'env', 'evi.template.env');
 
 // ANSI colors for better output visibility
 const colors = {
@@ -45,7 +47,7 @@ function log(message, color = colors.reset, isBold = false) {
 }
 
 /**
- * Validates version format (MAJOR.MINOR.PATCH - only digits and dots).
+ * Validates version format: X.Y.Z or X.Y.Z-suffix (same as release.sh).
  * @param {string} version - Version string to validate
  * @returns {boolean} True if version is valid, false otherwise
  */
@@ -53,45 +55,7 @@ function isValidVersion(version) {
   if (!version || typeof version !== 'string') {
     return false;
   }
-  // Only digits and dots allowed
-  return /^\d+\.\d+\.\d+$/.test(version);
-}
-
-/**
- * Compares two version strings.
- * @param {string} version1 - First version
- * @param {string} version2 - Second version
- * @returns {number} -1 if version1 < version2, 0 if equal, 1 if version1 > version2
- */
-function compareVersions(version1, version2) {
-  const v1Parts = version1.split('.').map(Number);
-  const v2Parts = version2.split('.').map(Number);
-  
-  for (let i = 0; i < 3; i++) {
-    if (v1Parts[i] < v2Parts[i]) return -1;
-    if (v1Parts[i] > v2Parts[i]) return 1;
-  }
-  return 0;
-}
-
-/**
- * Prompts user for confirmation using readline.
- * @param {string} question - Question to ask
- * @returns {Promise<boolean>} True if user confirmed, false otherwise
- */
-function askConfirmation(question) {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-  });
-
-  return new Promise((resolve) => {
-    rl.question(question, (answer) => {
-      rl.close();
-      const normalized = answer.trim().toLowerCase();
-      resolve(normalized === 'y' || normalized === 'yes');
-    });
-  });
+  return /^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$/.test(version);
 }
 
 /**
@@ -164,236 +128,126 @@ function extractVersionFromImageTag(line) {
 }
 
 /**
- * Updates version in package.json file.
- * @param {string} filePath - Path to package.json
+ * Updates a single component's image version in evi.template.env. Matches EVI_DB_IMAGE, EVI_FE_IMAGE, or EVI_BE_IMAGE.
+ * @param {string[]} lines - Lines of the file (modified in place)
+ * @param {string} envVar - EVI_DB_IMAGE | EVI_FE_IMAGE | EVI_BE_IMAGE
  * @param {string} newVersion - New version to set
- * @param {string} sourceVersion - Source version from root package.json
- * @returns {Promise<{updated: boolean, oldVersion: string|null}>}
+ * @returns {Array<{oldVersion: string, newVersion: string}>} Changes made
  */
-async function updatePackageJson(filePath, newVersion, sourceVersion) {
-  if (!fs.existsSync(filePath)) {
-    log(`❌ File not found: ${filePath}`, colors.red, true);
-    throw new Error(`File not found: ${filePath}`);
-  }
-
-  const packageData = readJsonFile(filePath);
-  const oldVersion = packageData.version || null;
-
-  // Validate current version if exists
-  if (oldVersion && !isValidVersion(oldVersion)) {
-    log(`❌ Invalid version format in ${filePath}: "${oldVersion}"`, colors.red, true);
-    log(`   Version must contain only digits and dots (format: MAJOR.MINOR.PATCH)`, colors.red);
-    throw new Error(`Invalid version format: ${oldVersion}`);
-  }
-
-  // Check if version decreased
-  if (oldVersion && compareVersions(newVersion, oldVersion) < 0) {
-    log(`⚠️  Warning: Version will decrease in ${filePath}`, colors.yellow, true);
-    log(`   Current version: ${oldVersion}`, colors.yellow);
-    log(`   New version: ${newVersion}`, colors.yellow);
-    
-    const confirmed = await askConfirmation('   Continue and decrease version? (y/n): ');
-    if (!confirmed) {
-      log('   Update cancelled by user.', colors.yellow);
-      throw new Error('Update cancelled by user');
+function updateEnvTemplateLineForComponent(lines, envVar, newVersion) {
+  const changes = [];
+  const re = new RegExp(`^(${envVar})=(.+)$`);
+  for (let i = 0; i < lines.length; i++) {
+    const match = lines[i].match(re);
+    if (match) {
+      const line = lines[i];
+      const oldVersion = extractVersionFromImageTag(line);
+      if (oldVersion && oldVersion !== newVersion) {
+        lines[i] = line.replace(`:${oldVersion}`, `:${newVersion}`);
+        changes.push({ oldVersion, newVersion });
+      }
+      break;
     }
   }
-
-  // Update version
-  packageData.version = newVersion;
-  writeJsonFile(filePath, packageData);
-
-  return {
-    updated: oldVersion !== newVersion,
-    oldVersion: oldVersion
-  };
+  return changes;
 }
 
 /**
- * Updates version in image tags in evi.template.env file.
+ * Updates evi.template.env with three container versions (db, fe, be).
  * @param {string} filePath - Path to evi.template.env
- * @param {string} newVersion - New version to set
- * @returns {Promise<{updated: boolean, changes: Array<{line: string, oldVersion: string, newVersion: string}>}>}
+ * @param {string} versionDb - evi-db version
+ * @param {string} versionFe - evi-fe version
+ * @param {string} versionBe - evi-be version
+ * @returns {{ updated: boolean, changes: Array<{var: string, oldVersion: string, newVersion: string}> }}
  */
-async function updateEnvTemplate(filePath, newVersion) {
+function updateEnvTemplateWithThreeVersions(filePath, versionDb, versionFe, versionBe) {
   if (!fs.existsSync(filePath)) {
-    log(`❌ File not found: ${filePath}`, colors.red, true);
-    throw new Error(`File not found: ${filePath}`);
+    return { updated: false, changes: [] };
   }
-
   const content = readTextFile(filePath);
   const lines = content.split('\n');
-  const changes = [];
-  let hasChanges = false;
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const oldVersion = extractVersionFromImageTag(line);
-
-    if (oldVersion) {
-      // Validate current version
-      if (!isValidVersion(oldVersion)) {
-        log(`❌ Invalid version format in ${filePath} at line ${i + 1}: "${oldVersion}"`, colors.red, true);
-        log(`   Version must contain only digits and dots (format: MAJOR.MINOR.PATCH)`, colors.red);
-        throw new Error(`Invalid version format: ${oldVersion}`);
-      }
-
-      // Check if version decreased
-      if (compareVersions(newVersion, oldVersion) < 0) {
-        log(`⚠️  Warning: Version will decrease in ${filePath} at line ${i + 1}`, colors.yellow, true);
-        log(`   Current version: ${oldVersion}`, colors.yellow);
-        log(`   New version: ${newVersion}`, colors.yellow);
-        
-        const confirmed = await askConfirmation('   Continue and decrease version? (y/n): ');
-        if (!confirmed) {
-          log('   Update cancelled by user.', colors.yellow);
-          throw new Error('Update cancelled by user');
-        }
-      }
-
-      // Update version in line
-      if (oldVersion !== newVersion) {
-        lines[i] = line.replace(`:${oldVersion}`, `:${newVersion}`);
-        changes.push({
-          line: line.trim(),
-          oldVersion: oldVersion,
-          newVersion: newVersion
-        });
-        hasChanges = true;
-      }
-    }
-  }
-
-  if (hasChanges) {
+  const allChanges = [];
+  const c1 = updateEnvTemplateLineForComponent(lines, 'EVI_DB_IMAGE', versionDb);
+  c1.forEach(c => allChanges.push({ var: 'EVI_DB_IMAGE', ...c }));
+  const c2 = updateEnvTemplateLineForComponent(lines, 'EVI_FE_IMAGE', versionFe);
+  c2.forEach(c => allChanges.push({ var: 'EVI_FE_IMAGE', ...c }));
+  const c3 = updateEnvTemplateLineForComponent(lines, 'EVI_BE_IMAGE', versionBe);
+  c3.forEach(c => allChanges.push({ var: 'EVI_BE_IMAGE', ...c }));
+  if (allChanges.length > 0) {
     writeTextFile(filePath, lines.join('\n'));
   }
-
-  return {
-    updated: hasChanges,
-    changes: changes
-  };
+  return { updated: allChanges.length > 0, changes: allChanges };
 }
 
 /**
- * Main function to synchronize versions.
+ * Main: read eviDbVersion, eviFeVersion, eviBeVersion from root package.json and propagate to env templates.
  */
-async function main() {
+function main() {
   try {
-    log('\n🔄 Starting version synchronization...', colors.cyan, true);
+    log('\n🔄 Syncing container versions from package.json to env templates...', colors.cyan, true);
 
-    // Check if root package.json exists
     if (!fs.existsSync(ROOT_PACKAGE_JSON)) {
       log(`❌ Root package.json not found: ${ROOT_PACKAGE_JSON}`, colors.red, true);
       process.exit(1);
     }
 
-    // Read version from root package.json
     const rootPackage = readJsonFile(ROOT_PACKAGE_JSON);
-    const sourceVersion = rootPackage.version;
+    const fallback = rootPackage.version || '';
+    const versionDb = rootPackage.eviDbVersion || fallback;
+    const versionFe = rootPackage.eviFeVersion || fallback;
+    const versionBe = rootPackage.eviBeVersion || fallback;
 
-    if (!sourceVersion) {
-      log(`❌ Version not found in root package.json`, colors.red, true);
+    if (!versionDb || !versionFe || !versionBe) {
+      log(`❌ Root package.json must have eviDbVersion, eviFeVersion, eviBeVersion (or version as fallback).`, colors.red, true);
       process.exit(1);
     }
 
-    // Validate source version
-    if (!isValidVersion(sourceVersion)) {
-      log(`❌ Invalid version format in root package.json: "${sourceVersion}"`, colors.red, true);
-      log(`   Version must contain only digits and dots (format: MAJOR.MINOR.PATCH)`, colors.red);
-      process.exit(1);
+    for (const v of [versionDb, versionFe, versionBe]) {
+      if (!isValidVersion(v)) {
+        log(`❌ Invalid version in package.json: "${v}". Use X.Y.Z or X.Y.Z-suffix.`, colors.red, true);
+        process.exit(1);
+      }
     }
 
-    log(`📦 Source version: ${sourceVersion}`, colors.blue);
+    log(`📦 evi-db: ${versionDb}, evi-fe: ${versionFe}, evi-be: ${versionBe}`, colors.blue);
 
     const updates = [];
 
-    // Update back/package.json
-    log(`\n📝 Updating back/package.json...`, colors.cyan);
-    try {
-      const result = await updatePackageJson(BACK_PACKAGE_JSON, sourceVersion, sourceVersion);
-      if (result.updated) {
-        updates.push({
-          file: 'back/package.json',
-          oldVersion: result.oldVersion,
-          newVersion: sourceVersion
-        });
-        log(`   ✅ Updated: ${result.oldVersion || 'N/A'} → ${sourceVersion}`, colors.green);
-      } else {
-        log(`   ℹ️  Already up to date: ${sourceVersion}`, colors.blue);
-      }
-    } catch (error) {
-      if (error.message === 'Update cancelled by user') {
-        log(`\n❌ Synchronization cancelled.`, colors.red, true);
-        process.exit(1);
-      }
-      throw error;
-    }
-
-    // Update front/package.json
-    log(`\n📝 Updating front/package.json...`, colors.cyan);
-    try {
-      const result = await updatePackageJson(FRONT_PACKAGE_JSON, sourceVersion, sourceVersion);
-      if (result.updated) {
-        updates.push({
-          file: 'front/package.json',
-          oldVersion: result.oldVersion,
-          newVersion: sourceVersion
-        });
-        log(`   ✅ Updated: ${result.oldVersion || 'N/A'} → ${sourceVersion}`, colors.green);
-      } else {
-        log(`   ℹ️  Already up to date: ${sourceVersion}`, colors.blue);
-      }
-    } catch (error) {
-      if (error.message === 'Update cancelled by user') {
-        log(`\n❌ Synchronization cancelled.`, colors.red, true);
-        process.exit(1);
-      }
-      throw error;
-    }
-
-    // Update dev-ops/common/env/evi.template.env
     log(`\n📝 Updating dev-ops/common/env/evi.template.env...`, colors.cyan);
-    try {
-      const result = await updateEnvTemplate(ENV_TEMPLATE, sourceVersion);
-      if (result.updated) {
-        for (const change of result.changes) {
-          updates.push({
-            file: 'dev-ops/common/env/evi.template.env',
-            oldVersion: change.oldVersion,
-            newVersion: change.newVersion,
-            line: change.line
-          });
-          log(`   ✅ Updated: ${change.oldVersion} → ${change.newVersion}`, colors.green);
+    const result1 = updateEnvTemplateWithThreeVersions(ENV_TEMPLATE, versionDb, versionFe, versionBe);
+    if (result1.updated) {
+      for (const c of result1.changes) {
+        updates.push({ file: 'dev-ops/common/env/evi.template.env', ...c });
+        log(`   ✅ ${c.var}: ${c.oldVersion} → ${c.newVersion}`, colors.green);
+      }
+    } else {
+      log(`   ℹ️  Already up to date`, colors.blue);
+    }
+
+    if (fs.existsSync(DEPLOY_ENV_TEMPLATE)) {
+      log(`\n📝 Updating deploy/env/evi.template.env...`, colors.cyan);
+      const result2 = updateEnvTemplateWithThreeVersions(DEPLOY_ENV_TEMPLATE, versionDb, versionFe, versionBe);
+      if (result2.updated) {
+        for (const c of result2.changes) {
+          updates.push({ file: 'deploy/env/evi.template.env', ...c });
+          log(`   ✅ ${c.var}: ${c.oldVersion} → ${c.newVersion}`, colors.green);
         }
       } else {
-        log(`   ℹ️  Already up to date: ${sourceVersion}`, colors.blue);
+        log(`   ℹ️  Already up to date`, colors.blue);
       }
-    } catch (error) {
-      if (error.message === 'Update cancelled by user') {
-        log(`\n❌ Synchronization cancelled.`, colors.red, true);
-        process.exit(1);
-      }
-      throw error;
-    }
-
-    // Summary
-    log(`\n📊 Synchronization Summary:`, colors.blue, true);
-    if (updates.length === 0) {
-      log(`   All files are already synchronized with version ${sourceVersion}`, colors.green);
     } else {
-      log(`   Updated ${updates.length} file(s):`, colors.green);
-      for (const update of updates) {
-        if (update.line) {
-          log(`   - ${update.file} (${update.line}): ${update.oldVersion} → ${update.newVersion}`, colors.green);
-        } else {
-          log(`   - ${update.file}: ${update.oldVersion || 'N/A'} → ${update.newVersion}`, colors.green);
-        }
-      }
+      log(`\n📝 deploy/env/evi.template.env not found, skipping`, colors.yellow);
     }
 
-    log(`\n✅ Version synchronization completed successfully!`, colors.green, true);
-    process.exit(0);
+    log(`\n📊 Summary:`, colors.blue, true);
+    if (updates.length === 0) {
+      log(`   Env templates already match package.json.`, colors.green);
+    } else {
+      log(`   Updated ${updates.length} line(s) in env template(s).`, colors.green);
+    }
 
+    log(`\n✅ Sync completed. For full sync (02_schema, interactive prompts), use: ./release.sh prepare`, colors.green, true);
+    process.exit(0);
   } catch (error) {
     log(`\n❌ Synchronization failed: ${error.message}`, colors.red, true);
     process.exit(1);
