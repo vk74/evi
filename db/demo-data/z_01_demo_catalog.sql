@@ -1,10 +1,16 @@
--- Version: 1.0.8
+-- Version: 1.0.9
 -- Description: Seeds the database with demo catalog data, including sections and services.
 -- Backend file: z_01_demo_catalog.sql
 
 -- This script populates the product/service catalog with a set of demo entries
 -- to provide a meaningful example for new users. It includes creating catalog
 -- sections and linking services to them. The script is idempotent.
+
+-- Changes in v1.0.9:
+-- - Auto: Documents, Keys, Sedan accessories, Media upgrade, Mats, Seat covers set to active and published
+-- - Business sedan options: only Documents (required 1), Keys (required 2), Sedan accessories (optional), Media upgrade (optional); Mats and Seat covers removed
+-- - Product regions: AUTO-03/04/05/10/11 in reg-a and reg-b; AUTO-09 only in reg-a
+-- - Section "auto": publish Business sedan + Documents, Keys, Sedan accessories, Media upgrade, Mats, Seat covers, Wrench set, Jack
 
 -- Changes in v1.0.8:
 -- - User groups renamed from Cyrillic to English (sales, tech-support, medical-specialists, auto-specialists, finance, procurement)
@@ -180,16 +186,16 @@ ON CONFLICT (group_id, user_id, is_active) DO NOTHING;
 -- 8. Automotive Products
 -- ===========================================
 
--- Products (2 types: Sedan, Jeep; + documents, keys; + accessories for options in Business sedan). Only Business sedan is active and published.
+-- Products (2 types: Sedan, Jeep; + documents, keys; + accessories). Business sedan and option products (Documents, Keys, Sedan accessories, Media upgrade, Mats, Seat covers) are active and published; Jeep is draft.
 INSERT INTO app.products (product_id, product_code, translation_key, is_published, status_code, created_by) VALUES
 ('a1111111-1111-1111-1111-111111111111', 'AUTO-01-12345', 'auto.sedan.business', true, 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a2222222-2222-2222-2222-222222222222', 'AUTO-02-67890', 'auto.jeep', false, 'draft', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a3333333-3333-3333-3333-333333333333', 'AUTO-03-11111', 'auto.documents', false, 'draft', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a4444444-4444-4444-4444-444444444444', 'AUTO-04-22222', 'auto.keys', false, 'draft', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a5555555-5555-5555-5555-555555555555', 'AUTO-05-33333', 'auto.sedan.accessories', false, 'draft', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a9999999-9999-9999-9999-999999999999', 'AUTO-09-77777', 'auto.media.upgrade', false, 'draft', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'AUTO-10-88888', 'auto.mats', false, 'draft', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', 'AUTO-11-99999', 'auto.seat.covers', false, 'draft', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
+('a3333333-3333-3333-3333-333333333333', 'AUTO-03-11111', 'auto.documents', true, 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('a4444444-4444-4444-4444-444444444444', 'AUTO-04-22222', 'auto.keys', true, 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('a5555555-5555-5555-5555-555555555555', 'AUTO-05-33333', 'auto.sedan.accessories', true, 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('a9999999-9999-9999-9999-999999999999', 'AUTO-09-77777', 'auto.media.upgrade', true, 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'AUTO-10-88888', 'auto.mats', true, 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', 'AUTO-11-99999', 'auto.seat.covers', true, 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
 ON CONFLICT (product_id) DO UPDATE SET
     product_code = EXCLUDED.product_code,
     translation_key = EXCLUDED.translation_key,
@@ -246,11 +252,16 @@ BEGIN
     ('a1111111-1111-1111-1111-111111111111', reg_a_id, reg_a_std_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
     ('a1111111-1111-1111-1111-111111111111', reg_b_id, std_cat_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
     ('a2222222-2222-2222-2222-222222222222', reg_b_id, std_cat_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+    ('a3333333-3333-3333-3333-333333333333', reg_a_id, reg_a_std_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
     ('a3333333-3333-3333-3333-333333333333', reg_b_id, std_cat_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+    ('a4444444-4444-4444-4444-444444444444', reg_a_id, reg_a_std_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
     ('a4444444-4444-4444-4444-444444444444', reg_b_id, std_cat_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+    ('a5555555-5555-5555-5555-555555555555', reg_a_id, reg_a_std_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
     ('a5555555-5555-5555-5555-555555555555', reg_b_id, std_cat_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-    ('a9999999-9999-9999-9999-999999999999', reg_b_id, std_cat_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+    ('a9999999-9999-9999-9999-999999999999', reg_a_id, reg_a_std_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+    ('aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', reg_a_id, reg_a_std_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
     ('aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', reg_b_id, std_cat_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+    ('aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', reg_a_id, reg_a_std_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
     ('aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', reg_b_id, std_cat_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
     ON CONFLICT (product_id, region_id) DO UPDATE SET
         taxable_category_id = EXCLUDED.taxable_category_id;
@@ -274,10 +285,8 @@ INSERT INTO app.product_options (main_product_id, option_product_id, is_required
 ('a1111111-1111-1111-1111-111111111111', 'a3333333-3333-3333-3333-333333333333', true, 1, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a1111111-1111-1111-1111-111111111111', 'a4444444-4444-4444-4444-444444444444', true, 2, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 -- Sedan: optional
-('a1111111-1111-1111-1111-111111111111', 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a1111111-1111-1111-1111-111111111111', 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a1111111-1111-1111-1111-111111111111', 'a9999999-9999-9999-9999-999999999999', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a1111111-1111-1111-1111-111111111111', 'a5555555-5555-5555-5555-555555555555', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('a1111111-1111-1111-1111-111111111111', 'a9999999-9999-9999-9999-999999999999', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 -- Jeep: required
 ('a2222222-2222-2222-2222-222222222222', 'a3333333-3333-3333-3333-333333333333', true, 1, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a2222222-2222-2222-2222-222222222222', 'a4444444-4444-4444-4444-444444444444', true, 2, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
@@ -576,9 +585,17 @@ ON CONFLICT (id) DO UPDATE SET
 -- 13. Publish Products to Sections
 -- ===========================================
 
--- Publish only Business sedan to auto section (all other products are draft/unpublished)
+-- Publish Business sedan + Documents, Keys, Sedan accessories, Media upgrade, Mats, Seat covers, Wrench set, Jack to auto section
 INSERT INTO app.section_products (section_id, product_id, published_by) VALUES
-('a2222222-2222-2222-2222-222222222222', 'a1111111-1111-1111-1111-111111111111', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
+('a2222222-2222-2222-2222-222222222222', 'a1111111-1111-1111-1111-111111111111', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('a2222222-2222-2222-2222-222222222222', 'a3333333-3333-3333-3333-333333333333', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('a2222222-2222-2222-2222-222222222222', 'a4444444-4444-4444-4444-444444444444', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('a2222222-2222-2222-2222-222222222222', 'a5555555-5555-5555-5555-555555555555', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('a2222222-2222-2222-2222-222222222222', 'a9999999-9999-9999-9999-999999999999', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('a2222222-2222-2222-2222-222222222222', 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('a2222222-2222-2222-2222-222222222222', 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('a2222222-2222-2222-2222-222222222222', 'c5555555-5555-5555-5555-555555555555', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('a2222222-2222-2222-2222-222222222222', 'c6666666-6666-6666-6666-666666666666', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
 ON CONFLICT (section_id, product_id) DO NOTHING;
 
 -- ===========================================
