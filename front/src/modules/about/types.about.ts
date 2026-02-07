@@ -1,9 +1,19 @@
 /**
- * Version: 1.0.0
+ * Version: 1.1.0
  * Description: Type definitions for about module components
  * Purpose: Defines interfaces and types for about module functionality
  * Type: Frontend file - types.about.ts
+ *
+ * Changes in v1.1.0:
+ * - Added ComponentItem interface for components with source URL
+ * - Extended ComponentsData with hostOs, reverseProxy, adminTools sections
  */
+
+// Component item with name and source URL for ModuleComponents
+export interface ComponentItem {
+  name: string;
+  url: string;
+}
 
 // Session data interface for ModuleSessionData component
 export interface SessionData {
@@ -43,9 +53,12 @@ export interface DeveloperInfoData {
 // Components info interface for ModuleComponents component
 export interface ComponentsData {
   title: string;
-  frontend: string[];
-  backend: string[];
-  database: string[];
+  frontend: ComponentItem[];
+  backend: ComponentItem[];
+  database: ComponentItem[];
+  hostOs: ComponentItem[];
+  reverseProxy: ComponentItem[];
+  adminTools: ComponentItem[];
 }
 
 // About module state interface

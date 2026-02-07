@@ -61,7 +61,10 @@
       "title": "system components",
       "frontend": "frontend",
       "backend": "backend",
-      "database": "database"
+      "database": "database",
+      "hostOs": "host os",
+      "reverseProxy": "reverse proxy",
+      "adminTools": "admin tools"
     },
     "landing": {
       "title": "about our organization",
