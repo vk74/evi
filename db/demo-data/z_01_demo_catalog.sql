@@ -1,6 +1,10 @@
--- Version: 1.0.12
+-- Version: 1.0.13
 -- Description: Seeds the database with demo catalog data for evi (regions, products, options, price lists, catalog sections).
 -- Backend file: z_01_demo_catalog.sql
+--
+-- Changes in v1.0.13:
+-- - Fixed FK order: moved Sedan Accessories->Car tools set product_option from Section 8 to Section 10
+--   (c3333333 is created in Section 10; referencing it in Section 8 caused script to fail)
 --
 -- Changes in v1.0.12:
 -- - Added Car tools set (TOOL-01-12121): active, published in auto section, regions reg-a/reg-b, price 0
@@ -264,10 +268,9 @@ INSERT INTO app.product_options (main_product_id, option_product_id, is_required
 -- Jeep: optional
 ('a2222222-2222-2222-2222-222222222222', 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a2222222-2222-2222-2222-222222222222', 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
--- Sedan Accessories Set: optional (car mats, seat covers, car tools set)
+-- Sedan Accessories Set: optional (car mats, seat covers). Car tools set link added in Section 10 after Tools products exist.
 ('a5555555-5555-5555-5555-555555555555', 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a5555555-5555-5555-5555-555555555555', 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a5555555-5555-5555-5555-555555555555', 'c3333333-3333-3333-3333-333333333333', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
+('a5555555-5555-5555-5555-555555555555', 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
 ON CONFLICT (main_product_id, option_product_id) DO UPDATE SET
     is_required = EXCLUDED.is_required,
     units_count = EXCLUDED.units_count;
@@ -450,7 +453,9 @@ INSERT INTO app.product_options (main_product_id, option_product_id, is_required
 ('a2222222-2222-2222-2222-222222222222', 'c6666666-6666-6666-6666-666666666666', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 -- Car tools set: optional (wrench set, jack)
 ('c3333333-3333-3333-3333-333333333333', 'c5555555-5555-5555-5555-555555555555', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('c3333333-3333-3333-3333-333333333333', 'c6666666-6666-6666-6666-666666666666', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
+('c3333333-3333-3333-3333-333333333333', 'c6666666-6666-6666-6666-666666666666', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+-- Sedan Accessories Set: optional Car tools set (must be here; c3333333 created in this section)
+('a5555555-5555-5555-5555-555555555555', 'c3333333-3333-3333-3333-333333333333', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
 ON CONFLICT (main_product_id, option_product_id) DO UPDATE SET
     is_required = EXCLUDED.is_required,
     units_count = EXCLUDED.units_count;
