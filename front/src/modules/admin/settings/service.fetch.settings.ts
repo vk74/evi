@@ -1,12 +1,15 @@
 /**
  * @file service.fetch.settings.ts
- * Version: 1.1.0
+ * Version: 1.2.0
  * Service for fetching application settings from the backend.
  * Frontend file that provides unified interface for getting and caching settings with TTL.
  *
  * Functionality:
  * - Provides a unified interface for getting and caching settings
  * - Uses the Pinia store for caching with a TTL of 5 minutes
+ *
+ * Changes in v1.2.0:
+ * - Removed routine console.log (fetch/cache hits); kept errors, warnings, and key lifecycle logs
  *
  * Changes in v1.1.0:
  * - Renamed UI settings terminology to public settings across the file
@@ -40,13 +43,10 @@ export async function fetchSettings(section_path: string, forceRefresh = false, 
   const store = useAppSettingsStore();
   const uiStore = useUiStore();
   
-  console.log(`Fetching settings for section: ${section_path}${forceRefresh ? ' (forced refresh)' : ''}`);
-  
   try {
     // Check if we have valid cache and not forcing refresh
     if (!forceRefresh && store.hasValidCache(section_path)) {
       const cachedSettings = store.getCachedSettings(section_path);
-      console.log(`Using cached settings for section: ${section_path}`, cachedSettings);
       return cachedSettings || [];
     }
     
@@ -208,7 +208,6 @@ export async function fetchPublicSettings(): Promise<AppSetting[]> {
   try {
     if (!isAuthenticated) {
       // User is not authenticated - use public API
-      console.log('[Fetch Public Settings] Using public API for anonymous user');
       const { fetchPublicSettings: fetchPublicSettingsFromPublicApi } = await import('@/core/services/service.fetch.public.settings');
       const publicResponse = await fetchPublicSettingsFromPublicApi();
       
@@ -230,8 +229,6 @@ export async function fetchPublicSettings(): Promise<AppSetting[]> {
       }
     } else {
       // User is authenticated - use full settings API
-      console.log('[Fetch Public Settings] Using authenticated API for public settings');
-      
       // Prepare request parameters for all public settings
       const requestData: FetchAllSettingsRequest = {
         type: 'all',
@@ -321,7 +318,6 @@ export function getDefaultValues(
     }
   });
   
-  console.log(`Retrieved default values for ${Object.keys(defaultValues).length} settings:`, defaultValues);
   return defaultValues;
 }
 

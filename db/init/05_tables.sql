@@ -1,6 +1,9 @@
--- Version: 1.13.0
+-- Version: 1.14.0
 -- Description: Create all application tables, functions, and triggers.
 -- Backend file: 05_tables.sql
+--
+-- Changes in v1.14.0:
+-- - Added CHECK constraint chk_no_public_confidential on app.app_settings: forbid is_public=true AND confidentiality=true
 --
 -- Changes in v1.13.0 (MVP merge init+migrations):
 -- - users.location -> location_id INTEGER, FK to app.regions(region_id)
@@ -164,6 +167,20 @@ CREATE TABLE IF NOT EXISTS app.app_settings (
     is_public BOOLEAN DEFAULT FALSE,
     PRIMARY KEY (section_path, setting_name, environment)
 );
+
+-- Prevent confidential settings from being exposed as public
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conrelid = 'app.app_settings'::regclass
+      AND conname = 'chk_no_public_confidential'
+  ) THEN
+    ALTER TABLE app.app_settings
+    ADD CONSTRAINT chk_no_public_confidential
+    CHECK (NOT (is_public = true AND confidentiality = true));
+  END IF;
+END $$;
 
 -- Create catalog_sections table
 CREATE TABLE IF NOT EXISTS app.catalog_sections (

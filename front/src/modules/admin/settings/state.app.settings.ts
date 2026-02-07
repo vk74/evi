@@ -1,6 +1,6 @@
 /**
  * @file state.app.settings.ts
- * Version: 1.2.0
+ * Version: 1.3.0
  * State management for the application settings module using Pinia.
  * Frontend file that tracks selected section ID, expanded sections, and caches settings data.
  *
@@ -9,6 +9,11 @@
  * - Manages settings cache with TTL of 5 minutes
  * - Provides methods for updating, sorting, selecting, and clearing the cache
  * - Persists UI state (selectedSectionPath, expandedSections, expandedBlocks) to localStorage
+ *
+ * Changes in v1.3.0:
+ * - updateCachedSetting() syncs publicSettingsCache when updated setting is_public (fix cache coherency)
+ * - Use SETTINGS_CACHE_TTL from types.settings, removed local duplicate
+ * - Removed routine console.log; kept lifecycle/error logs; rollback log no longer prints value
  *
  * Changes in v1.2.0:
  * - Renamed UI settings cache and helpers to public settings cache and helpers
@@ -20,6 +25,7 @@ import { defineStore } from 'pinia';
 import { 
   AppSetting, 
   SettingsCacheEntry,
+  SETTINGS_CACHE_TTL,
   PUBLIC_SETTINGS_CACHE_TTL
 } from './types.settings';
 
@@ -36,9 +42,6 @@ interface AppSettingsState {
   isLoading: boolean;             // Whether settings are currently being loaded
   lastError: string | null;       // Last error encountered when loading settings
 }
-
-// Cache TTL in milliseconds (5 minutes)
-export const SETTINGS_CACHE_TTL = 5 * 60 * 1000;
 
 /**
  * App Settings Store
@@ -297,15 +300,12 @@ export const useAppSettingsStore = defineStore('appSettings', {
         timestamp: Date.now(),
         data: sectionSettings
       };
-      
-      console.log(`Cached ${sectionSettings.length} settings for section: ${section_path}`);
     },
     
     // Clear cache for a specific section
     clearSectionCache(section_path: string) {
       if (this.settingsCache[section_path]) {
         delete this.settingsCache[section_path];
-        console.log(`Cleared cache for section: ${section_path}`);
       }
     },
     
@@ -337,7 +337,6 @@ export const useAppSettingsStore = defineStore('appSettings', {
       
       // Update the setting value locally
       cacheEntry.data[settingIndex].value = value;
-      console.log(`Local cache updated for setting ${sectionPath}.${settingName}`, value);
       
       return true;
     },
@@ -363,15 +362,28 @@ export const useAppSettingsStore = defineStore('appSettings', {
       if (settingIndex === -1) {
         // Setting not found in cache, add it
         cacheEntry.data.push(updatedSetting);
-        console.log(`Added new setting to cache: ${sectionPath}.${settingName}`);
       } else {
         // Update existing setting
         cacheEntry.data[settingIndex] = updatedSetting;
-        console.log(`Updated cached setting: ${sectionPath}.${settingName}`);
       }
       
       // Refresh the timestamp to extend cache TTL
       cacheEntry.timestamp = Date.now();
+
+      // Sync with publicSettingsCache if setting is public
+      if (updatedSetting.is_public) {
+        const publicEntry = this.publicSettingsCache[sectionPath];
+        if (publicEntry) {
+          const idx = publicEntry.data.findIndex(s => s.setting_name === settingName);
+          if (idx !== -1) {
+            publicEntry.data[idx] = updatedSetting;
+          } else {
+            publicEntry.data.push(updatedSetting);
+          }
+          publicEntry.timestamp = Date.now();
+        }
+      }
+
       return true;
     },
     
@@ -385,7 +397,7 @@ export const useAppSettingsStore = defineStore('appSettings', {
      */
     rollbackSetting(sectionPath: string, settingName: string, originalValue: any): void {
       this.setSetting(sectionPath, settingName, originalValue);
-      console.log(`Rolled back setting ${sectionPath}.${settingName} to:`, originalValue);
+      console.log(`Rolled back setting ${sectionPath}.${settingName}`);
     },
 
     /**

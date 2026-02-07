@@ -1,12 +1,15 @@
 /**
  * @file types.settings.ts
- * Version: 1.1.0
+ * Version: 1.2.0
  * Type definitions for application settings.
  * Frontend file that provides centralized location for all settings interfaces, types and enums.
  *
  * Functionality:
  * - Centralized location for all settings interfaces, types and enums
  * - Ensures consistent typing across all settings components and services
+ *
+ * Changes in v1.2.0:
+ * - PUBLIC_SETTINGS_CACHE_TTL set to 5 minutes (aligned with SETTINGS_CACHE_TTL)
  *
  * Changes in v1.1.0:
  * - Renamed PublicUiSetting/PublicUiSettingsResponse to PublicSetting/PublicSettingsResponse
@@ -20,9 +23,9 @@
 export const SETTINGS_CACHE_TTL = 5 * 60 * 1000;
 
 /**
- * Public Settings Cache TTL in milliseconds (10 minutes)
+ * Public Settings Cache TTL in milliseconds (5 minutes)
  */
-export const PUBLIC_SETTINGS_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+export const PUBLIC_SETTINGS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 /**
  * Environment type enum for settings

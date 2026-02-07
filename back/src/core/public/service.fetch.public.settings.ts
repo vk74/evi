@@ -1,39 +1,22 @@
 /**
  * service.fetch.public.settings.ts - backend file
- * version: 1.5.0
+ * version: 1.6.0
  * Service for fetching public settings that are accessible without authentication.
- * 
- * Public settings include:
- * - Application.Appearance → navbar.backgroundcolor
- * - AdminProducts → card.color
- * - AdminServices → card.color
- * - AdminProducts → display.optionsOnlyProducts
- * 
- * Changes in v1.1.0:
- * - Renamed PublicUiSetting/PublicUiSettingsResponse to PublicSetting/PublicSettingsResponse
- * - Renamed fetchPublicUiSettings to fetchPublicSettings
- * - Kept endpoint focused on public settings terminology across backend
- * 
- * Changes in v1.2.0:
- * - Updated event bus integration to use PUBLIC_SETTINGS_EVENT_NAMES
- * - Removed legacy UI settings terminology from event names
- * 
- * Changes in v1.3.0:
- * - Updated section_path from 'Admin.Products' to 'AdminProducts' (removed dot)
- * 
- * Changes in v1.4.0:
- * - Updated section_path from 'Catalog.Services' to 'AdminCatalog'
- * 
+ *
+ * Changes in v1.6.0:
+ * - Replaced hardcoded list with dynamic filter: all settings with is_public=true and confidentiality=false from cache
+ * - Single source of truth: is_public flag in app.app_settings
+ *
  * Changes in v1.5.0:
  * - Updated section_path from 'AdminCatalog' to 'AdminServices'
  */
 
 import { Request } from 'express';
-import { getSettingValue } from '../helpers/get.setting.value';
 import fabricEvents from '../eventBus/fabric.events';
 import { PUBLIC_SETTINGS_EVENT_NAMES } from './events.public.policies';
 import { v4 as uuidv4 } from 'uuid';
 import { getClientIp } from '../helpers/get.client.ip.from.req';
+import { getAllSettings } from '../../modules/admin/settings/cache.settings';
 
 /**
  * Interface for public setting
@@ -82,60 +65,15 @@ export async function fetchPublicSettings(req: Request): Promise<PublicSettingsR
       }
     });
 
-    // Define public settings to fetch
-    const publicSettings: PublicSetting[] = [];
-
-    // 1. Navigation bar background color
-    const navbarColor = await getSettingValue<string>(
-      'Application.Appearance',
-      'navbar.backgroundcolor',
-      '#26A69A'
-    );
-    publicSettings.push({
-      section_path: 'Application.Appearance',
-      setting_name: 'navbar.backgroundcolor',
-      value: navbarColor,
-      is_public: true
-    });
-
-    // 2. Product card color
-    const productCardColor = await getSettingValue<string>(
-      'AdminProducts',
-      'card.color',
-      '#E8F4F8'
-    );
-    publicSettings.push({
-      section_path: 'AdminProducts',
-      setting_name: 'card.color',
-      value: productCardColor,
-      is_public: true
-    });
-
-    // 3. Service card color
-    const serviceCardColor = await getSettingValue<string>(
-      'AdminServices',
-      'card.color',
-      '#F5F5F5'
-    );
-    publicSettings.push({
-      section_path: 'AdminServices',
-      setting_name: 'card.color',
-      value: serviceCardColor,
-      is_public: true
-    });
-
-    // 4. Display options-only products setting
-    const displayOptionsOnlyProducts = await getSettingValue<boolean>(
-      'AdminProducts',
-      'display.optionsOnlyProducts',
-      false
-    );
-    publicSettings.push({
-      section_path: 'AdminProducts',
-      setting_name: 'display.optionsOnlyProducts',
-      value: displayOptionsOnlyProducts,
-      is_public: true
-    });
+    const allSettings = Object.values(getAllSettings());
+    const publicSettings: PublicSetting[] = allSettings
+      .filter(s => s.is_public === true && !s.confidentiality)
+      .map(s => ({
+        section_path: s.section_path,
+        setting_name: s.setting_name,
+        value: s.value,
+        is_public: true
+      }));
 
     // Log settings retrieved successfully
     fabricEvents.createAndPublishEvent({
