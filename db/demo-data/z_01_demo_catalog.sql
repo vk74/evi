@@ -1,6 +1,15 @@
--- Version: 1.0.13
+-- Version: 1.0.16
 -- Description: Seeds the database with demo catalog data for evi (regions, products, options, price lists, catalog sections).
 -- Backend file: z_01_demo_catalog.sql
+--
+-- Changes in v1.0.16:
+-- - Unpaired TOOL-05-33333 (Wrench set) from AUTO-01-12345 (Sedan); DELETE + removed from product_options INSERT
+--
+-- Changes in v1.0.15:
+-- - Unpaired TOOL-06-44444 (Jack) from AUTO-01-12345 (Sedan); DELETE + removed from product_options INSERT
+--
+-- Changes in v1.0.14:
+-- - Product AUTO-01-12345: enabled all visibility preferences (is_visible_owner, is_visible_groups, is_visible_tech_specs, is_visible_long_description)
 --
 -- Changes in v1.0.13:
 -- - Fixed FK order: moved Sedan Accessories->Car tools set product_option from Section 8 to Section 10
@@ -276,6 +285,16 @@ ON CONFLICT (main_product_id, option_product_id) DO UPDATE SET
     units_count = EXCLUDED.units_count;
 
 -- ===========================================
+-- 8a. Product visibility preferences (AUTO-01-12345: all visible for demo)
+-- ===========================================
+UPDATE app.products
+SET is_visible_owner = true,
+    is_visible_groups = true,
+    is_visible_tech_specs = true,
+    is_visible_long_description = true
+WHERE product_id = 'a1111111-1111-1111-1111-111111111111';
+
+-- ===========================================
 -- 9. Medical Products
 -- ===========================================
 
@@ -438,6 +457,8 @@ INSERT INTO app.product_users (product_id, user_id, role_type, created_by) VALUE
 ON CONFLICT (product_id, user_id, role_type) DO NOTHING;
 
 -- Product pairing (Tools with medical and auto products)
+DELETE FROM app.product_options
+WHERE main_product_id = 'a1111111-1111-1111-1111-111111111111' AND option_product_id IN ('c5555555-5555-5555-5555-555555555555', 'c6666666-6666-6666-6666-666666666666');
 INSERT INTO app.product_options (main_product_id, option_product_id, is_required, units_count, created_by) VALUES
 -- Sterilizer with medical equipment (required)
 ('b1111111-1111-1111-1111-111111111111', 'c1111111-1111-1111-1111-111111111111', true, 1, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
@@ -445,11 +466,9 @@ INSERT INTO app.product_options (main_product_id, option_product_id, is_required
 -- Surgical set with medical equipment (optional)
 ('b1111111-1111-1111-1111-111111111111', 'c2222222-2222-2222-2222-222222222222', false, NULL, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('b2222222-2222-2222-2222-222222222222', 'c2222222-2222-2222-2222-222222222222', false, NULL, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
--- Wrench set with cars (optional)
-('a1111111-1111-1111-1111-111111111111', 'c5555555-5555-5555-5555-555555555555', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+-- Wrench set with cars (optional; Sedan–Wrench pair removed in v1.0.16)
 ('a2222222-2222-2222-2222-222222222222', 'c5555555-5555-5555-5555-555555555555', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
--- Jack with cars (optional)
-('a1111111-1111-1111-1111-111111111111', 'c6666666-6666-6666-6666-666666666666', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+-- Jack with cars (optional; Sedan–Jack pair removed in v1.0.15)
 ('a2222222-2222-2222-2222-222222222222', 'c6666666-6666-6666-6666-666666666666', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 -- Car tools set: optional (wrench set, jack)
 ('c3333333-3333-3333-3333-333333333333', 'c5555555-5555-5555-5555-555555555555', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
