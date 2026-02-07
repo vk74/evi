@@ -1,55 +1,17 @@
--- Version: 1.0.9
--- Description: Seeds the database with demo catalog data, including sections and services.
+-- Version: 1.0.10
+-- Description: Seeds the database with demo catalog data for evi (regions, products, options, price lists, catalog sections).
 -- Backend file: z_01_demo_catalog.sql
 
--- This script populates the product/service catalog with a set of demo entries
--- to provide a meaningful example for new users. It includes creating catalog
--- sections and linking services to them. The script is idempotent.
-
--- Changes in v1.0.9:
--- - Auto: Documents, Keys, Sedan accessories, Media upgrade, Mats, Seat covers set to active and published
--- - Business sedan options: only Documents (required 1), Keys (required 2), Sedan accessories (optional), Media upgrade (optional); Mats and Seat covers removed
--- - Product regions: AUTO-03/04/05/10/11 in reg-a and reg-b; AUTO-09 only in reg-a
--- - Section "auto": publish Business sedan + Documents, Keys, Sedan accessories, Media upgrade, Mats, Seat covers, Wrench set, Jack
-
--- Changes in v1.0.8:
--- - User groups renamed from Cyrillic to English (sales, tech-support, medical-specialists, auto-specialists, finance, procurement)
--- - Added demo users tech.sup.guy, sales.rep, med.spec and assigned them to respective user groups
--- - All products set to draft and unpublished except Business sedan (active, published, reg-a and reg-b, related options unchanged)
--- - Catalog section_products: only Business sedan published in auto section; no products in med section
-
--- Changes in v1.0.7:
--- - Simplified: 2 regions (reg-a, reg-b); reg-a uses RUB, reg-b uses KZT
--- - 9 currencies in reference, only RUB and KZT used in price lists
--- - 2 catalog pages (auto, medical); ~50% fewer products (auto, medical, tools)
--- - More auto accessories kept so Business sedan has visible options
-
--- Changes in v1.0.2:
--- - Fixed invalid UUIDs: replaced 's' with 'a' for sections, 'm' with 'b' for medical products, 't' with 'c' for tools
--- - All UUIDs now use valid hex characters (0-9, a-f) only
---
--- Changes in v1.0.3:
--- - Fixed invalid UUIDs for medical products 'MED-10-88888' and 'MED-11-99999' (length of first group was not 8 chars)
--- - Updated corresponding product translation UUIDs to match the corrected product IDs
---
--- Changes in v1.0.4:
--- - Fixed remaining invalid UUID usages for medical products MED-10-88888 and MED-11-99999 in product_regions, section publishing and product grouping
---
--- Changes in v1.0.5:
--- - Updated product_translations.language_code from short codes ('ru', 'en') to enum values ('russian', 'english')
---   to match updated app.system_language_code enum in 03_enums.sql
---
--- Changes in v1.0.6:
--- - Added test user t1 to sysadmins group for testing purposes
+-- Demo data set for evi: regions reg-a/reg-b, auto/medical/tools products with paired options, RUB/KZT price lists, catalog sections auto and med.
 
 -- ===========================================
 -- 1. Delete all demo services and their relations
 -- ===========================================
 
-DELETE FROM app.section_services;
-DELETE FROM app.service_users;
-DELETE FROM app.service_groups;
-DELETE FROM app.services;
+-- DELETE FROM app.section_services;
+-- DELETE FROM app.service_users;
+-- DELETE FROM app.service_groups;
+-- DELETE FROM app.services;
 
 -- ===========================================
 -- 2. Regions
@@ -258,7 +220,7 @@ BEGIN
     ('a4444444-4444-4444-4444-444444444444', reg_b_id, std_cat_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
     ('a5555555-5555-5555-5555-555555555555', reg_a_id, reg_a_std_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
     ('a5555555-5555-5555-5555-555555555555', reg_b_id, std_cat_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-    ('a9999999-9999-9999-9999-999999999999', reg_a_id, reg_a_std_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+    ('a9999999-9999-9999-9999-999999999999', reg_b_id, std_cat_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
     ('aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', reg_a_id, reg_a_std_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
     ('aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', reg_b_id, std_cat_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
     ('aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', reg_a_id, reg_a_std_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
@@ -292,7 +254,10 @@ INSERT INTO app.product_options (main_product_id, option_product_id, is_required
 ('a2222222-2222-2222-2222-222222222222', 'a4444444-4444-4444-4444-444444444444', true, 2, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 -- Jeep: optional
 ('a2222222-2222-2222-2222-222222222222', 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a2222222-2222-2222-2222-222222222222', 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
+('a2222222-2222-2222-2222-222222222222', 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+-- Sedan Accessories Set: optional (car mats, seat covers)
+('a5555555-5555-5555-5555-555555555555', 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('a5555555-5555-5555-5555-555555555555', 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
 ON CONFLICT (main_product_id, option_product_id) DO UPDATE SET
     is_required = EXCLUDED.is_required,
     units_count = EXCLUDED.units_count;
