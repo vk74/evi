@@ -19,7 +19,6 @@ pre-MVP release.
 - deploy/.gitignore
 - deploy/README.md
 - deploy/RELEASE_NOTES.md
-- deploy/db/demo-data/z_01_demo_catalog.sql
 - deploy/db/migrations/m_001_future_migrations.sql
 - deploy/env/evi.secrets.template.env
 - deploy/env/evi.template.env

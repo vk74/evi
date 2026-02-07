@@ -1,6 +1,9 @@
--- Version: 1.0.10
+-- Version: 1.0.11
 -- Description: Seeds the database with demo catalog data for evi (regions, products, options, price lists, catalog sections).
 -- Backend file: z_01_demo_catalog.sql
+--
+-- Changes in v1.0.11:
+-- - Product AUTO-05-33333: list_price set to 0 in both RUB and KZT price lists.
 
 -- Demo data set for evi: regions reg-a/reg-b, auto/medical/tools products with paired options, RUB/KZT price lists, catalog sections auto and med.
 
@@ -482,7 +485,7 @@ BEGIN
     (pl_rub_id, 'product', 'AUTO-02-67890', 'Джип', 4200000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_rub_id, 'product', 'AUTO-03-11111', 'Документы на автомобиль', 5000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_rub_id, 'product', 'AUTO-04-22222', 'Ключи запасные', 15000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_rub_id, 'product', 'AUTO-05-33333', 'Набор аксессуаров для седана', 25000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    (pl_rub_id, 'product', 'AUTO-05-33333', 'Набор аксессуаров для седана', 0, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_rub_id, 'product', 'AUTO-09-77777', 'Апгрейд медиасистемы', 85000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_rub_id, 'product', 'AUTO-10-88888', 'Коврики автомобильные', 3500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_rub_id, 'product', 'AUTO-11-99999', 'Чехлы на сиденья', 5500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
@@ -506,7 +509,7 @@ BEGIN
     (pl_kzt_id, 'product', 'AUTO-02-67890', 'Джип', 21000000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_kzt_id, 'product', 'AUTO-03-11111', 'Документы на автомобиль', 25000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_kzt_id, 'product', 'AUTO-04-22222', 'Ключи запасные', 75000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-    (pl_kzt_id, 'product', 'AUTO-05-33333', 'Набор аксессуаров для седана', 125000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    (pl_kzt_id, 'product', 'AUTO-05-33333', 'Набор аксессуаров для седана', 0, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_kzt_id, 'product', 'AUTO-09-77777', 'Апгрейд медиасистемы', 425000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_kzt_id, 'product', 'AUTO-10-88888', 'Коврики автомобильные', 17500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_kzt_id, 'product', 'AUTO-11-99999', 'Чехлы на сиденья', 27500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
