@@ -30,7 +30,7 @@ To run evi, your server or virtual machine needs the following specs:
 - **CPU:** 2 cores
 - **Network:** 1 NIC, Ports **80** (HTTP) and **443** (HTTPS) open on the host
 - **HDD** 600 - 900  Mb for all containers (depending on setup options) + extra space to store your app data
-- **OS:** evi was tested on Ubuntu 24.04 LTS and should run on any Debian-based distro
+- **OS:** Compatible with Debian-based distributions: Ubuntu, Debian, Linux Mint, Pop!_OS, and other distros that use `apt-get`. **evi has been tested only on Ubuntu** (e.g. Ubuntu 24.04 LTS); other listed distros are expected to work but are not officially tested.
 
 
 ## Installation instructions

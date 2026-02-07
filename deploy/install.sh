@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 #
-# Version: 1.8.1
+# Version: 1.8.2
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
 # - First run: prerequisites, guided env setup, deploy from pre-built images (init via evi-deploy-init.sh, then pull + systemctl start in install.sh).
 # - Subsequent runs: do not overwrite evi.env/evi.secrets.env; menu: deploy again, reconfigure (edit existing files), run evictl, exit.
 # - No podman build; no Manage submenu (use ./evictl directly for status, logs, restart, update).
+#
+# Changes in v1.8.2:
+# - Relaxed check_os(): accept Ubuntu, Debian, Linux Mint, Pop!_OS and other Debian-based distros (ID allowlist + ID_LIKE)
 #
 # Changes in v1.8.1:
 # - Restored Step 4 (demo data question) in guided setup
@@ -457,8 +460,19 @@ check_os() {
   printf "  checking os... "
   if [[ -f /etc/os-release ]]; then
     source /etc/os-release
-    if [[ "${ID}" == "ubuntu" && "${VERSION_ID}" == "24.04" ]]; then
-      printf "${GREEN}ok (ubuntu 24.04)${NC}\n"
+    local id_like=" ${ID_LIKE:-} "
+    local compatible=false
+    if [[ "${ID}" == "ubuntu" ]] || [[ "${ID}" == "debian" ]] || [[ "${ID}" == "linuxmint" ]] || \
+       [[ "${ID}" == "pop" ]] || [[ "${ID}" == "neon" ]] || [[ "${ID}" == "elementary" ]] || \
+       [[ "${ID}" == "kubuntu" ]] || [[ "${ID}" == "lubuntu" ]] || [[ "${ID}" == "xubuntu" ]]; then
+      compatible=true
+    elif [[ "${id_like}" =~ (^| )debian( |$) ]] || [[ "${id_like}" =~ (^| )ubuntu( |$) ]]; then
+      compatible=true
+    fi
+    if [[ "${compatible}" == "true" ]]; then
+      local label="${NAME:-${ID}}"
+      [[ -n "${VERSION_ID:-}" ]] && label="${label} ${VERSION_ID}"
+      printf "${GREEN}ok (${label})${NC}\n"
       return 0
     else
       printf "${YELLOW}warn (${NAME} ${VERSION_ID})${NC}\n"
