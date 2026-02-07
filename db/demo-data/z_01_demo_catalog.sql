@@ -1,6 +1,12 @@
--- Version: 1.0.11
+-- Version: 1.0.12
 -- Description: Seeds the database with demo catalog data for evi (regions, products, options, price lists, catalog sections).
 -- Backend file: z_01_demo_catalog.sql
+--
+-- Changes in v1.0.12:
+-- - Added Car tools set (TOOL-01-12121): active, published in auto section, regions reg-a/reg-b, price 0
+-- - Car tools set has paired options: wrench set (TOOL-05-33333), jack (TOOL-06-44444)
+-- - TOOL-05-33333 and TOOL-06-44444: status active, is_published true
+-- - Sedan Accessories Set (AUTO-05-33333): added paired option TOOL-01-12121
 --
 -- Changes in v1.0.11:
 -- - Product AUTO-05-33333: list_price set to 0 in both RUB and KZT price lists.
@@ -258,9 +264,10 @@ INSERT INTO app.product_options (main_product_id, option_product_id, is_required
 -- Jeep: optional
 ('a2222222-2222-2222-2222-222222222222', 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a2222222-2222-2222-2222-222222222222', 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
--- Sedan Accessories Set: optional (car mats, seat covers)
+-- Sedan Accessories Set: optional (car mats, seat covers, car tools set)
 ('a5555555-5555-5555-5555-555555555555', 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a5555555-5555-5555-5555-555555555555', 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
+('a5555555-5555-5555-5555-555555555555', 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('a5555555-5555-5555-5555-555555555555', 'c3333333-3333-3333-3333-333333333333', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
 ON CONFLICT (main_product_id, option_product_id) DO UPDATE SET
     is_required = EXCLUDED.is_required,
     units_count = EXCLUDED.units_count;
@@ -355,12 +362,13 @@ ON CONFLICT (main_product_id, option_product_id) DO UPDATE SET
 -- 10. Tools Products
 -- ===========================================
 
--- Products (4 tools: sterilizer, surgical set, wrench set, jack). All draft and unpublished.
+-- Products (5 tools: sterilizer, surgical set, car tools set, wrench set, jack). Car tools set, wrench set, jack: active and published.
 INSERT INTO app.products (product_id, product_code, translation_key, is_published, status_code, created_by) VALUES
 ('c1111111-1111-1111-1111-111111111111', 'TOOL-01-12345', 'tool.sterilizer', false, 'draft', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('c2222222-2222-2222-2222-222222222222', 'TOOL-02-67890', 'tool.surgical.set', false, 'draft', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('c5555555-5555-5555-5555-555555555555', 'TOOL-05-33333', 'tool.wrench.set', false, 'draft', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('c6666666-6666-6666-6666-666666666666', 'TOOL-06-44444', 'tool.jack', false, 'draft', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+('c3333333-3333-3333-3333-333333333333', 'TOOL-01-12121', 'tool.car.tools.set', true, 'active', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('c5555555-5555-5555-5555-555555555555', 'TOOL-05-33333', 'tool.wrench.set', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('c6666666-6666-6666-6666-666666666666', 'TOOL-06-44444', 'tool.jack', true, 'active', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
 ON CONFLICT (product_id) DO UPDATE SET
     product_code = EXCLUDED.product_code,
     translation_key = EXCLUDED.translation_key,
@@ -375,6 +383,9 @@ INSERT INTO app.product_translations (product_id, language_code, name, short_des
 -- Surgical Set
 ('c2222222-2222-2222-2222-222222222222', 'russian', 'Набор хирургических инструментов', 'Хирургический набор', 'Комплект хирургических инструментов для различных операций.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('c2222222-2222-2222-2222-222222222222', 'english', 'Surgical Instruments Set', 'Surgical set', 'Set of surgical instruments for various operations.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+-- Car tools set
+('c3333333-3333-3333-3333-333333333333', 'russian', 'Автомобильный набор инструментов', 'Набор автомобильных инструментов', 'Комплект инструментов для автомобиля: гаечные ключи, домкрат и другое необходимое для ремонта и обслуживания.', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('c3333333-3333-3333-3333-333333333333', 'english', 'Car tools set', 'Automotive tools kit', 'Set of tools for the car: wrenches, jack and other essentials for repair and maintenance.', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 -- Wrench Set
 ('c5555555-5555-5555-5555-555555555555', 'russian', 'Набор ключей', 'Автомобильный набор ключей', 'Набор гаечных ключей различных размеров для автомобильного ремонта.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('c5555555-5555-5555-5555-555555555555', 'english', 'Wrench Set', 'Automotive wrench set', 'Set of wrenches of various sizes for automotive repair.', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
@@ -404,6 +415,8 @@ BEGIN
     ('c1111111-1111-1111-1111-111111111111', reg_b_id, reg_b_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     ('c2222222-2222-2222-2222-222222222222', reg_a_id, reg_a_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     ('c2222222-2222-2222-2222-222222222222', reg_b_id, reg_b_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    ('c3333333-3333-3333-3333-333333333333', reg_a_id, reg_a_std_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+    ('c3333333-3333-3333-3333-333333333333', reg_b_id, reg_b_std_id, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
     ('c5555555-5555-5555-5555-555555555555', reg_a_id, reg_a_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     ('c5555555-5555-5555-5555-555555555555', reg_b_id, reg_b_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     ('c6666666-6666-6666-6666-666666666666', reg_a_id, reg_a_std_id, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
@@ -416,6 +429,7 @@ END $$;
 INSERT INTO app.product_users (product_id, user_id, role_type, created_by) VALUES
 ('c1111111-1111-1111-1111-111111111111', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('c2222222-2222-2222-2222-222222222222', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('c3333333-3333-3333-3333-333333333333', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7', 'owner', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('c5555555-5555-5555-5555-555555555555', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('c6666666-6666-6666-6666-666666666666', '7ef9dce8-c832-40fe-a6ef-85afff37c474', 'owner', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
 ON CONFLICT (product_id, user_id, role_type) DO NOTHING;
@@ -433,7 +447,10 @@ INSERT INTO app.product_options (main_product_id, option_product_id, is_required
 ('a2222222-2222-2222-2222-222222222222', 'c5555555-5555-5555-5555-555555555555', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 -- Jack with cars (optional)
 ('a1111111-1111-1111-1111-111111111111', 'c6666666-6666-6666-6666-666666666666', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
-('a2222222-2222-2222-2222-222222222222', 'c6666666-6666-6666-6666-666666666666', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
+('a2222222-2222-2222-2222-222222222222', 'c6666666-6666-6666-6666-666666666666', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+-- Car tools set: optional (wrench set, jack)
+('c3333333-3333-3333-3333-333333333333', 'c5555555-5555-5555-5555-555555555555', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('c3333333-3333-3333-3333-333333333333', 'c6666666-6666-6666-6666-666666666666', false, NULL, 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
 ON CONFLICT (main_product_id, option_product_id) DO UPDATE SET
     is_required = EXCLUDED.is_required,
     units_count = EXCLUDED.units_count;
@@ -496,6 +513,7 @@ BEGIN
     (pl_rub_id, 'product', 'MED-06-44444', 'Электроды для монитора', 120.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_rub_id, 'product', 'MED-07-55555', 'Кабель питания для монитора', 2500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_rub_id, 'product', 'TOOL-01-12345', 'Стерилизатор', 85000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    (pl_rub_id, 'product', 'TOOL-01-12121', 'Автомобильный набор инструментов', 0, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_rub_id, 'product', 'TOOL-02-67890', 'Набор хирургических инструментов', 125000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_rub_id, 'product', 'TOOL-05-33333', 'Набор ключей', 4500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_rub_id, 'product', 'TOOL-06-44444', 'Домкрат', 3500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474')
@@ -520,6 +538,7 @@ BEGIN
     (pl_kzt_id, 'product', 'MED-06-44444', 'Электроды для монитора', 600.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_kzt_id, 'product', 'MED-07-55555', 'Кабель питания для монитора', 12500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_kzt_id, 'product', 'TOOL-01-12345', 'Стерилизатор', 425000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+    (pl_kzt_id, 'product', 'TOOL-01-12121', 'Автомобильный набор инструментов', 0, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_kzt_id, 'product', 'TOOL-02-67890', 'Набор хирургических инструментов', 625000.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_kzt_id, 'product', 'TOOL-05-33333', 'Набор ключей', 22500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
     (pl_kzt_id, 'product', 'TOOL-06-44444', 'Домкрат', 17500.00, '7ef9dce8-c832-40fe-a6ef-85afff37c474')
@@ -553,7 +572,7 @@ ON CONFLICT (id) DO UPDATE SET
 -- 13. Publish Products to Sections
 -- ===========================================
 
--- Publish Business sedan + Documents, Keys, Sedan accessories, Media upgrade, Mats, Seat covers, Wrench set, Jack to auto section
+-- Publish Business sedan + Documents, Keys, Sedan accessories, Media upgrade, Mats, Seat covers, Car tools set, Wrench set, Jack to auto section
 INSERT INTO app.section_products (section_id, product_id, published_by) VALUES
 ('a2222222-2222-2222-2222-222222222222', 'a1111111-1111-1111-1111-111111111111', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a2222222-2222-2222-2222-222222222222', 'a3333333-3333-3333-3333-333333333333', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
@@ -562,6 +581,7 @@ INSERT INTO app.section_products (section_id, product_id, published_by) VALUES
 ('a2222222-2222-2222-2222-222222222222', 'a9999999-9999-9999-9999-999999999999', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a2222222-2222-2222-2222-222222222222', 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a2222222-2222-2222-2222-222222222222', 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaab', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
+('a2222222-2222-2222-2222-222222222222', 'c3333333-3333-3333-3333-333333333333', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a2222222-2222-2222-2222-222222222222', 'c5555555-5555-5555-5555-555555555555', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('a2222222-2222-2222-2222-222222222222', 'c6666666-6666-6666-6666-666666666666', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7')
 ON CONFLICT (section_id, product_id) DO NOTHING;
@@ -596,6 +616,7 @@ ON CONFLICT (product_id, group_id, role_type) DO NOTHING;
 INSERT INTO app.product_groups (product_id, group_id, role_type, created_by) VALUES
 ('c1111111-1111-1111-1111-111111111111', 'c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('c2222222-2222-2222-2222-222222222222', 'c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('c3333333-3333-3333-3333-333333333333', 'd4e5f6a7-b8c9-4012-d3e4-f5a6b7c8d9e0', 'product_specialists', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 ('c5555555-5555-5555-5555-555555555555', 'd4e5f6a7-b8c9-4012-d3e4-f5a6b7c8d9e0', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('c6666666-6666-6666-6666-666666666666', 'd4e5f6a7-b8c9-4012-d3e4-f5a6b7c8d9e0', 'product_specialists', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
 ON CONFLICT (product_id, group_id, role_type) DO NOTHING;
