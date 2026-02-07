@@ -633,6 +633,9 @@ onMounted(async () => {
   // CRITICAL: Load public settings first (works for both authenticated and anonymous users)
   await loadInitialPublicSettings();
   
+  // Enable cross-tab settings synchronization via BroadcastChannel
+  appSettingsStore.initCrossTabSync();
+  
   // If Admin is the active module on initial load, expand the admin section
   if (appStore.activeModule === 'Admin') {
     isAdminExpanded.value = true;

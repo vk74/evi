@@ -1,6 +1,6 @@
 /**
  * @file state.app.settings.ts
- * Version: 1.3.0
+ * Version: 1.4.0
  * State management for the application settings module using Pinia.
  * Frontend file that tracks selected section ID, expanded sections, and caches settings data.
  *
@@ -9,6 +9,12 @@
  * - Manages settings cache with TTL of 5 minutes
  * - Provides methods for updating, sorting, selecting, and clearing the cache
  * - Persists UI state (selectedSectionPath, expandedSections, expandedBlocks) to localStorage
+ * - Cross-tab cache invalidation via BroadcastChannel
+ *
+ * Changes in v1.4.0:
+ * - Added cross-tab cache invalidation using BroadcastChannel API
+ * - When a setting is updated in one tab, all other tabs receive the update immediately
+ * - initCrossTabSync() must be called once from App.vue to start listening
  *
  * Changes in v1.3.0:
  * - updateCachedSetting() syncs publicSettingsCache when updated setting is_public (fix cache coherency)
@@ -28,6 +34,22 @@ import {
   SETTINGS_CACHE_TTL,
   PUBLIC_SETTINGS_CACHE_TTL
 } from './types.settings';
+
+// Channel name for cross-tab settings synchronization
+const SETTINGS_CHANNEL_NAME = 'evi-settings-sync';
+
+/**
+ * Message format for cross-tab communication
+ */
+interface SettingsSyncMessage {
+  type: 'setting-updated';
+  sectionPath: string;
+  settingName: string;
+  updatedSetting: AppSetting;
+}
+
+// Module-level channel reference (created lazily on initCrossTabSync)
+let settingsChannel: BroadcastChannel | null = null;
 
 // Define the interface for the store state
 interface AppSettingsState {
@@ -384,6 +406,21 @@ export const useAppSettingsStore = defineStore('appSettings', {
         }
       }
 
+      // Broadcast update to other tabs
+      if (settingsChannel) {
+        try {
+          const msg: SettingsSyncMessage = {
+            type: 'setting-updated',
+            sectionPath,
+            settingName,
+            updatedSetting
+          };
+          settingsChannel.postMessage(msg);
+        } catch {
+          // Channel closed or unavailable -- safe to ignore
+        }
+      }
+
       return true;
     },
     
@@ -460,6 +497,68 @@ export const useAppSettingsStore = defineStore('appSettings', {
     clearPublicSettingsCache(): void {
       console.log('[App Settings Store] Clearing public settings cache');
       this.publicSettingsCache = {};
+    },
+
+    /**
+     * Apply a setting update received from another browser tab.
+     * Updates both settingsCache and publicSettingsCache without broadcasting again.
+     */
+    applyRemoteSettingUpdate(sectionPath: string, settingName: string, updatedSetting: AppSetting): void {
+      // Update settingsCache
+      const cacheEntry = this.settingsCache[sectionPath];
+      if (cacheEntry) {
+        const idx = cacheEntry.data.findIndex(s => s.setting_name === settingName);
+        if (idx !== -1) {
+          cacheEntry.data[idx] = updatedSetting;
+        } else {
+          cacheEntry.data.push(updatedSetting);
+        }
+        cacheEntry.timestamp = Date.now();
+      }
+
+      // Update publicSettingsCache if setting is public
+      if (updatedSetting.is_public) {
+        const publicEntry = this.publicSettingsCache[sectionPath];
+        if (publicEntry) {
+          const idx = publicEntry.data.findIndex(s => s.setting_name === settingName);
+          if (idx !== -1) {
+            publicEntry.data[idx] = updatedSetting;
+          } else {
+            publicEntry.data.push(updatedSetting);
+          }
+          publicEntry.timestamp = Date.now();
+        }
+      }
+    },
+
+    /**
+     * Initialize cross-tab synchronization via BroadcastChannel.
+     * Should be called once from App.vue on mount.
+     * When another tab updates a setting, this tab applies the change immediately.
+     */
+    initCrossTabSync(): void {
+      if (typeof BroadcastChannel === 'undefined') {
+        // BroadcastChannel not supported (e.g. some older browsers) -- skip silently
+        return;
+      }
+
+      // Avoid double-initialization
+      if (settingsChannel) {
+        return;
+      }
+
+      try {
+        settingsChannel = new BroadcastChannel(SETTINGS_CHANNEL_NAME);
+        settingsChannel.onmessage = (event: MessageEvent<SettingsSyncMessage>) => {
+          const msg = event.data;
+          if (msg && msg.type === 'setting-updated') {
+            this.applyRemoteSettingUpdate(msg.sectionPath, msg.settingName, msg.updatedSetting);
+          }
+        };
+      } catch {
+        // Failed to create channel -- safe to ignore
+        settingsChannel = null;
+      }
     }
   },
   
