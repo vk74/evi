@@ -37,7 +37,7 @@ To run evi, your server or virtual machine needs the following specs:
 
 ## 1. Clone the deploy tree into directory evi
 
-Install git if it is not present on the server, then clone only the **deploy** folder from the evi repository into a directory named **evi** in your home directory (on Debian/Ubuntu):
+Install git if it is not present on the host server, then clone **deploy** folder from the evi repository into a directory named **evi** (located in your home directory):
 
 ```bash
 command -v git >/dev/null 2>&1 || { sudo apt-get update && sudo apt-get install -y git; }

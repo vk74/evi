@@ -634,6 +634,8 @@ install_prerequisites_all() {
   printf "  to manage your evi database use pgadmin from any computer at ${GREEN}http://<server>:5445${NC} (use your server's ip address or dns name).\n"
   printf "  login to web-console using ${GREEN}${pgadmin_email}${NC} and ${GREEN}EVI_ADMIN_DB_PASSWORD${NC}\n"
   echo ""
+  printf "${YELLOW}\033[1mIMPORTANT:\033[0m${YELLOW} restrict firewall access to cockpit and pgadmin to trusted networks or hosts only.${NC}\n"
+  echo ""
 
   read -r -p "press enter to continue..."
 }
