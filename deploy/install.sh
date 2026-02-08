@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 #
-# Version: 1.8.2
+# Version: 1.8.3
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
 # - First run: prerequisites, guided env setup, deploy from pre-built images (init via evi-deploy-init.sh, then pull + systemctl start in install.sh).
 # - Subsequent runs: do not overwrite evi.env/evi.secrets.env; menu: deploy again, reconfigure (edit existing files), run evictl, exit.
 # - No podman build; no Manage submenu (use ./evictl directly for status, logs, restart, update).
+#
+# Changes in v1.8.3:
+# - pgAdmin: removed localhost-only restriction; default EVI_PGADMIN_HOST=0.0.0.0 for browser access from any computer (port 5445)
 #
 # Changes in v1.8.2:
 # - Relaxed check_os(): accept Ubuntu, Debian, Linux Mint, Pop!_OS and other Debian-based distros (ID allowlist + ID_LIKE)
@@ -557,10 +560,10 @@ install_gui_tools() {
   echo ""
   echo "this will install:"
   echo "  - cockpit: web-based tool for server management (https://localhost:9090)"
-  echo "  - pgadmin: web-console for database administration (http://localhost:5445)"
+  echo "  - pgadmin: web-console for database administration (http://<server-ip>:5445)"
   echo ""
   echo "pgadmin runs as a container and will be started with evi deployment."
-  echo "it is accessible ONLY from localhost for security."
+  echo "you can open it in a browser from any computer at http://<server-ip>:5445 (restrict access via firewall if needed)."
   echo ""
   
   if ! confirm "proceed with installation?"; then
@@ -635,7 +638,7 @@ install_gui_tools() {
   echo "  login using your host OS user account and password."
   echo ""
   echo "pgadmin:"
-  printf "  to manage your evi database use pgadmin web-console at ${GREEN}http://localhost:5445${NC}.\n"
+  printf "  to manage your evi database use pgadmin at ${GREEN}http://<server-ip>:5445${NC} from any computer.\n"
   echo "  evi-pgadmin and evi-db are 2 different containers, you need 2 separate user accounts, but they can use the same password."
   printf "  1. login to web-console using ${GREEN}${pgadmin_email}${NC} and EVI_ADMIN_DB_PASSWORD\n"
   printf "  2. in web-console login to database using ${GREEN}evidba${NC} user account and EVI_ADMIN_DB_PASSWORD (preconfigured).\n"
@@ -1465,7 +1468,7 @@ load_deploy_env() {
   export EVI_ADMIN_DB_USERNAME="${EVI_ADMIN_DB_USERNAME:-evidba}"
   export EVI_PGADMIN_ENABLED="${EVI_PGADMIN_ENABLED:-false}"
   export EVI_PGADMIN_IMAGE="${EVI_PGADMIN_IMAGE:-docker.io/dpage/pgadmin4:8}"
-  export EVI_PGADMIN_HOST="${EVI_PGADMIN_HOST:-127.0.0.1}"
+  export EVI_PGADMIN_HOST="${EVI_PGADMIN_HOST:-0.0.0.0}"
   export EVI_PGADMIN_PORT="${EVI_PGADMIN_PORT:-5445}"
   export EVI_PGADMIN_EMAIL="${EVI_PGADMIN_EMAIL:-}"
 }
