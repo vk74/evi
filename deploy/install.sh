@@ -1884,7 +1884,7 @@ main_menu() {
   while true; do
     echo ""
     echo "+--------------------------------------------------------------+"
-    printf " %-60s |\n" "evi installation manager, main menu v.${INSTALL_VERSION}"
+    printf "| %-60s |\n" "evi installation manager, main menu. v.${INSTALL_VERSION}"
     echo "+--------------------------------------------------------------+"
     
     display_status

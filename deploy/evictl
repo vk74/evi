@@ -1354,7 +1354,7 @@ menu() {
   while true; do
     echo ""
     echo "+--------------------------------------------------------------+"
-    printf " %-60s |\n" "evi prod manager (evictl) v.${EVICTL_VERSION}"
+    printf "| %-60s |\n" "evi prod manager (evictl) v.${EVICTL_VERSION}"
     echo "+--------------------------------------------------------------+"
     
     display_container_status_table
