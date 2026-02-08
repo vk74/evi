@@ -1,12 +1,20 @@
 #!/usr/bin/env bash
 #
-# Version: 1.8.4
+# Version: 1.8.5
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
 # - First run: prerequisites, guided env setup, deploy from pre-built images (init via evi-deploy-init.sh, then pull + systemctl start in install.sh).
 # - Subsequent runs: do not overwrite evi.env/evi.secrets.env; menu: deploy again, reconfigure (edit existing files), run evictl, exit.
 # - No podman build; no Manage submenu (use ./evictl directly for status, logs, restart, update).
+#
+# Changes in v1.8.5:
+# - Removed prerequisites submenu; option 1 in main menu directly starts installation
+# - Combined mandatory and optional prerequisites into single step
+# - Option 1 renamed to "install prerequisites (requires sudo)"
+# - pgAdmin email asked at start (after confirm, before apt-get)
+# - Rephrased pgAdmin email prompt
+# - Summary renamed to "prerequisites installation summary"; added podman/curl/openssl, green checkmarks, highlighted key data
 #
 # Changes in v1.8.4:
 # - Menu banners show script version (parsed from header)
@@ -527,27 +535,46 @@ check_ports() {
   fi
 }
 
-install_core_prerequisites() {
-  log "installing core prerequisites for container environment on this host server..."
-  if ! confirm "this will install podman, curl, openssl and configure rootless ports. proceed?"; then
+install_prerequisites_all() {
+  log "installing prerequisites for container environment on this host server..."
+  echo ""
+  echo "this will install:"
+  echo "  - podman: container runtime for running evi services"
+  echo "  - curl: command-line tool for HTTP requests"
+  echo "  - openssl: TLS/SSL utilities"
+  echo "  - cockpit: web-based tool for server and containers management (https://<server-ip>:9090)"
+  echo "  - pgadmin: web-console for postgres database administration (http://<server-ip>:5445)"
+  echo ""
+
+  if ! confirm "proceed with installation?"; then
     return 0
   fi
 
+  ensure_config_files
+  echo ""
+  local pgadmin_email=""
+  while [[ -z "${pgadmin_email}" ]]; do
+    read -r -p "enter e-mail of administrator's user account. the e-mail will be used as a username to login to pgadmin web-console: " pgadmin_email
+    if ! validate_email "${pgadmin_email}"; then
+      warn "invalid email format. email must be valid (e.g., user@domain.com) and cannot use .local or localhost domain"
+      pgadmin_email=""
+    fi
+  done
+
+  # --- Core prerequisites ---
+  log "installing core prerequisites (podman, curl, openssl)..."
   sudo apt-get update
   sudo apt-get install -y podman curl openssl
-  
-  # Configure rootless ports
+
   log "configuring rootless ports (80/443)..."
   echo "net.ipv4.ip_unprivileged_port_start=80" | sudo tee /etc/sysctl.d/99-evi-rootless.conf
   sudo sysctl --system
-  
-  # Enable linger
+
   if ! loginctl show-user "$(whoami)" -p Linger 2>/dev/null | grep -q "yes"; then
     log "enabling systemd linger for $(whoami)..."
     sudo loginctl enable-linger "$(whoami)"
   fi
-  
-  # Configure firewall
+
   if command -v ufw >/dev/null 2>&1; then
     if sudo ufw status | grep -q "Status: active"; then
       log "opening ports 80, 443 in ufw..."
@@ -555,128 +582,66 @@ install_core_prerequisites() {
       sudo ufw allow 443/tcp
     fi
   fi
-  
-  info "core prerequisites installed."
-  read -r -p "press enter to continue..."
-}
 
-install_gui_tools() {
-  log "installing admin tools..."
-  echo ""
-  echo "this will install:"
-  echo "  - cockpit: web-based tool for server management (https://localhost:9090)"
-  echo "  - pgadmin: web-console for database administration (http://<server-ip>:5445)"
-  echo ""
-  echo "pgadmin runs as a container and will be started with evi deployment."
-  echo "you can open it in a browser from any computer at http://<server-ip>:5445 (restrict access via firewall if needed)."
-  echo ""
-  
-  if ! confirm "proceed with installation?"; then
-    return 0
-  fi
-
-  # --- Request pgAdmin email (before installation) ---
-  ensure_config_files
-  echo ""
-  echo "pgadmin requires an email address for the administrator account."
-  echo "this email will be used to log in to pgadmin web interface."
-  echo ""
-  local pgadmin_email=""
-  while [[ -z "${pgadmin_email}" ]]; do
-    read -r -p "enter valid e-mail to be used as pgadmin web-console login name (don't use .local or similar domains): " pgadmin_email
-    if ! validate_email "${pgadmin_email}"; then
-      warn "invalid email format. email must be valid (e.g., user@domain.com) and cannot use .local or localhost domain"
-      pgadmin_email=""
-    fi
-  done
-
-  # --- Install Cockpit ---
+  # --- Cockpit ---
   log "installing cockpit..."
   sudo apt-get update
   sudo apt-get install -y cockpit cockpit-podman
-  
   sudo systemctl enable --now cockpit.socket
-  
+
   if command -v ufw >/dev/null 2>&1; then
     if sudo ufw status | grep -q "Status: active"; then
       log "opening port 9090 in ufw..."
       sudo ufw allow 9090/tcp
     fi
   fi
-  
-  # Enable user podman socket for cockpit
+
   systemctl --user enable --now podman.socket
-  
-  info "cockpit installed. access at https://localhost:9090"
+  info "cockpit installed. access at https://<server-ip>:9090"
 
   # --- Configure pgAdmin ---
   log "configuring pgadmin..."
-  
-  # Enable pgAdmin in evi.env
   if [[ -f "${TARGET_ENV}" ]]; then
     if grep -q "^EVI_PGADMIN_ENABLED=" "${TARGET_ENV}"; then
       sed -i "s|^EVI_PGADMIN_ENABLED=.*|EVI_PGADMIN_ENABLED=true|" "${TARGET_ENV}"
     else
       echo "EVI_PGADMIN_ENABLED=true" >> "${TARGET_ENV}"
     fi
-    
-    # Set pgAdmin email
     if grep -q "^EVI_PGADMIN_EMAIL=" "${TARGET_ENV}"; then
       sed -i "s|^EVI_PGADMIN_EMAIL=.*|EVI_PGADMIN_EMAIL=${pgadmin_email}|" "${TARGET_ENV}"
     else
       echo "EVI_PGADMIN_EMAIL=${pgadmin_email}" >> "${TARGET_ENV}"
     fi
-    
     info "pgadmin enabled in evi.env"
     info "pgadmin email set to: ${pgadmin_email}"
   fi
-  
+
   echo ""
-  printf "${GREEN}=== admin tools installation summary ===${NC}\n"
+  printf "${GREEN}=== prerequisites installation summary ===${NC}\n"
   echo ""
   echo "installed tools:"
-  echo "  - cockpit"
-  echo "  - pgadmin"
+  printf "  ${GREEN}✓${NC} podman\n"
+  printf "  ${GREEN}✓${NC} curl\n"
+  printf "  ${GREEN}✓${NC} openssl\n"
+  printf "  ${GREEN}✓${NC} cockpit\n"
+  printf "  ${GREEN}✓${NC} pgadmin\n"
   echo ""
   echo "cockpit:"
-  printf "  to manage your container environment visit cockpit at ${GREEN}https://localhost:9090${NC}.\n"
+  printf "  to manage your container environment visit cockpit at ${GREEN}https://<server-ip>:9090${NC} from any computer.\n"
   echo "  login using your host OS user account and password."
   echo ""
   echo "pgadmin:"
   printf "  to manage your evi database use pgadmin at ${GREEN}http://<server-ip>:5445${NC} from any computer.\n"
   echo "  evi-pgadmin and evi-db are 2 different containers, you need 2 separate user accounts, but they can use the same password."
-  printf "  1. login to web-console using ${GREEN}${pgadmin_email}${NC} and EVI_ADMIN_DB_PASSWORD\n"
-  printf "  2. in web-console login to database using ${GREEN}evidba${NC} user account and EVI_ADMIN_DB_PASSWORD (preconfigured).\n"
+  printf "  1. login to web-console using ${GREEN}${pgadmin_email}${NC} and ${GREEN}EVI_ADMIN_DB_PASSWORD${NC}\n"
+  printf "  2. in web-console login to database using ${GREEN}evidba${NC} user account and ${GREEN}EVI_ADMIN_DB_PASSWORD${NC} (preconfigured).\n"
   echo "  3. when evi deployment completes, EVI_ADMIN_DB_PASSWORD can be found in cockpit -> podman containers -> integration tab."
   echo "  4. should you need to set your own db password, proceed to step 2 (container environment configuration) option 2 (manual configuration)."
   echo "  edit evi.secrets.env file, EVI_ADMIN_DB_PASSWORD variable."
   echo "  otherwise a secure password will be generated for you during guided container environment setup (option 1)."
   echo ""
-  
-  read -r -p "press enter to continue..."
-}
 
-menu_prerequisites() {
-  while true; do
-    echo ""
-    log "=== prerequisites for container environment, to be installed on host server ==="
-    echo ""
-    check_os || true
-    check_resources || true
-    check_podman || true
-    check_ports || true
-    echo ""
-    echo "0) back to main menu"
-    echo "1) install core prerequisites (mandatory, requires sudo)"
-    echo "2) install admin tools (optional, requires sudo)"
-    read -r -p "select [0-2]: " opt
-    case $opt in
-      0) break ;;
-      1) install_core_prerequisites ;;
-      2) install_gui_tools ;;
-      *) warn "invalid option" ;;
-    esac
-  done
+  read -r -p "press enter to continue..."
 }
 
 # --- Guided Environment Configuration ---
@@ -1890,14 +1855,14 @@ main_menu() {
     display_status
     
     echo "  0) exit"
-    echo "  1) prerequisites"
+    echo "  1) install prerequisites (requires sudo)"
     echo "  2) environment configuration"
     echo "  3) deploy"
     echo ""
     read -r -p "select [0-3]: " opt
     case $opt in
       0) log "bye!"; exit 0 ;;
-      1) menu_prerequisites ;;
+      1) install_prerequisites_all ;;
       2) menu_env_config ;;
       3) deploy_up ;;
       *) warn "invalid option" ;;
