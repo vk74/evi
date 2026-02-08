@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 #
-# Version: 1.9.2
+# Version: 1.9.3
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
-# - First run: prerequisites, guided env setup, deploy from pre-built images (init via evi-deploy-init.sh, then pull + systemctl start in install.sh).
-# - Subsequent runs: do not overwrite evi.env/evi.secrets.env; menu: deploy again, reconfigure (edit existing files), run evictl, exit.
-# - No podman build; no Manage submenu (use ./evictl directly for status, logs, restart, update).
+# - First run: prerequisites, guided env setup, deploy from pre-built images (init, pull + systemctl start in install.sh).
+# - Subsequent runs: if evi.env and evi.secrets.env exist, run deploy/scripts/evi-reconfigure.sh (info block, menu: 0 exit, 1 guided configuration, 2 edit evi.env, 3 edit evi.secrets.env, 4 redeploy containers). No overwrite of config files.
+# - No podman build; use ./evictl for status, logs, restart, update.
+#
+# Changes in v1.9.3:
+# - Subsequent run: delegate to evi-reconfigure.sh; removed menu_subsequent and reconfigure_edit_existing. New menu: exit, guided config, edit evi.env, edit evi.secrets.env, redeploy. Redeploy uses do_redeploy (init + restart only; no image pull — uses existing images; evi-db volume preserved). Upgrading to new image versions is separate (e.g. evictl update). Guided setup: "keep current setting" as first option in every step.
 #
 # Changes in v1.9.2:
 # - Prerequisites: UFW only opens application ports 80, 443. Admin ports 9090/5445 are configured only in Step 2 (environment configuration).
@@ -737,66 +740,102 @@ guided_setup() {
   
   ensure_config_files
   
+  # Read current values from config (for "keep current" option when reconfiguring)
+  local current_domain current_tls_mode current_acme_email current_firewall_access current_firewall_allowed current_seed_demo_data
+  current_domain=$(grep "^EVI_DOMAIN=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "")
+  current_tls_mode=$(grep "^EVI_TLS_MODE=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | tr -d "'" || echo "letsencrypt")
+  current_acme_email=$(grep "^EVI_ACME_EMAIL=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "")
+  current_firewall_access=$(grep "^EVI_FIREWALL_ADMIN_ACCESS=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | tr -d "'" || echo "")
+  current_firewall_allowed=$(grep "^EVI_FIREWALL_ADMIN_ALLOWED=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "")
+  current_seed_demo_data=$(grep "^EVI_SEED_DEMO_DATA=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | tr -d "'" | tr '[:upper:]' '[:lower:]' || echo "false")
+  
   # Step 1: Access type
   echo "step 1: how will users connect to your evi?"
   echo ""
-  echo "  1) private ip or intranet dns name"
-  echo "  2) public dns domain"
-  echo "  3) public ip address"
+  local step1_keep_label="not set"
+  [[ -n "${current_domain}" ]] && step1_keep_label="${current_domain}"
+  echo "  1) keep current setting (${step1_keep_label})"
+  echo "  2) private ip or intranet dns name"
+  echo "  3) public dns domain"
+  echo "  4) public ip address"
   echo ""
   
   local access_type=""
+  local step1_choice=""
   while [[ -z "${access_type}" ]]; do
-    read -r -p "select [1-3]: " access_type
-    case "${access_type}" in
-      1) access_type="internal" ;;
-      2) access_type="public_domain" ;;
-      3) access_type="public_ip" ;;
-      *) access_type=""; warn "please select 1, 2, or 3" ;;
+    read -r -p "select [1-4]: " step1_choice
+    case "${step1_choice}" in
+      1)
+        if [[ -n "${current_domain}" ]]; then
+          domain="${current_domain}"
+          if [[ "${current_tls_mode}" == "letsencrypt" ]]; then
+            access_type="public_domain"
+            tls_mode="letsencrypt"
+            acme_email="${current_acme_email}"
+            cert_choice="letsencrypt"
+          elif validate_ip "${current_domain}"; then
+            access_type="public_ip"
+            tls_mode="manual"
+          else
+            access_type="internal"
+            tls_mode="manual"
+          fi
+        else
+          access_type=""; warn "no current setting; please select 2, 3, or 4"
+        fi
+        ;;
+      2) access_type="internal" ;;
+      3) access_type="public_domain" ;;
+      4) access_type="public_ip" ;;
+      *) access_type=""; warn "please select 1, 2, 3, or 4" ;;
     esac
   done
   
-  # Get domain/IP
-  echo ""
-  local domain=""
-  local tls_mode=""
-  local acme_email=""
+  # Get domain/IP (unless already set by keep current)
+  local domain="${domain:-}"
+  local tls_mode="${tls_mode:-}"
+  local acme_email="${acme_email:-}"
+  local cert_choice="${cert_choice:-}"
   
   if [[ "${access_type}" == "public_domain" ]]; then
-    while [[ -z "${domain}" ]]; do
-      read -r -p "enter your public domain name (e.g., evi.example.com): " domain
-      if ! validate_domain "${domain}"; then
-        warn "invalid domain format"
-        domain=""
-      fi
-    done
-    
-    # Step 3: TLS certificate choice for public domain
-    echo ""
-    echo "step 3: tls certificate configuration"
-    echo ""
-    echo "  1) let's encrypt (automatic)"
-    echo "  2) use my own certificates"
-    echo ""
-    
-    local cert_choice=""
-    while [[ -z "${cert_choice}" ]]; do
-      read -r -p "select [1-2]: " cert_choice
-      case "${cert_choice}" in
-        1) 
-          tls_mode="letsencrypt"
-          cert_choice="letsencrypt"
-          ;;
-        2) 
-          tls_mode="manual"
-          cert_choice="own"
-          ;;
-        *) cert_choice=""; warn "please select 1 or 2" ;;
-      esac
-    done
-    
-    if [[ "${tls_mode}" == "letsencrypt" ]]; then
-      # Get ACME email
+    if [[ -z "${domain}" ]]; then
+      while [[ -z "${domain}" ]]; do
+        read -r -p "enter your public domain name (e.g., evi.example.com): " domain
+        if ! validate_domain "${domain}"; then
+          warn "invalid domain format"
+          domain=""
+        fi
+      done
+    fi
+    if [[ -z "${cert_choice}" ]]; then
+      echo ""
+      echo "step 3: tls certificate configuration"
+      echo ""
+      local step3_keep_label="${current_tls_mode:-not set}"
+      echo "  1) keep current setting (${step3_keep_label})"
+      echo "  2) let's encrypt (automatic)"
+      echo "  3) use my own certificates"
+      echo ""
+      local step3_c=""
+      while [[ -z "${cert_choice}" ]]; do
+        read -r -p "select [1-3]: " step3_c
+        case "${step3_c}" in
+          1)
+            if [[ -n "${current_tls_mode}" ]]; then
+              tls_mode="${current_tls_mode}"
+              cert_choice="keep"
+              [[ "${current_tls_mode}" == "letsencrypt" ]] && acme_email="${current_acme_email}"
+            else
+              warn "no current setting; please select 2 or 3"
+            fi
+            ;;
+          2) tls_mode="letsencrypt"; cert_choice="letsencrypt" ;;
+          3) tls_mode="manual"; cert_choice="own" ;;
+          *) warn "please select 1, 2, or 3" ;;
+        esac
+      done
+    fi
+    if [[ "${tls_mode}" == "letsencrypt" ]] && [[ -z "${acme_email}" ]]; then
       while [[ -z "${acme_email}" ]]; do
         read -r -p "enter email for let's encrypt account operations: " acme_email
         if [[ ! "${acme_email}" =~ ^[^@]+@[^@]+\.[^@]+$ ]]; then
@@ -807,23 +846,27 @@ guided_setup() {
     fi
     
   elif [[ "${access_type}" == "public_ip" ]]; then
-    while [[ -z "${domain}" ]]; do
-      read -r -p "enter your public ip address: " domain
-      if ! validate_ip "${domain}"; then
-        warn "invalid ip address format"
-        domain=""
-      fi
-    done
+    if [[ -z "${domain}" ]]; then
+      while [[ -z "${domain}" ]]; do
+        read -r -p "enter your public ip address: " domain
+        if ! validate_ip "${domain}"; then
+          warn "invalid ip address format"
+          domain=""
+        fi
+      done
+    fi
     tls_mode="manual"
     
   else  # internal
-    while [[ -z "${domain}" ]]; do
-      read -r -p "enter ip address or domain name: " domain
-      if ! validate_ip "${domain}" && ! validate_domain "${domain}"; then
-        warn "invalid ip or domain format"
-        domain=""
-      fi
-    done
+    if [[ -z "${domain}" ]]; then
+      while [[ -z "${domain}" ]]; do
+        read -r -p "enter ip address or domain name: " domain
+        if ! validate_ip "${domain}" && ! validate_domain "${domain}"; then
+          warn "invalid ip or domain format"
+          domain=""
+        fi
+      done
+    fi
     tls_mode="manual"
   fi
 
@@ -833,32 +876,43 @@ guided_setup() {
   echo ""
   echo "cockpit is the web interface for server and container management. choose from where it can be opened in a browser."
   echo ""
-  echo "  1) from specific computer(s) by address"
+  local step2_keep_label="${current_firewall_access:-not set}"
+  [[ -n "${current_firewall_allowed}" ]] && step2_keep_label="${current_firewall_access} (${current_firewall_allowed})"
+  echo "  1) keep current setting (${step2_keep_label})"
+  echo "  2) from specific computer(s) by address"
   echo "     (enter one or more IP addresses, e.g. 192.168.1.10 or 192.168.1.10, 192.168.1.11)"
   echo ""
-  echo "  2) from all computers in a local network range"
+  echo "  3) from all computers in a local network range"
   echo "     (enter range in the form address/mask, e.g. 192.168.1.0/24 or 172.31.0.0/16)"
   echo ""
-  echo "  3) only from this server"
+  echo "  4) only from this server"
   echo "     (you open cockpit in a browser only when on the same machine; requires a graphical session on the server, e.g. desktop or remote desktop — not typical for headless servers)"
   echo ""
-  echo "  4) from any computer (not recommended)"
+  echo "  5) from any computer (not recommended)"
   echo "     (anyone who knows the address can try to open cockpit; use only for testing)"
   echo ""
-  echo "  5) do not change firewall now"
+  echo "  6) do not change firewall now"
   echo "     (you will configure access yourself later)"
   echo ""
   local firewall_access=""
   local firewall_allowed=""
   while [[ -z "${firewall_access}" ]]; do
-    read -r -p "select [1-5]: " firewall_access
-    case "${firewall_access}" in
-      1) firewall_access="allowed_ips" ;;
-      2) firewall_access="allowed_cidr" ;;
-      3) firewall_access="localhost" ;;
-      4) firewall_access="any" ;;
-      5) firewall_access="skip" ;;
-      *) firewall_access=""; warn "please select 1, 2, 3, 4, or 5" ;;
+    read -r -p "select [1-6]: " step2_c
+    case "${step2_c}" in
+      1)
+        if [[ -n "${current_firewall_access}" ]]; then
+          firewall_access="${current_firewall_access}"
+          firewall_allowed="${current_firewall_allowed}"
+        else
+          warn "no current setting; please select 2, 3, 4, 5, or 6"
+        fi
+        ;;
+      2) firewall_access="allowed_ips" ;;
+      3) firewall_access="allowed_cidr" ;;
+      4) firewall_access="localhost" ;;
+      5) firewall_access="any" ;;
+      6) firewall_access="skip" ;;
+      *) warn "please select 1, 2, 3, 4, 5, or 6" ;;
     esac
   done
   if [[ "${firewall_access}" == "allowed_ips" ]]; then
@@ -893,24 +947,36 @@ guided_setup() {
   local cert_choice_manual=""
   
   if [[ "${tls_mode}" == "manual" ]]; then
-    # For public_domain with own cert, we already handled it above
-    if [[ "${access_type}" == "public_domain" ]] && [[ "${cert_choice}" == "own" ]]; then
+    # For public_domain with own cert (or keep current with manual), we already handled it above
+    if [[ "${access_type}" == "public_domain" ]] && { [[ "${cert_choice}" == "own" ]] || [[ "${cert_choice}" == "keep" ]]; }; then
       generate_certs="no"
     else
       # For internal and public_ip, ask about certificate choice
       echo ""
       echo "step 3: tls certificate configuration"
       echo ""
-      echo "  1) auto-generate self-signed certificate (recommended)"
-      echo "  2) use my own certificates"
+      local step3m_keep="auto-generate"
+      [[ -f "${TLS_DIR}/cert.pem" ]] && [[ -f "${TLS_DIR}/key.pem" ]] && step3m_keep="use my own"
+      echo "  1) keep current setting (${step3m_keep})"
+      echo "  2) auto-generate self-signed certificate (recommended)"
+      echo "  3) use my own certificates"
       echo ""
-      
+      local step3m_c=""
       while [[ -z "${cert_choice_manual}" ]]; do
-        read -r -p "select [1-2]: " cert_choice_manual
-        case "${cert_choice_manual}" in
-          1) generate_certs="yes" ;;
-          2) generate_certs="no" ;;
-          *) cert_choice_manual=""; warn "please select 1 or 2" ;;
+        read -r -p "select [1-3]: " step3m_c
+        case "${step3m_c}" in
+          1)
+            if [[ -f "${TLS_DIR}/cert.pem" ]] && [[ -f "${TLS_DIR}/key.pem" ]]; then
+              generate_certs="no"
+              cert_choice_manual="keep"
+            else
+              generate_certs="yes"
+              cert_choice_manual="keep"
+            fi
+            ;;
+          2) generate_certs="yes"; cert_choice_manual="auto" ;;
+          3) generate_certs="no"; cert_choice_manual="own" ;;
+          *) warn "please select 1, 2, or 3" ;;
         esac
       done
     fi
@@ -959,17 +1025,23 @@ guided_setup() {
   echo ""
   echo "step 4: database password configuration"
   echo ""
-  echo "  1) auto-generate secure passwords (recommended)"
-  echo "  2) set passwords manually"
+  local step4_keep="not set"
+  local cur_pg
+  cur_pg=$(grep "^EVI_POSTGRES_PASSWORD=" "${TARGET_SECRETS}" 2>/dev/null | cut -d'=' -f2-)
+  [[ -n "${cur_pg}" ]] && step4_keep="set"
+  echo "  1) keep current setting (${step4_keep})"
+  echo "  2) auto-generate secure passwords (recommended)"
+  echo "  3) set passwords manually"
   echo ""
   
   local pass_choice=""
   while [[ -z "${pass_choice}" ]]; do
-    read -r -p "select [1-2]: " pass_choice
-    case "${pass_choice}" in
-      1) pass_choice="auto" ;;
-      2) pass_choice="manual" ;;
-      *) pass_choice=""; warn "please select 1 or 2" ;;
+    read -r -p "select [1-3]: " step4_c
+    case "${step4_c}" in
+      1) pass_choice="keep" ;;
+      2) pass_choice="auto" ;;
+      3) pass_choice="manual" ;;
+      *) warn "please select 1, 2, or 3" ;;
     esac
   done
   
@@ -1014,17 +1086,21 @@ guided_setup() {
   echo ""
   echo "step 5: deploy demo data?"
   echo ""
-  echo "  1) yes, deploy demo data"
-  echo "  2) no demo data, just clean install"
+  local step5_keep_label="no"
+  [[ "${current_seed_demo_data}" == "true" ]] && step5_keep_label="yes"
+  echo "  1) keep current setting (${step5_keep_label})"
+  echo "  2) yes, deploy demo data"
+  echo "  3) no demo data, just clean install"
   echo ""
   
   local demo_data_choice=""
   while [[ -z "${demo_data_choice}" ]]; do
-    read -r -p "select [1-2]: " demo_data_choice
-    case "${demo_data_choice}" in
-      1) demo_data_choice="yes" ;;
-      2) demo_data_choice="no" ;;
-      *) demo_data_choice=""; warn "please select 1 or 2" ;;
+    read -r -p "select [1-3]: " step5_c
+    case "${step5_c}" in
+      1) demo_data_choice="${step5_keep_label}" ;;
+      2) demo_data_choice="yes" ;;
+      3) demo_data_choice="no" ;;
+      *) warn "please select 1, 2, or 3" ;;
     esac
   done
   
@@ -1075,10 +1151,12 @@ guided_setup() {
     sed -i "s|^EVI_ACME_EMAIL=.*|EVI_ACME_EMAIL=|" "${TARGET_ENV}"
   fi
   
-  # Update evi.secrets.env
-  sed -i "s|^EVI_POSTGRES_PASSWORD=.*|EVI_POSTGRES_PASSWORD=${pg_password}|" "${TARGET_SECRETS}"
-  sed -i "s|^EVI_APP_DB_PASSWORD=.*|EVI_APP_DB_PASSWORD=${app_password}|" "${TARGET_SECRETS}"
-  sed -i "s|^EVI_ADMIN_DB_PASSWORD=.*|EVI_ADMIN_DB_PASSWORD=${admin_password}|" "${TARGET_SECRETS}"
+  # Update evi.secrets.env (skip when user chose keep current passwords)
+  if [[ "${pass_choice}" != "keep" ]]; then
+    sed -i "s|^EVI_POSTGRES_PASSWORD=.*|EVI_POSTGRES_PASSWORD=${pg_password}|" "${TARGET_SECRETS}"
+    sed -i "s|^EVI_APP_DB_PASSWORD=.*|EVI_APP_DB_PASSWORD=${app_password}|" "${TARGET_SECRETS}"
+    sed -i "s|^EVI_ADMIN_DB_PASSWORD=.*|EVI_ADMIN_DB_PASSWORD=${admin_password}|" "${TARGET_SECRETS}"
+  fi
   
   # Update EVI_SEED_DEMO_DATA
   if grep -q "^EVI_SEED_DEMO_DATA=" "${TARGET_ENV}"; then
@@ -1803,6 +1881,104 @@ run_deploy_init() {
   log "OK: init completed."
 }
 
+# Pull container images (platform from host arch). Requires load_deploy_env. Returns 0 on success.
+deploy_pull_images() {
+  local pull_stderr
+  pull_stderr=$(mktemp)
+  local podman_platform=""
+  case "$(uname -m)" in
+    x86_64)   podman_platform="linux/amd64" ;;
+    aarch64)  podman_platform="linux/arm64" ;;
+    arm64)    podman_platform="linux/arm64" ;;
+    armv7l)   podman_platform="linux/arm/v7" ;;
+    *)        podman_platform="" ;;
+  esac
+  local pull_args=()
+  [[ -n "${podman_platform}" ]] && pull_args=(--platform "${podman_platform}")
+  local img
+  for img in "${EVI_PROXY_IMAGE}" "${EVI_DB_IMAGE}" "${EVI_BE_IMAGE}" "${EVI_FE_IMAGE}"; do
+    if ! podman pull "${pull_args[@]}" "${img}" 2>"${pull_stderr}"; then
+      err "Failed to pull ${img}:"
+      cat "${pull_stderr}" 1>&2
+      rm -f "${pull_stderr}"
+      return 1
+    fi
+    local id_size
+    id_size=$(podman images --format "{{.ID}} {{.Size}}" --filter "reference=${img}" --noheading 2>/dev/null | head -1)
+    printf "  ${GREEN}%-50s${NC} %s\n" "${img}" "${id_size:-}"
+  done
+  if [[ "${EVI_PGADMIN_ENABLED:-false}" == "true" ]]; then
+    if ! podman pull "${pull_args[@]}" "${EVI_PGADMIN_IMAGE}" 2>"${pull_stderr}"; then
+      err "Failed to pull pgAdmin image ${EVI_PGADMIN_IMAGE}:"
+      cat "${pull_stderr}" 1>&2
+      rm -f "${pull_stderr}"
+      return 1
+    fi
+    local id_size
+    id_size=$(podman images --format "{{.ID}} {{.Size}}" --filter "reference=${EVI_PGADMIN_IMAGE}" --noheading 2>/dev/null | head -1)
+    printf "  ${GREEN}%-50s${NC} %s\n" "${EVI_PGADMIN_IMAGE}" "${id_size:-}"
+  fi
+  rm -f "${pull_stderr}"
+  return 0
+}
+
+# Redeploy: init and restart services using existing images (no pull). Applies new env/secrets to current containers.
+# Does not remove evi-db volume. For upgrading to new image versions use evictl update (or similar) separately.
+do_redeploy() {
+  log "starting redeploy (using existing images, no pull)..."
+  ensure_executable
+  if [[ ! -f "${TARGET_ENV}" || ! -f "${TARGET_SECRETS}" ]]; then
+    err "configuration files missing."
+    read -r -p "press enter to continue..."
+    return
+  fi
+  local tls_status
+  tls_status=$(check_tls_status)
+  if [[ "${tls_status}" == "missing_certs" ]]; then
+    err "tls certificates missing. generate them in environment configuration."
+    read -r -p "press enter to continue..."
+    return
+  fi
+  log "initializing services..."
+  if ! run_deploy_init; then
+    err "init failed."
+    read -r -p "press enter to continue..."
+    return
+  fi
+  load_deploy_env
+  log "restarting services..."
+  systemctl --user daemon-reload
+  systemctl --user restart evi-db evi-be evi-fe evi-reverse-proxy 2>/dev/null || true
+  if [[ "${EVI_PGADMIN_ENABLED:-false}" == "true" ]]; then
+    systemctl --user restart evi-pgadmin 2>/dev/null || true
+  fi
+  local db_name="${EVI_POSTGRES_DB:-maindb}"
+  local wait_attempts=8
+  local wait_i=0
+  while [[ ${wait_i} -lt ${wait_attempts} ]]; do
+    if podman exec evi-db pg_isready -U postgres -d "${db_name}" 2>/dev/null; then
+      break
+    fi
+    sleep 0.5
+    wait_i=$((wait_i + 1))
+  done
+  log "Service status:"
+  local units="evi-db evi-be evi-fe evi-reverse-proxy"
+  [[ "${EVI_PGADMIN_ENABLED:-false}" == "true" ]] && units="${units} evi-pgadmin"
+  for u in ${units}; do
+    local state
+    state=$(systemctl --user is-active "${u}" 2>/dev/null || echo "failed")
+    if [[ "${state}" == "active" ]]; then
+      printf "  ${GREEN}%-20s${NC} active\n" "${u}:"
+    else
+      printf "  ${RED}%-20s${NC} %s\n" "${u}:" "${state}"
+    fi
+  done
+  echo ""
+  info "redeploy complete! to upgrade to new image versions use: ./evictl update (or similar). for daily operations: ./evictl (status, restart, logs)"
+  read -r -p "press enter to continue..."
+}
+
 deploy_up() {
   log "starting deployment..."
   ensure_executable
@@ -1859,48 +2035,7 @@ deploy_up() {
     up_errors="init did not succeed; skipping pull and start"
     up_time=$(($(date +%s) - up_start))
   else
-    # Pull images with detailed log and per-image size/id; capture errors.
-    # Force platform to host arch so we do not get arm64 on amd64 (Exec format error).
-    log "Pulling container images..."
-    local pull_ok=true
-    local pull_stderr
-    pull_stderr=$(mktemp)
-    local podman_platform=""
-    case "$(uname -m)" in
-      x86_64)   podman_platform="linux/amd64" ;;
-      aarch64)  podman_platform="linux/arm64" ;;
-      arm64)    podman_platform="linux/arm64" ;;
-      armv7l)   podman_platform="linux/arm/v7" ;;
-      *)        podman_platform="" ;;
-    esac
-    local pull_args=()
-    [[ -n "${podman_platform}" ]] && pull_args=(--platform "${podman_platform}")
-    local img
-    for img in "${EVI_PROXY_IMAGE}" "${EVI_DB_IMAGE}" "${EVI_BE_IMAGE}" "${EVI_FE_IMAGE}"; do
-      if podman pull "${pull_args[@]}" "${img}" 2>"${pull_stderr}"; then
-        local id_size
-        id_size=$(podman images --format "{{.ID}} {{.Size}}" --filter "reference=${img}" --noheading 2>/dev/null | head -1)
-        printf "  ${GREEN}%-50s${NC} %s\n" "${img}" "${id_size:-}"
-      else
-        err "Failed to pull ${img}:"
-        cat "${pull_stderr}" 1>&2
-        pull_ok=false
-        break
-      fi
-    done
-    if [[ "${pull_ok}" == "true" ]] && [[ "${EVI_PGADMIN_ENABLED:-false}" == "true" ]]; then
-      if podman pull "${pull_args[@]}" "${EVI_PGADMIN_IMAGE}" 2>"${pull_stderr}"; then
-        id_size=$(podman images --format "{{.ID}} {{.Size}}" --filter "reference=${EVI_PGADMIN_IMAGE}" --noheading 2>/dev/null | head -1)
-        printf "  ${GREEN}%-50s${NC} %s\n" "${EVI_PGADMIN_IMAGE}" "${id_size:-}"
-      else
-        err "Failed to pull pgAdmin image ${EVI_PGADMIN_IMAGE}:"
-        cat "${pull_stderr}" 1>&2
-        pull_ok=false
-      fi
-    fi
-    rm -f "${pull_stderr}"
-    
-    if [[ "${pull_ok}" != "true" ]]; then
+    if ! deploy_pull_images; then
       up_status="failed"
       up_errors="one or more image pulls failed (see above)"
       up_time=$(($(date +%s) - up_start))
@@ -1967,41 +2102,6 @@ deploy_up() {
   read -r -p "press enter to continue..."
 }
 
-# --- Reconfigure: edit existing config files (no overwrite from template) ---
-reconfigure_edit_existing() {
-  local editor="${EDITOR:-vi}"
-  if ! command -v "${editor}" >/dev/null 2>&1; then
-    editor="vi"
-  fi
-  info "opening existing config files in ${editor} (changes are preserved)"
-  "${editor}" "${TARGET_ENV}" "${TARGET_SECRETS}"
-}
-
-# --- Subsequent run menu (config already exists; do not overwrite) ---
-menu_subsequent() {
-  ensure_executable
-  while true; do
-    echo ""
-    echo "+--------------------------------------------------------------+"
-    printf "| %-60s |\n" "evi install (config exists) version ${INSTALL_VERSION}"
-    echo "+--------------------------------------------------------------+"
-    echo ""
-    echo "  1) deploy again (init + start from images)"
-    echo "  2) reconfigure (edit existing evi.env / evi.secrets.env)"
-    echo "  3) run evictl (status, logs, restart, update)"
-    echo "  0) exit"
-    echo ""
-    read -r -p "select: " opt
-    case $opt in
-      1) deploy_up ;;
-      2) reconfigure_edit_existing ;;
-      3) "${SCRIPT_DIR}/evictl" ;;
-      0) log "bye!"; exit 0 ;;
-      *) warn "invalid option" ;;
-    esac
-  done
-}
-
 # --- Main Menu (first run: no config yet) ---
 main_menu() {
   ensure_executable
@@ -2029,9 +2129,11 @@ main_menu() {
   done
 }
 
-# Start: if config exists, show subsequent menu (no overwrite); else main menu
+# Start: if config exists, run reconfigure script (menu: guided, edit evi.env/secrets, redeploy); else main menu
 if [[ -f "${TARGET_ENV}" ]] && [[ -f "${TARGET_SECRETS}" ]]; then
-  menu_subsequent
+  # shellcheck disable=SC1090
+  source "${SCRIPTS_DIR}/evi-reconfigure.sh"
+  evi_reconfigure_main
 else
   main_menu
 fi
