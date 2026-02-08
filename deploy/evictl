@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.7.3
+# Version: 1.7.4
 # Purpose: evi production deployment controller (rootless Podman + Quadlet).
 # Deployment file: evictl
 # Logic:
@@ -9,6 +9,9 @@
 # - Shows container status table on menu entry
 # - Renders Quadlet units from templates, renders Caddyfile, and manages secrets
 # - Supports full backup and restore of EVI environment
+#
+# Changes in v1.7.4:
+# - Menu banner shows script version (parsed from header)
 #
 # Changes in v1.7.3:
 # - pgAdmin: default EVI_PGADMIN_HOST=0.0.0.0 for browser access from any computer (port 5445)
@@ -128,6 +131,8 @@ EVI_QUADLET_DIR_DEFAULT="${HOME}/.config/containers/systemd"
 
 EVI_ENV_FILE_DEFAULT="${ENV_DIR}/evi.env"
 EVI_SECRETS_FILE_DEFAULT="${ENV_DIR}/evi.secrets.env"
+
+EVICTL_VERSION=$(sed -n '1,20p' "${SCRIPT_DIR}/$(basename "${BASH_SOURCE[0]:-$0}")" 2>/dev/null | grep -m1 '^# Version: ' | sed 's/^# Version:[[:space:]]*//' || echo "?")
 
 # Colors
 RED='\033[0;31m'
@@ -1349,7 +1354,7 @@ menu() {
   while true; do
     echo ""
     echo "+--------------------------------------------------------------+"
-    echo "|           evi prod manager (evictl)                          |"
+    printf " %-60s |\n" "evi prod manager (evictl) v.${EVICTL_VERSION}"
     echo "+--------------------------------------------------------------+"
     
     display_container_status_table

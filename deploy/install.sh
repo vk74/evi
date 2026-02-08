@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 #
-# Version: 1.8.3
+# Version: 1.8.4
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
 # - First run: prerequisites, guided env setup, deploy from pre-built images (init via evi-deploy-init.sh, then pull + systemctl start in install.sh).
 # - Subsequent runs: do not overwrite evi.env/evi.secrets.env; menu: deploy again, reconfigure (edit existing files), run evictl, exit.
 # - No podman build; no Manage submenu (use ./evictl directly for status, logs, restart, update).
+#
+# Changes in v1.8.4:
+# - Menu banners show script version (parsed from header)
 #
 # Changes in v1.8.3:
 # - pgAdmin: removed localhost-only restriction; default EVI_PGADMIN_HOST=0.0.0.0 for browser access from any computer (port 5445)
@@ -98,6 +101,8 @@ PROXY_DIR="${SCRIPT_DIR}/reverse-proxy"
 EVI_STATE_DIR_DEFAULT="${HOME}/.local/share/evi"
 EVI_CONFIG_DIR_DEFAULT="${HOME}/.config/evi"
 EVI_QUADLET_DIR_DEFAULT="${HOME}/.config/containers/systemd"
+
+INSTALL_VERSION=$(sed -n '1,20p' "${SCRIPT_DIR}/$(basename "${BASH_SOURCE[0]:-$0}")" 2>/dev/null | grep -m1 '^# Version: ' | sed 's/^# Version:[[:space:]]*//' || echo "?")
 
 # Password minimum length
 MIN_PASSWORD_LENGTH=12
@@ -1854,7 +1859,7 @@ menu_subsequent() {
   while true; do
     echo ""
     echo "+--------------------------------------------------------------+"
-    echo "|           evi install (config exists)                        |"
+    printf "| %-60s |\n" "evi install (config exists) v.${INSTALL_VERSION}"
     echo "+--------------------------------------------------------------+"
     echo ""
     echo "  1) deploy again (init + start from images)"
@@ -1879,7 +1884,7 @@ main_menu() {
   while true; do
     echo ""
     echo "+--------------------------------------------------------------+"
-    echo "|           evi installation manager, main menu                |"
+    printf " %-60s |\n" "evi installation manager, main menu v.${INSTALL_VERSION}"
     echo "+--------------------------------------------------------------+"
     
     display_status
