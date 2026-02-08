@@ -627,18 +627,12 @@ install_prerequisites_all() {
   printf "  ${GREEN}✓${NC} pgadmin\n"
   echo ""
   echo "cockpit:"
-  printf "  to manage your container environment visit cockpit at ${GREEN}https://<server-ip>:9090${NC} from any computer.\n"
+  printf "  to manage your container environment visit cockpit from any computer at ${GREEN}https://<server>:9090${NC} (use your server's ip address or dns name).\n"
   echo "  login using your host OS user account and password."
   echo ""
   echo "pgadmin:"
-  printf "  to manage your evi database use pgadmin at ${GREEN}http://<server-ip>:5445${NC} from any computer.\n"
-  echo "  evi-pgadmin and evi-db are 2 different containers, you need 2 separate user accounts, but they can use the same password."
-  printf "  1. login to web-console using ${GREEN}${pgadmin_email}${NC} and ${GREEN}EVI_ADMIN_DB_PASSWORD${NC}\n"
-  printf "  2. in web-console login to database using ${GREEN}evidba${NC} user account and ${GREEN}EVI_ADMIN_DB_PASSWORD${NC} (preconfigured).\n"
-  echo "  3. when evi deployment completes, EVI_ADMIN_DB_PASSWORD can be found in cockpit -> podman containers -> integration tab."
-  echo "  4. should you need to set your own db password, proceed to step 2 (container environment configuration) option 2 (manual configuration)."
-  echo "  edit evi.secrets.env file, EVI_ADMIN_DB_PASSWORD variable."
-  echo "  otherwise a secure password will be generated for you during guided container environment setup (option 1)."
+  printf "  to manage your evi database use pgadmin from any computer at ${GREEN}http://<server>:5445${NC} (use your server's ip address or dns name).\n"
+  printf "  login to web-console using ${GREEN}${pgadmin_email}${NC} and ${GREEN}EVI_ADMIN_DB_PASSWORD${NC}\n"
   echo ""
 
   read -r -p "press enter to continue..."
@@ -1824,7 +1818,7 @@ menu_subsequent() {
   while true; do
     echo ""
     echo "+--------------------------------------------------------------+"
-    printf "| %-60s |\n" "evi install (config exists) v.${INSTALL_VERSION}"
+    printf "| %-60s |\n" "evi install (config exists) version ${INSTALL_VERSION}"
     echo "+--------------------------------------------------------------+"
     echo ""
     echo "  1) deploy again (init + start from images)"
@@ -1849,7 +1843,7 @@ main_menu() {
   while true; do
     echo ""
     echo "+--------------------------------------------------------------+"
-    printf "| %-60s |\n" "evi installation manager, main menu. v.${INSTALL_VERSION}"
+    printf "| %-60s |\n" "evi installation manager, main menu. version ${INSTALL_VERSION}"
     echo "+--------------------------------------------------------------+"
     
     display_status
