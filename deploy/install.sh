@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.9.0
+# Version: 1.9.2
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
@@ -8,8 +8,13 @@
 # - Subsequent runs: do not overwrite evi.env/evi.secrets.env; menu: deploy again, reconfigure (edit existing files), run evictl, exit.
 # - No podman build; no Manage submenu (use ./evictl directly for status, logs, restart, update).
 #
+# Changes in v1.9.2:
+# - Prerequisites: UFW only opens application ports 80, 443. Admin ports 9090/5445 are configured only in Step 2 (environment configuration).
+#
+# Changes in v1.9.1:
+# - apply_firewall_admin_tools: delete "from 127.0.0.1" rules for 9090/5445 before applying allowed_ips/allowed_cidr/any so chosen policy takes effect; add proto tcp to rules.
+#
 # Changes in v1.9.0:
-# - Prerequisites: UFW allows cockpit (9090) and pgadmin (5445) from 127.0.0.1 only (no global allow).
 # - Guided setup: new Step 2 "from which computers may admins connect to cockpit?" (allowed_ips, allowed_cidr, localhost, any, skip).
 # - EVI_FIREWALL_ADMIN_ACCESS and EVI_FIREWALL_ADMIN_ALLOWED in evi.env; apply_firewall_admin_tools() applies UFW rules after save.
 # - Steps renumbered: TLS=3, passwords=4, demo data=5.
@@ -590,7 +595,7 @@ install_prerequisites_all() {
 
   if command -v ufw >/dev/null 2>&1; then
     if sudo ufw status | grep -q "Status: active"; then
-      log "opening ports 80, 443 in ufw..."
+      log "opening application ports 80, 443 in ufw..."
       sudo ufw allow 80/tcp
       sudo ufw allow 443/tcp
     fi
@@ -601,14 +606,6 @@ install_prerequisites_all() {
   sudo apt-get update
   sudo apt-get install -y cockpit cockpit-podman
   sudo systemctl enable --now cockpit.socket
-
-  if command -v ufw >/dev/null 2>&1; then
-    if sudo ufw status | grep -q "Status: active"; then
-      log "allowing cockpit and pgadmin from localhost only (ports 9090, 5445)..."
-      sudo ufw allow from 127.0.0.1 to any port 9090
-      sudo ufw allow from 127.0.0.1 to any port 5445
-    fi
-  fi
 
   systemctl --user enable --now podman.socket
   info "cockpit installed. access at https://<server-ip>:9090"
@@ -648,7 +645,7 @@ install_prerequisites_all() {
   printf "  to manage your evi database use pgadmin from any computer at ${GREEN}http://<server>:5445${NC} (use your server's ip address or dns name).\n"
   printf "  login to web-console using ${GREEN}${pgadmin_email}${NC} and ${GREEN}EVI_ADMIN_DB_PASSWORD${NC}\n"
   echo ""
-  printf "${YELLOW}\033[1mIMPORTANT:\033[0m${YELLOW} you can choose how to restrict access to cockpit and pgadmin in installation step 2 (environment configuration).${NC}\n"
+  printf "${YELLOW}\033[1mIMPORTANT:\033[0m${YELLOW} access to cockpit (9090) and pgadmin (5445) is configured in step 2 of environment configuration (localhost, specific hosts, or subnet).${NC}\n"
   echo ""
 
   read -r -p "press enter to continue..."
@@ -683,13 +680,16 @@ apply_firewall_admin_tools() {
   fi
 
   log "applying firewall rules for cockpit (ports 9090, 5445)..."
+  # Remove any existing rules for 9090 and 5445 (global allow or from 127.0.0.1 from prerequisites)
   sudo ufw delete allow 9090/tcp 2>/dev/null || true
   sudo ufw delete allow 5445/tcp 2>/dev/null || true
+  sudo ufw delete allow from 127.0.0.1 to any port 9090 2>/dev/null || true
+  sudo ufw delete allow from 127.0.0.1 to any port 5445 2>/dev/null || true
 
   case "${access}" in
     localhost)
-      sudo ufw allow from 127.0.0.1 to any port 9090 2>/dev/null || true
-      sudo ufw allow from 127.0.0.1 to any port 5445 2>/dev/null || true
+      sudo ufw allow from 127.0.0.1 to any port 9090 proto tcp 2>/dev/null || true
+      sudo ufw allow from 127.0.0.1 to any port 5445 proto tcp 2>/dev/null || true
       info "firewall: cockpit allowed from this server only (127.0.0.1)."
       ;;
     allowed_ips)
@@ -701,7 +701,7 @@ apply_firewall_admin_tools() {
         ip=$(echo "${ip}" | tr -d ' ')
         [[ -z "${ip}" ]] && continue
         if validate_ip "${ip}"; then
-          sudo ufw allow from "${ip}" to any port 9090,5445 2>/dev/null || true
+          sudo ufw allow from "${ip}" to any port 9090,5445 proto tcp 2>/dev/null || true
         fi
       done <<< "${allowed}"
       info "firewall: cockpit allowed from ${allowed}."
@@ -712,7 +712,7 @@ apply_firewall_admin_tools() {
         return 0
       fi
       if validate_cidr "${allowed}"; then
-        sudo ufw allow from "${allowed}" to any port 9090,5445 2>/dev/null || true
+        sudo ufw allow from "${allowed}" to any port 9090,5445 proto tcp 2>/dev/null || true
         info "firewall: cockpit allowed from ${allowed}."
       else
         warn "firewall: invalid CIDR ${allowed}; skipping."
@@ -829,7 +829,7 @@ guided_setup() {
 
   # Step 2: Firewall — from where may admins connect to cockpit (ports 9090, 5445)
   echo ""
-  echo "step 2: from which computers may admins connect to cockpit?"
+  echo "step 2: from which computers may admins connect to evi cockpit?"
   echo ""
   echo "cockpit is the web interface for server and container management. choose from where it can be opened in a browser."
   echo ""
