@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# version: 1.6.0
+# version: 1.7.0
 # purpose: developer release automation script for evi application.
 # deployment file: release.sh
 # logic:
@@ -9,6 +9,10 @@
 # - Step-by-step (menu) and CLI commands only; end-user deploy tree is installed into directory evi in home directory (~/evi).
 # - Independent from install.sh and evictl (developer workflow only).
 # - Deploy directory contents (db migrations, demo-data) are produced by release scripts only; do not edit deploy manually.
+#
+# Changes in v1.7.0:
+# - Menu option 5: build all images (evi-fe, evi-be, evi-db) in one step; options 6-8 push fe/be/db; option 9 push all images to GHCR; option 10 create git tags.
+# - CLI commands build-all and push-all added.
 #
 # Changes in v1.6.0:
 # - Multi-version support: evi-db, evi-fe, evi-be can have different versions. Root package.json holds eviDbVersion, eviFeVersion, eviBeVersion.
@@ -1223,6 +1227,15 @@ build_image_db() {
   printf "  ${CYAN}ghcr.io/${GHCR_NAMESPACE}/evi-db:${version}${NC}\n"
 }
 
+# Build all images (evi-fe, evi-be, evi-db) in one step
+build_image_all() {
+  log "building all images (evi-fe, evi-be, evi-db)..."
+  build_image_fe
+  build_image_be
+  build_image_db
+  log "all images built"
+}
+
 # Remove local manifest lists and per-arch images for evi-* (version/component), then run podman image prune -f for dangling layers.
 # If component is given (fe, be, db), remove only that image; otherwise all three. Does not remove containers/volumes/build cache.
 cleanup_local_images() {
@@ -1324,6 +1337,15 @@ publish_image_fe() { publish_image_component "fe"; }
 publish_image_be() { publish_image_component "be"; }
 publish_image_db() { publish_image_component "db"; }
 
+# Push all images (evi-fe, evi-be, evi-db) to GHCR in one step
+publish_image_all() {
+  log "pushing all images to GHCR..."
+  publish_image_fe
+  publish_image_be
+  publish_image_db
+  log "all images pushed to GHCR"
+}
+
 # Create one Git tag for a component (evi-db/vX.Y.Z, evi-fe/vX.Y.Z, evi-be/vX.Y.Z).
 create_one_git_tag() {
   local component="$1"
@@ -1382,10 +1404,12 @@ show_menu() {
   echo "  2) build evi-fe image"
   echo "  3) build evi-be image"
   echo "  4) build evi-db image"
-  echo "  5) push evi-fe to GHCR"
-  echo "  6) push evi-be to GHCR"
-  echo "  7) push evi-db to GHCR"
-  echo "  8) create git version tags (evi-db, evi-fe, evi-be)"
+  echo "  5) build all images (evi-fe, evi-be, evi-db)"
+  echo "  6) push evi-fe to GHCR"
+  echo "  7) push evi-be to GHCR"
+  echo "  8) push evi-db to GHCR"
+  echo "  9) push all images to GHCR"
+  echo " 10) create git version tags (evi-db, evi-fe, evi-be)"
   echo "  0) exit"
   echo ""
 }
@@ -1416,21 +1440,31 @@ main_menu() {
         read -r -p "press enter to continue..."
         ;;
       5)
-        publish_image_fe
+        build_image_all
         echo ""
         read -r -p "press enter to continue..."
         ;;
       6)
-        publish_image_be
+        publish_image_fe
         echo ""
         read -r -p "press enter to continue..."
         ;;
       7)
-        publish_image_db
+        publish_image_be
         echo ""
         read -r -p "press enter to continue..."
         ;;
       8)
+        publish_image_db
+        echo ""
+        read -r -p "press enter to continue..."
+        ;;
+      9)
+        publish_image_all
+        echo ""
+        read -r -p "press enter to continue..."
+        ;;
+      10)
         create_git_tag
         echo ""
         read -r -p "press enter to continue..."
@@ -1461,9 +1495,11 @@ commands:
   build-fe        build evi-fe container image only
   build-be        build evi-be container image only
   build-db        build evi-db container image only
+  build-all       build all images (evi-fe, evi-be, evi-db) in one step
   push-fe         push evi-fe to GHCR
   push-be         push evi-be to GHCR
   push-db         push evi-db to GHCR
+  push-all        push all images (evi-fe, evi-be, evi-db) to GHCR in one step
   tag             create git tags for evi-db, evi-fe, evi-be (from package.json)
   help            show this help message
 
@@ -1471,7 +1507,9 @@ examples:
   ./release.sh              # show interactive menu
   ./release.sh prepare       # set versions and prepare deploy files
   ./release.sh build-fe      # build frontend image only
+  ./release.sh build-all     # build all images
   ./release.sh push-fe       # push frontend image to GHCR
+  ./release.sh push-all      # push all images to GHCR
 
 For full cleanup of unused images (including base images pulled during build), run manually:
   podman image prune -a -f
@@ -1507,6 +1545,9 @@ main() {
     build-db)
       build_image_db
       ;;
+    build-all)
+      build_image_all
+      ;;
     push-fe)
       publish_image_fe
       ;;
@@ -1515,6 +1556,9 @@ main() {
       ;;
     push-db)
       publish_image_db
+      ;;
+    push-all)
+      publish_image_all
       ;;
     tag)
       create_git_tag
