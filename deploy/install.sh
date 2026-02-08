@@ -1849,9 +1849,9 @@ main_menu() {
     display_status
     
     echo "  0) exit"
-    echo "  1) install prerequisites (requires sudo)"
-    echo "  2) environment configuration"
-    echo "  3) deploy"
+    echo "  1) install prerequisites on host server (requires sudo)"
+    echo "  2) containers environment configuration (rootless)"
+    echo "  3) deploy and start evi containers (rootless)"
     echo ""
     read -r -p "select [0-3]: " opt
     case $opt in
