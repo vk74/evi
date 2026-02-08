@@ -1,15 +1,18 @@
 /**
  * types.catalog.ts - backend file
- * version: 1.2.0
+ * version: 1.3.0
  * Type definitions for catalog functionality on BACKEND.
- * 
+ *
  * Changes in v1.1.1:
  * - Added published_at field to DbProductDetails interface
  * - Added published_at field to CatalogProductDetailsDTO interface
- * 
+ *
  * Changes in v1.2.0:
  * - Added visibility flags (is_visible_owner, is_visible_groups, is_visible_tech_specs, is_visible_long_description) to DbProductDetails interface
  * - Added visibility flags to CatalogProductDetailsDTO interface
+ *
+ * Changes in v1.3.0:
+ * - Added short_description to CatalogProductOptionDTO for option descriptions in estimation export
  *
  * This module defines TypeScript types and interfaces for:
  * - Database models and operations
@@ -331,6 +334,7 @@ export interface CatalogProductOptionDTO {
     option_product_id: string;
     option_name: string;
     product_code: string | null;
+    short_description?: string | null;
     is_published: boolean;
     is_required: boolean;
     units_count: number | null;

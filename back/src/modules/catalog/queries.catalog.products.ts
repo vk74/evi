@@ -1,6 +1,6 @@
 /**
  * queries.catalog.products.ts - backend file
- * version: 1.9.0
+ * version: 1.10.0
  * 
  * Purpose: SQL queries for catalog products (public consumption layer)
  * Logic: Provides parameterized queries to fetch active products for the catalog and product details
@@ -51,6 +51,9 @@
  * Changes in v1.9.0:
  * - Fixed language_code comparisons to cast enum to text before comparison
  * - This allows queries to work with both old enum values ('en', 'ru') and new values ('english', 'russian')
+ *
+ * Changes in v1.10.0:
+ * - getProductOptionsByProductId now returns short_description (COALESCE from product_translations) for estimation Excel export
  */
 
 export const queries = {
@@ -208,6 +211,7 @@ export const queries = {
       po.option_product_id,
       COALESCE(pt_requested.name, pt_fallback.name, p_option.product_code) AS option_name,
       p_option.product_code,
+      COALESCE(pt_requested.short_desc, pt_fallback.short_desc) AS short_description,
       p_option.is_published,
       po.is_required,
       po.units_count,

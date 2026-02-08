@@ -1,5 +1,5 @@
 /*
-version: 1.7.0
+version: 1.8.0
 Frontend file for product types in catalog module.
 TypeScript interfaces for catalog products based on database structure.
 File: types.products.ts
@@ -25,6 +25,9 @@ Changes in v1.6.0:
 Changes in v1.7.0:
 - Added visibility flags (is_visible_owner, is_visible_groups, is_visible_tech_specs, is_visible_long_description) to CatalogProductDetails interface
 - Visibility flags control which sections are displayed in product detail cards
+
+Changes in v1.8.0:
+- Added short_description to CatalogProductOption and FetchProductOptionsResponse for option descriptions in estimation export
 */
 
 export type ProductStatus = 'published' | 'draft' | 'archived'
@@ -95,6 +98,7 @@ export interface CatalogProductOption {
   product_id: string;
   option_name: string;
   product_code: string | null;
+  short_description?: string | null;
   is_published: boolean;
   is_required: boolean;
   units_count: number | null;
@@ -108,6 +112,7 @@ export interface FetchProductOptionsResponse {
     option_product_id: string;
     option_name: string;
     product_code: string | null;
+    short_description?: string | null;
     is_published: boolean;
     is_required: boolean;
     units_count: number | null;

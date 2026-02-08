@@ -1,5 +1,5 @@
 <!--
-version: 1.9.0
+version: 1.11.0
 Frontend file ProductOptionsTable.vue.
 Purpose: Displays product option rows with search, counter, and pagination; mirrors PairEditor table UX.
 Filename: ProductOptionsTable.vue
@@ -70,6 +70,9 @@ Changes in v1.9.0:
 
 Changes in v1.10.0:
 - Added getEstimationRows(vatRates) for estimation export: returns options with quantity > 0 (catalog number = product_code, name, quantity, unit price, vat rate, description empty)
+
+Changes in v1.11.0:
+- getEstimationRows now uses option short_description from API for Excel description column
 -->
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
@@ -806,7 +809,7 @@ function getEstimationRows(vatRates: Map<string, number | null>): Array<{ catalo
       quantity: qty,
       unitPrice,
       vatRate,
-      description: ''
+      description: opt.short_description ?? ''
     })
   }
   return result
