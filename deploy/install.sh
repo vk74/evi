@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 #
-# Version: 1.9.3
+# Version: 1.10.0
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
-# - First run: prerequisites, guided env setup, deploy from pre-built images (init, pull + systemctl start in install.sh).
-# - Subsequent runs: if evi.env and evi.secrets.env exist, run deploy/scripts/evi-reconfigure.sh (info block, menu: 0 exit, 1 guided configuration, 2 edit evi.env, 3 edit evi.secrets.env, 4 redeploy containers). No overwrite of config files.
+# - First run: prerequisites, guided env setup (no "keep current" options), deploy from pre-built images (init, pull + systemctl start in install.sh).
+# - Subsequent runs: if evi.env and evi.secrets.env exist, run deploy/scripts/evi-reconfigure.sh (info block, menu: 0 exit, 1 guided configuration, 2 edit evi.env, 3 edit evi.secrets.env, 4 redeploy containers). Guided reconfigure has "keep current setting" in evi-reconfigure.sh.
 # - No podman build; use ./evictl for status, logs, restart, update.
+#
+# Changes in v1.10.0:
+# - Guided setup (first run): removed "keep current setting" from all steps; reordered steps to 1-access, 2-TLS, 3-firewall, 4-passwords, 5-demo. Options renumbered (e.g. step 1: 1-3, step 4: 1-2).
+# - Reconfigure flow moved to evi-reconfigure.sh: guided_reconfigure() with same step order and "keep current" as option 1; empty-password guard when keeping passwords.
 #
 # Changes in v1.9.3:
 # - Subsequent run: delegate to evi-reconfigure.sh; removed menu_subsequent and reconfigure_edit_existing. New menu: exit, guided config, edit evi.env, edit evi.secrets.env, redeploy. Redeploy uses do_redeploy (init + restart only; no image pull — uses existing images; evi-db volume preserved). Upgrading to new image versions is separate (e.g. evictl update). Guided setup: "keep current setting" as first option in every step.
@@ -740,102 +744,76 @@ guided_setup() {
   
   ensure_config_files
   
-  # Read current values from config (for "keep current" option when reconfiguring)
-  local current_domain current_tls_mode current_acme_email current_firewall_access current_firewall_allowed current_seed_demo_data
-  current_domain=$(grep "^EVI_DOMAIN=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "")
-  current_tls_mode=$(grep "^EVI_TLS_MODE=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | tr -d "'" || echo "letsencrypt")
-  current_acme_email=$(grep "^EVI_ACME_EMAIL=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "")
-  current_firewall_access=$(grep "^EVI_FIREWALL_ADMIN_ACCESS=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | tr -d "'" || echo "")
-  current_firewall_allowed=$(grep "^EVI_FIREWALL_ADMIN_ALLOWED=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "")
-  current_seed_demo_data=$(grep "^EVI_SEED_DEMO_DATA=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | tr -d "'" | tr '[:upper:]' '[:lower:]' || echo "false")
-  
-  # Step 1: Access type
+  # Step 1: Access type (no "keep current" — first-run only)
   echo "step 1: how will users connect to your evi?"
   echo ""
-  local step1_keep_label="not set"
-  [[ -n "${current_domain}" ]] && step1_keep_label="${current_domain}"
-  echo "  1) keep current setting (${step1_keep_label})"
-  echo "  2) private ip or intranet dns name"
-  echo "  3) public dns domain"
-  echo "  4) public ip address"
+  echo "  1) private ip or intranet dns name"
+  echo "  2) public dns domain"
+  echo "  3) public ip address"
   echo ""
   
   local access_type=""
-  local step1_choice=""
   while [[ -z "${access_type}" ]]; do
-    read -r -p "select [1-4]: " step1_choice
+    read -r -p "select [1-3]: " step1_choice
     case "${step1_choice}" in
-      1)
-        if [[ -n "${current_domain}" ]]; then
-          domain="${current_domain}"
-          if [[ "${current_tls_mode}" == "letsencrypt" ]]; then
-            access_type="public_domain"
-            tls_mode="letsencrypt"
-            acme_email="${current_acme_email}"
-            cert_choice="letsencrypt"
-          elif validate_ip "${current_domain}"; then
-            access_type="public_ip"
-            tls_mode="manual"
-          else
-            access_type="internal"
-            tls_mode="manual"
-          fi
-        else
-          access_type=""; warn "no current setting; please select 2, 3, or 4"
-        fi
-        ;;
-      2) access_type="internal" ;;
-      3) access_type="public_domain" ;;
-      4) access_type="public_ip" ;;
-      *) access_type=""; warn "please select 1, 2, 3, or 4" ;;
+      1) access_type="internal" ;;
+      2) access_type="public_domain" ;;
+      3) access_type="public_ip" ;;
+      *) warn "please select 1, 2, or 3" ;;
     esac
   done
   
-  # Get domain/IP (unless already set by keep current)
-  local domain="${domain:-}"
-  local tls_mode="${tls_mode:-}"
-  local acme_email="${acme_email:-}"
-  local cert_choice="${cert_choice:-}"
-  
+  local domain=""
   if [[ "${access_type}" == "public_domain" ]]; then
-    if [[ -z "${domain}" ]]; then
-      while [[ -z "${domain}" ]]; do
-        read -r -p "enter your public domain name (e.g., evi.example.com): " domain
-        if ! validate_domain "${domain}"; then
-          warn "invalid domain format"
-          domain=""
-        fi
-      done
-    fi
-    if [[ -z "${cert_choice}" ]]; then
-      echo ""
-      echo "step 3: tls certificate configuration"
-      echo ""
-      local step3_keep_label="${current_tls_mode:-not set}"
-      echo "  1) keep current setting (${step3_keep_label})"
-      echo "  2) let's encrypt (automatic)"
-      echo "  3) use my own certificates"
-      echo ""
-      local step3_c=""
-      while [[ -z "${cert_choice}" ]]; do
-        read -r -p "select [1-3]: " step3_c
-        case "${step3_c}" in
-          1)
-            if [[ -n "${current_tls_mode}" ]]; then
-              tls_mode="${current_tls_mode}"
-              cert_choice="keep"
-              [[ "${current_tls_mode}" == "letsencrypt" ]] && acme_email="${current_acme_email}"
-            else
-              warn "no current setting; please select 2 or 3"
-            fi
-            ;;
-          2) tls_mode="letsencrypt"; cert_choice="letsencrypt" ;;
-          3) tls_mode="manual"; cert_choice="own" ;;
-          *) warn "please select 1, 2, or 3" ;;
-        esac
-      done
-    fi
-    if [[ "${tls_mode}" == "letsencrypt" ]] && [[ -z "${acme_email}" ]]; then
+    while [[ -z "${domain}" ]]; do
+      read -r -p "enter your public domain name (e.g., evi.example.com): " domain
+      if ! validate_domain "${domain}"; then
+        warn "invalid domain format"
+        domain=""
+      fi
+    done
+  elif [[ "${access_type}" == "public_ip" ]]; then
+    while [[ -z "${domain}" ]]; do
+      read -r -p "enter your public ip address: " domain
+      if ! validate_ip "${domain}"; then
+        warn "invalid ip address format"
+        domain=""
+      fi
+    done
+    # public_ip always uses manual TLS
+  else
+    while [[ -z "${domain}" ]]; do
+      read -r -p "enter ip address or domain name: " domain
+      if ! validate_ip "${domain}" && ! validate_domain "${domain}"; then
+        warn "invalid ip or domain format"
+        domain=""
+      fi
+    done
+    # internal always uses manual TLS
+  fi
+  
+  # Step 2: TLS certificate (always step 2; no "keep current")
+  local tls_mode=""
+  local acme_email=""
+  local generate_certs="yes"
+  local cert_choice=""
+  
+  echo ""
+  echo "step 2: tls certificate configuration"
+  echo ""
+  if [[ "${access_type}" == "public_domain" ]]; then
+    echo "  1) let's encrypt (automatic)"
+    echo "  2) use my own certificates"
+    echo ""
+    while [[ -z "${cert_choice}" ]]; do
+      read -r -p "select [1-2]: " step2_tls
+      case "${step2_tls}" in
+        1) tls_mode="letsencrypt"; cert_choice="letsencrypt" ;;
+        2) tls_mode="manual"; cert_choice="own"; generate_certs="no" ;;
+        *) warn "please select 1 or 2" ;;
+      esac
+    done
+    if [[ "${tls_mode}" == "letsencrypt" ]]; then
       while [[ -z "${acme_email}" ]]; do
         read -r -p "enter email for let's encrypt account operations: " acme_email
         if [[ ! "${acme_email}" =~ ^[^@]+@[^@]+\.[^@]+$ ]]; then
@@ -844,75 +822,91 @@ guided_setup() {
         fi
       done
     fi
-    
-  elif [[ "${access_type}" == "public_ip" ]]; then
-    if [[ -z "${domain}" ]]; then
-      while [[ -z "${domain}" ]]; do
-        read -r -p "enter your public ip address: " domain
-        if ! validate_ip "${domain}"; then
-          warn "invalid ip address format"
-          domain=""
-        fi
-      done
-    fi
+  else
+    # internal or public_ip: manual TLS only
     tls_mode="manual"
-    
-  else  # internal
-    if [[ -z "${domain}" ]]; then
-      while [[ -z "${domain}" ]]; do
-        read -r -p "enter ip address or domain name: " domain
-        if ! validate_ip "${domain}" && ! validate_domain "${domain}"; then
-          warn "invalid ip or domain format"
-          domain=""
-        fi
-      done
-    fi
-    tls_mode="manual"
+    echo "  1) auto-generate self-signed certificate (recommended)"
+    echo "  2) use my own certificates"
+    echo ""
+    while [[ -z "${cert_choice}" ]]; do
+      read -r -p "select [1-2]: " step2_tls
+      case "${step2_tls}" in
+        1) generate_certs="yes"; cert_choice="auto" ;;
+        2) generate_certs="no"; cert_choice="own" ;;
+        *) warn "please select 1 or 2" ;;
+      esac
+    done
   fi
-
-  # Step 2: Firewall — from where may admins connect to cockpit (ports 9090, 5445)
+  
+  # Handle own certificates (manual mode, user provides files)
+  if [[ "${tls_mode}" == "manual" ]] && [[ "${generate_certs}" == "no" ]]; then
+    echo ""
+    echo "please place your certificates in: ${TLS_DIR}/"
+    echo "  - cert.pem (server certificate)"
+    echo "  - key.pem (private key)"
+    echo ""
+    read -r -p "press enter when files are ready..."
+    
+    if [[ ! -f "${TLS_DIR}/cert.pem" ]] || [[ ! -f "${TLS_DIR}/key.pem" ]]; then
+      err "certificates not found in ${TLS_DIR}/"
+      warn "you can add them later and run deployment again."
+    else
+      echo ""
+      log "validating certificates..."
+      local validation_errors
+      validation_errors=$(validate_user_certificate "${TLS_DIR}/cert.pem" "${TLS_DIR}/key.pem" "${domain}" 2>&1)
+      local validation_result=$?
+      if [[ $validation_result -ne 0 ]]; then
+        echo ""
+        err "certificate validation failed!"
+        while IFS= read -r error_msg; do
+          [[ -n "${error_msg}" ]] && info "  ${error_msg}"
+        done <<< "${validation_errors}"
+        echo ""
+        warn "deployment may fail if certificates are invalid."
+        warn "you can fix certificates later and run deployment again."
+        if ! confirm "continue anyway?"; then
+          warn "configuration cancelled."
+          return
+        fi
+      else
+        info "certificates validated successfully."
+      fi
+    fi
+  fi
+  
+  # Step 3: Firewall — from where may admins connect to cockpit (ports 9090, 5445)
   echo ""
-  echo "step 2: from which computers may admins connect to evi cockpit?"
+  echo "step 3: from which computers may admins connect to evi cockpit?"
   echo ""
   echo "cockpit is the web interface for server and container management. choose from where it can be opened in a browser."
   echo ""
-  local step2_keep_label="${current_firewall_access:-not set}"
-  [[ -n "${current_firewall_allowed}" ]] && step2_keep_label="${current_firewall_access} (${current_firewall_allowed})"
-  echo "  1) keep current setting (${step2_keep_label})"
-  echo "  2) from specific computer(s) by address"
+  echo "  1) from specific computer(s) by address"
   echo "     (enter one or more IP addresses, e.g. 192.168.1.10 or 192.168.1.10, 192.168.1.11)"
   echo ""
-  echo "  3) from all computers in a local network range"
+  echo "  2) from all computers in a local network range"
   echo "     (enter range in the form address/mask, e.g. 192.168.1.0/24 or 172.31.0.0/16)"
   echo ""
-  echo "  4) only from this server"
+  echo "  3) only from this server"
   echo "     (you open cockpit in a browser only when on the same machine; requires a graphical session on the server, e.g. desktop or remote desktop — not typical for headless servers)"
   echo ""
-  echo "  5) from any computer (not recommended)"
+  echo "  4) from any computer (not recommended)"
   echo "     (anyone who knows the address can try to open cockpit; use only for testing)"
   echo ""
-  echo "  6) do not change firewall now"
+  echo "  5) do not change firewall now"
   echo "     (you will configure access yourself later)"
   echo ""
   local firewall_access=""
   local firewall_allowed=""
   while [[ -z "${firewall_access}" ]]; do
-    read -r -p "select [1-6]: " step2_c
-    case "${step2_c}" in
-      1)
-        if [[ -n "${current_firewall_access}" ]]; then
-          firewall_access="${current_firewall_access}"
-          firewall_allowed="${current_firewall_allowed}"
-        else
-          warn "no current setting; please select 2, 3, 4, 5, or 6"
-        fi
-        ;;
-      2) firewall_access="allowed_ips" ;;
-      3) firewall_access="allowed_cidr" ;;
-      4) firewall_access="localhost" ;;
-      5) firewall_access="any" ;;
-      6) firewall_access="skip" ;;
-      *) warn "please select 1, 2, 3, 4, 5, or 6" ;;
+    read -r -p "select [1-5]: " step3_c
+    case "${step3_c}" in
+      1) firewall_access="allowed_ips" ;;
+      2) firewall_access="allowed_cidr" ;;
+      3) firewall_access="localhost" ;;
+      4) firewall_access="any" ;;
+      5) firewall_access="skip" ;;
+      *) warn "please select 1, 2, 3, 4, or 5" ;;
     esac
   done
   if [[ "${firewall_access}" == "allowed_ips" ]]; then
@@ -941,107 +935,22 @@ guided_setup() {
       fi
     done
   fi
-
-  # Step 3: TLS certificates (for manual mode, except public_domain with own cert which is already handled)
-  local generate_certs="yes"
-  local cert_choice_manual=""
   
-  if [[ "${tls_mode}" == "manual" ]]; then
-    # For public_domain with own cert (or keep current with manual), we already handled it above
-    if [[ "${access_type}" == "public_domain" ]] && { [[ "${cert_choice}" == "own" ]] || [[ "${cert_choice}" == "keep" ]]; }; then
-      generate_certs="no"
-    else
-      # For internal and public_ip, ask about certificate choice
-      echo ""
-      echo "step 3: tls certificate configuration"
-      echo ""
-      local step3m_keep="auto-generate"
-      [[ -f "${TLS_DIR}/cert.pem" ]] && [[ -f "${TLS_DIR}/key.pem" ]] && step3m_keep="use my own"
-      echo "  1) keep current setting (${step3m_keep})"
-      echo "  2) auto-generate self-signed certificate (recommended)"
-      echo "  3) use my own certificates"
-      echo ""
-      local step3m_c=""
-      while [[ -z "${cert_choice_manual}" ]]; do
-        read -r -p "select [1-3]: " step3m_c
-        case "${step3m_c}" in
-          1)
-            if [[ -f "${TLS_DIR}/cert.pem" ]] && [[ -f "${TLS_DIR}/key.pem" ]]; then
-              generate_certs="no"
-              cert_choice_manual="keep"
-            else
-              generate_certs="yes"
-              cert_choice_manual="keep"
-            fi
-            ;;
-          2) generate_certs="yes"; cert_choice_manual="auto" ;;
-          3) generate_certs="no"; cert_choice_manual="own" ;;
-          *) warn "please select 1, 2, or 3" ;;
-        esac
-      done
-    fi
-    
-    # Handle own certificates (for all manual modes with own cert)
-    if [[ "${generate_certs}" == "no" ]]; then
-      echo ""
-      echo "please place your certificates in: ${TLS_DIR}/"
-      echo "  - cert.pem (server certificate)"
-      echo "  - key.pem (private key)"
-      echo ""
-      read -r -p "press enter when files are ready..."
-      
-      if [[ ! -f "${TLS_DIR}/cert.pem" ]] || [[ ! -f "${TLS_DIR}/key.pem" ]]; then
-        err "certificates not found in ${TLS_DIR}/"
-        warn "you can add them later and run deployment again."
-      else
-        # Validate certificates
-        echo ""
-        log "validating certificates..."
-        local validation_errors
-        validation_errors=$(validate_user_certificate "${TLS_DIR}/cert.pem" "${TLS_DIR}/key.pem" "${domain}" 2>&1)
-        local validation_result=$?
-        
-        if [[ $validation_result -ne 0 ]]; then
-          echo ""
-          err "certificate validation failed!"
-          while IFS= read -r error_msg; do
-            [[ -n "${error_msg}" ]] && info "  ${error_msg}"
-          done <<< "${validation_errors}"
-          echo ""
-          warn "deployment may fail if certificates are invalid."
-          warn "you can fix certificates later and run deployment again."
-          if ! confirm "continue anyway?"; then
-            warn "configuration cancelled."
-            return
-          fi
-        else
-          info "certificates validated successfully."
-        fi
-      fi
-    fi
-  fi
-  
-  # Step 4: Database passwords
+  # Step 4: Database passwords (no "keep current")
   echo ""
   echo "step 4: database password configuration"
   echo ""
-  local step4_keep="not set"
-  local cur_pg
-  cur_pg=$(grep "^EVI_POSTGRES_PASSWORD=" "${TARGET_SECRETS}" 2>/dev/null | cut -d'=' -f2-)
-  [[ -n "${cur_pg}" ]] && step4_keep="set"
-  echo "  1) keep current setting (${step4_keep})"
-  echo "  2) auto-generate secure passwords (recommended)"
-  echo "  3) set passwords manually"
+  echo "  1) auto-generate secure passwords (recommended)"
+  echo "  2) set passwords manually"
   echo ""
   
   local pass_choice=""
   while [[ -z "${pass_choice}" ]]; do
-    read -r -p "select [1-3]: " step4_c
+    read -r -p "select [1-2]: " step4_c
     case "${step4_c}" in
-      1) pass_choice="keep" ;;
-      2) pass_choice="auto" ;;
-      3) pass_choice="manual" ;;
-      *) warn "please select 1, 2, or 3" ;;
+      1) pass_choice="auto" ;;
+      2) pass_choice="manual" ;;
+      *) warn "please select 1 or 2" ;;
     esac
   done
   
@@ -1082,25 +991,21 @@ guided_setup() {
     info "passwords will be auto-generated."
   fi
   
-  # Step 5: Demo data
+  # Step 5: Demo data (no "keep current")
   echo ""
   echo "step 5: deploy demo data?"
   echo ""
-  local step5_keep_label="no"
-  [[ "${current_seed_demo_data}" == "true" ]] && step5_keep_label="yes"
-  echo "  1) keep current setting (${step5_keep_label})"
-  echo "  2) yes, deploy demo data"
-  echo "  3) no demo data, just clean install"
+  echo "  1) yes, deploy demo data"
+  echo "  2) no demo data, just clean install"
   echo ""
   
   local demo_data_choice=""
   while [[ -z "${demo_data_choice}" ]]; do
-    read -r -p "select [1-3]: " step5_c
+    read -r -p "select [1-2]: " step5_c
     case "${step5_c}" in
-      1) demo_data_choice="${step5_keep_label}" ;;
-      2) demo_data_choice="yes" ;;
-      3) demo_data_choice="no" ;;
-      *) warn "please select 1, 2, or 3" ;;
+      1) demo_data_choice="yes" ;;
+      2) demo_data_choice="no" ;;
+      *) warn "please select 1 or 2" ;;
     esac
   done
   
