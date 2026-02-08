@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
 #
-# Version: 1.8.5
+# Version: 1.9.0
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
 # - First run: prerequisites, guided env setup, deploy from pre-built images (init via evi-deploy-init.sh, then pull + systemctl start in install.sh).
 # - Subsequent runs: do not overwrite evi.env/evi.secrets.env; menu: deploy again, reconfigure (edit existing files), run evictl, exit.
 # - No podman build; no Manage submenu (use ./evictl directly for status, logs, restart, update).
+#
+# Changes in v1.9.0:
+# - Prerequisites: UFW allows cockpit (9090) and pgadmin (5445) from 127.0.0.1 only (no global allow).
+# - Guided setup: new Step 2 "from which computers may admins connect to cockpit?" (allowed_ips, allowed_cidr, localhost, any, skip).
+# - EVI_FIREWALL_ADMIN_ACCESS and EVI_FIREWALL_ADMIN_ALLOWED in evi.env; apply_firewall_admin_tools() applies UFW rules after save.
+# - Steps renumbered: TLS=3, passwords=4, demo data=5.
 #
 # Changes in v1.8.5:
 # - Removed prerequisites submenu; option 1 in main menu directly starts installation
@@ -180,6 +186,13 @@ validate_ip() {
 validate_domain() {
   local domain="$1"
   [[ "$domain" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$ ]]
+}
+
+validate_cidr() {
+  local cidr="$1"
+  [[ "$cidr" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$ ]] || return 1
+  local mask="${cidr##*/}"
+  [[ "$mask" -ge 0 && "$mask" -le 32 ]]
 }
 
 validate_password() {
@@ -591,8 +604,9 @@ install_prerequisites_all() {
 
   if command -v ufw >/dev/null 2>&1; then
     if sudo ufw status | grep -q "Status: active"; then
-      log "opening port 9090 in ufw..."
-      sudo ufw allow 9090/tcp
+      log "allowing cockpit and pgadmin from localhost only (ports 9090, 5445)..."
+      sudo ufw allow from 127.0.0.1 to any port 9090
+      sudo ufw allow from 127.0.0.1 to any port 5445
     fi
   fi
 
@@ -634,7 +648,7 @@ install_prerequisites_all() {
   printf "  to manage your evi database use pgadmin from any computer at ${GREEN}http://<server>:5445${NC} (use your server's ip address or dns name).\n"
   printf "  login to web-console using ${GREEN}${pgadmin_email}${NC} and ${GREEN}EVI_ADMIN_DB_PASSWORD${NC}\n"
   echo ""
-  printf "${YELLOW}\033[1mIMPORTANT:\033[0m${YELLOW} restrict firewall access to cockpit and pgadmin to trusted networks or hosts only.${NC}\n"
+  printf "${YELLOW}\033[1mIMPORTANT:\033[0m${YELLOW} restrict access (on host firewall) to cockpit and pgadmin to trusted networks or hosts only.${NC}\n"
   echo ""
 
   read -r -p "press enter to continue..."
@@ -644,6 +658,75 @@ install_prerequisites_all() {
 
 generate_password() {
   openssl rand -base64 32 | tr -d '/+=' | cut -c1-24
+}
+
+# Apply UFW rules for cockpit (9090) and pgadmin (5445) from EVI_FIREWALL_ADMIN_* in evi.env
+apply_firewall_admin_tools() {
+  [[ -f "${TARGET_ENV}" ]] || return 0
+  local access
+  access=$(grep "^EVI_FIREWALL_ADMIN_ACCESS=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "skip")
+  local allowed
+  allowed=$(grep "^EVI_FIREWALL_ADMIN_ALLOWED=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "")
+
+  if [[ "${access}" == "skip" ]]; then
+    info "firewall: no change (you will configure access yourself)."
+    return 0
+  fi
+
+  if ! command -v ufw >/dev/null 2>&1; then
+    warn "ufw not found; skipping firewall rules for cockpit."
+    return 0
+  fi
+  if ! sudo ufw status 2>/dev/null | grep -q "Status: active"; then
+    warn "ufw is not active; skipping firewall rules for cockpit."
+    return 0
+  fi
+
+  log "applying firewall rules for cockpit (ports 9090, 5445)..."
+  sudo ufw delete allow 9090/tcp 2>/dev/null || true
+  sudo ufw delete allow 5445/tcp 2>/dev/null || true
+
+  case "${access}" in
+    localhost)
+      sudo ufw allow from 127.0.0.1 to any port 9090 2>/dev/null || true
+      sudo ufw allow from 127.0.0.1 to any port 5445 2>/dev/null || true
+      info "firewall: cockpit allowed from this server only (127.0.0.1)."
+      ;;
+    allowed_ips)
+      if [[ -z "${allowed}" ]]; then
+        warn "firewall: no IPs in EVI_FIREWALL_ADMIN_ALLOWED; skipping."
+        return 0
+      fi
+      while IFS=',' read -r ip; do
+        ip=$(echo "${ip}" | tr -d ' ')
+        [[ -z "${ip}" ]] && continue
+        if validate_ip "${ip}"; then
+          sudo ufw allow from "${ip}" to any port 9090,5445 2>/dev/null || true
+        fi
+      done <<< "${allowed}"
+      info "firewall: cockpit allowed from ${allowed}."
+      ;;
+    allowed_cidr)
+      if [[ -z "${allowed}" ]]; then
+        warn "firewall: no CIDR in EVI_FIREWALL_ADMIN_ALLOWED; skipping."
+        return 0
+      fi
+      if validate_cidr "${allowed}"; then
+        sudo ufw allow from "${allowed}" to any port 9090,5445 2>/dev/null || true
+        info "firewall: cockpit allowed from ${allowed}."
+      else
+        warn "firewall: invalid CIDR ${allowed}; skipping."
+      fi
+      ;;
+    any)
+      sudo ufw allow 9090/tcp 2>/dev/null || true
+      sudo ufw allow 5445/tcp 2>/dev/null || true
+      info "firewall: cockpit allowed from any computer (not recommended)."
+      ;;
+    *)
+      warn "firewall: unknown EVI_FIREWALL_ADMIN_ACCESS=${access}; no rules applied."
+      ;;
+  esac
 }
 
 guided_setup() {
@@ -688,9 +771,9 @@ guided_setup() {
       fi
     done
     
-    # Step 2: TLS certificate choice for public domain
+    # Step 3: TLS certificate choice for public domain
     echo ""
-    echo "step 2: tls certificate configuration"
+    echo "step 3: tls certificate configuration"
     echo ""
     echo "  1) let's encrypt (automatic)"
     echo "  2) use my own certificates"
@@ -743,8 +826,69 @@ guided_setup() {
     done
     tls_mode="manual"
   fi
-  
-  # Step 2: TLS certificates (for manual mode, except public_domain with own cert which is already handled)
+
+  # Step 2: Firewall — from where may admins connect to cockpit (ports 9090, 5445)
+  echo ""
+  echo "step 2: from which computers may admins connect to cockpit?"
+  echo ""
+  echo "cockpit is the web interface for server and container management. choose from where it can be opened in a browser."
+  echo ""
+  echo "  1) from specific computer(s) by address"
+  echo "     (enter one or more IP addresses, e.g. 192.168.1.10 or 192.168.1.10, 192.168.1.11)"
+  echo ""
+  echo "  2) from all computers in a local network range"
+  echo "     (enter range in the form address/mask, e.g. 192.168.1.0/24 or 172.31.0.0/16)"
+  echo ""
+  echo "  3) only from this server"
+  echo "     (you open cockpit in a browser only when on the same machine; requires a graphical session on the server, e.g. desktop or remote desktop — not typical for headless servers)"
+  echo ""
+  echo "  4) from any computer (not recommended)"
+  echo "     (anyone who knows the address can try to open cockpit; use only for testing)"
+  echo ""
+  echo "  5) do not change firewall now"
+  echo "     (you will configure access yourself later)"
+  echo ""
+  local firewall_access=""
+  local firewall_allowed=""
+  while [[ -z "${firewall_access}" ]]; do
+    read -r -p "select [1-5]: " firewall_access
+    case "${firewall_access}" in
+      1) firewall_access="allowed_ips" ;;
+      2) firewall_access="allowed_cidr" ;;
+      3) firewall_access="localhost" ;;
+      4) firewall_access="any" ;;
+      5) firewall_access="skip" ;;
+      *) firewall_access=""; warn "please select 1, 2, 3, 4, or 5" ;;
+    esac
+  done
+  if [[ "${firewall_access}" == "allowed_ips" ]]; then
+    while true; do
+      read -r -p "enter IP address(es), separated by commas (e.g. 192.168.1.10, 192.168.1.11): " firewall_allowed
+      firewall_allowed=$(echo "${firewall_allowed}" | tr -d ' ')
+      [[ -z "${firewall_allowed}" ]] && warn "invalid format, try again" && continue
+      local ok=1
+      while IFS=',' read -r ip; do
+        ip=$(echo "${ip}" | tr -d ' ')
+        [[ -z "${ip}" ]] && continue
+        if ! validate_ip "${ip}"; then
+          ok=0
+          break
+        fi
+      done <<< "${firewall_allowed}"
+      [[ "${ok}" -eq 1 ]] && break
+      warn "invalid format, try again"
+    done
+  elif [[ "${firewall_access}" == "allowed_cidr" ]]; then
+    while [[ -z "${firewall_allowed}" ]]; do
+      read -r -p "enter network range as address/mask (e.g. 192.168.1.0/24 or 172.31.0.0/16): " firewall_allowed
+      if ! validate_cidr "${firewall_allowed}"; then
+        warn "invalid format, try again"
+        firewall_allowed=""
+      fi
+    done
+  fi
+
+  # Step 3: TLS certificates (for manual mode, except public_domain with own cert which is already handled)
   local generate_certs="yes"
   local cert_choice_manual=""
   
@@ -755,7 +899,7 @@ guided_setup() {
     else
       # For internal and public_ip, ask about certificate choice
       echo ""
-      echo "step 2: tls certificate configuration"
+      echo "step 3: tls certificate configuration"
       echo ""
       echo "  1) auto-generate self-signed certificate (recommended)"
       echo "  2) use my own certificates"
@@ -811,8 +955,9 @@ guided_setup() {
     fi
   fi
   
-  # Step 3: Database passwords
-  echo "step 3: database password configuration"
+  # Step 4: Database passwords
+  echo ""
+  echo "step 4: database password configuration"
   echo ""
   echo "  1) auto-generate secure passwords (recommended)"
   echo "  2) set passwords manually"
@@ -865,9 +1010,9 @@ guided_setup() {
     info "passwords will be auto-generated."
   fi
   
-  # Step 4: Demo data
+  # Step 5: Demo data
   echo ""
-  echo "step 4: deploy demo data?"
+  echo "step 5: deploy demo data?"
   echo ""
   echo "  1) yes, deploy demo data"
   echo "  2) no demo data, just clean install"
@@ -905,6 +1050,9 @@ guided_setup() {
   fi
   printf "  db passwords:  %s\n" "${pass_choice}"
   printf "  demo data:     %s\n" "${demo_data_choice}"
+  local firewall_summary="${firewall_access}"
+  [[ -n "${firewall_allowed}" ]] && firewall_summary="${firewall_access} (${firewall_allowed})"
+  printf "  cockpit access: %s\n" "${firewall_summary}"
   echo ""
   
   if ! confirm "save and apply this configuration?"; then
@@ -938,8 +1086,23 @@ guided_setup() {
   else
     echo "EVI_SEED_DEMO_DATA=${seed_demo_data}" >> "${TARGET_ENV}"
   fi
+
+  # Update EVI_FIREWALL_ADMIN_ACCESS and EVI_FIREWALL_ADMIN_ALLOWED
+  if grep -q "^EVI_FIREWALL_ADMIN_ACCESS=" "${TARGET_ENV}"; then
+    sed -i "s|^EVI_FIREWALL_ADMIN_ACCESS=.*|EVI_FIREWALL_ADMIN_ACCESS=${firewall_access}|" "${TARGET_ENV}"
+  else
+    echo "EVI_FIREWALL_ADMIN_ACCESS=${firewall_access}" >> "${TARGET_ENV}"
+  fi
+  if grep -q "^EVI_FIREWALL_ADMIN_ALLOWED=" "${TARGET_ENV}"; then
+    sed -i "s|^EVI_FIREWALL_ADMIN_ALLOWED=.*|EVI_FIREWALL_ADMIN_ALLOWED=${firewall_allowed}|" "${TARGET_ENV}"
+  else
+    echo "EVI_FIREWALL_ADMIN_ALLOWED=${firewall_allowed}" >> "${TARGET_ENV}"
+  fi
   
   info "configuration saved to evi.env and evi.secrets.env"
+
+  # Apply UFW rules for cockpit (9090) and pgadmin (5445)
+  apply_firewall_admin_tools
   
   # Generate certificates if needed
   if [[ "${tls_mode}" == "manual" ]] && [[ "${generate_certs}" == "yes" ]]; then

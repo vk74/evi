@@ -57,8 +57,10 @@ chmod +x install.sh evictl
 
 The installer will guide you through 3 installation steps: 
 - install prerequisites on host server (requires sudo)
-- configure container environment, optionally add demo data (does not require sudo)
+- configure container environment (domain/TLS, **firewall for cockpit access**, passwords, demo data; does not require sudo for config, but applying firewall rules uses sudo)
 - containers deployment (does not require sudo)
+
+During environment configuration, **Step 2** asks from which computers administrators may connect to Cockpit (the web UI for server and container management). The choice is applied to the host firewall (UFW) and restricts access to Cockpit (port 9090) and pgAdmin (port 5445) accordingly. Options: specific IP(s), network range (CIDR), this server only, any (not recommended), or skip (configure manually later).
 
 
 
