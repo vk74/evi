@@ -2061,8 +2061,7 @@ deploy_up() {
   local cockpit_allowed
   cockpit_allowed=$(get_cockpit_allowed_summary)
   printf "  1. your users can access evi by visiting ${GREEN}https://${EVI_DOMAIN}${NC}\n"
-  echo "  2. to manage your host server and evi application visit cockpit at https://${EVI_DOMAIN}$:9090 from ${cockpit_allowed}."
-  echo "     login using your host OS user account and password."
+  echo "  2. to manage your host server and evi application visit cockpit at ${GREEN}https://${EVI_DOMAIN}:9090${NC} from ${cockpit_allowed}. login using your host OS user account and password."
   echo ""
   read -r -p "press enter to continue..."
 }

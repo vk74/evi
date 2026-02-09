@@ -3,7 +3,8 @@
   "tools": {
     "evi-pgadmin": {
       "label": "evi pgAdmin",
-      "path": "index.html"
+      "path": "index.html",
+      "order": 91
     }
   }
 }

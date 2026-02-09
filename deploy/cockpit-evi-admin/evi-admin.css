@@ -1,8 +1,29 @@
-/* Version: 1.0.0
+/* Version: 1.1.0
  * Purpose: Styles for the EVI admin tools Cockpit package.
  * Two-panel layout: left navigation sidebar + right content area.
+ * Includes dark theme support via .theme-dark class on <html>, synced from Cockpit shell.
  * Cockpit package; filename: evi-admin.css
+ *
+ * Changes in v1.1.0:
+ * - Added dark theme: html.theme-dark overrides for all CSS custom properties
+ * - Dark variants for status indicators (running, success, error)
+ * - Smooth transition on background-color and color for theme switch
  */
+
+/* ===== Dark theme: redefine PatternFly CSS custom properties ===== */
+
+html.theme-dark {
+  --pf-v5-global--Color--100: #e0e0e0;
+  --pf-v5-global--Color--200: #a2a5a8;
+  --pf-v5-global--Color--light-100: #ffffff;
+  --pf-v5-global--BackgroundColor--100: #212427;
+  --pf-v5-global--BackgroundColor--200: #1b1d21;
+  --pf-v5-global--BackgroundColor--dark-100: #0f1114;
+  --pf-v5-global--BorderColor--100: #3c3f42;
+  --pf-v5-global--BorderColor--300: #57585a;
+  --pf-v5-global--primary-color--100: #2b9af3;
+  --pf-v5-global--primary-color--200: #06c;
+}
 
 /* ===== Layout ===== */
 
@@ -13,6 +34,7 @@
   font-family: var(--pf-v5-global--FontFamily--text, "RedHatText", "Helvetica Neue", Arial, sans-serif);
   color: var(--pf-v5-global--Color--100, #151515);
   background: var(--pf-v5-global--BackgroundColor--200, #f0f0f0);
+  transition: background-color 0.2s, color 0.2s;
 }
 
 /* ===== Header ===== */
@@ -290,6 +312,22 @@
   background: #fce8e8;
   border-left: 4px solid var(--pf-v5-global--danger-color--100, #c9190b);
   color: #7d1007;
+}
+
+/* Dark theme status overrides */
+html.theme-dark .evi-admin-status.status-running {
+  background: #0a2a4d;
+  color: #b8daff;
+}
+
+html.theme-dark .evi-admin-status.status-success {
+  background: #1a3a1a;
+  color: #a3d9a0;
+}
+
+html.theme-dark .evi-admin-status.status-error {
+  background: #3b1010;
+  color: #f5b5b5;
 }
 
 /* ===== Output area ===== */

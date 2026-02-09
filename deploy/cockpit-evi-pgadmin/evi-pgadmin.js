@@ -1,7 +1,9 @@
-/* Version: 1.2.0
+/* Version: 1.3.0
  * Purpose: Sync Cockpit theme (dark/light) with parent shell; build pgAdmin URL, try auto-open, set fallback link and show popup-blocked hint.
  * Cockpit package script; filename: evi-pgadmin.js
  *
+ * Changes in v1.3.0:
+ * - Use requestAnimationFrame before reading computed styles so browser recalculates CSS first
  * Changes in v1.2.0:
  * - Detect dark theme via parent computed background-color (version-agnostic, works with any Cockpit/PatternFly)
  * - Use .theme-dark class instead of pf-v5-theme-dark
@@ -26,7 +28,7 @@
     return lum < 0.4;
   }
 
-  function syncTheme() {
+  function applyTheme() {
     try {
       var parentBody = window.parent.document.body;
       if (!parentBody) return;
@@ -37,8 +39,15 @@
     }
   }
 
+  /* Deferred sync: wait for browser to recalculate styles after class mutation */
+  function syncTheme() {
+    requestAnimationFrame(function() {
+      applyTheme();
+    });
+  }
+
   /* Initial sync */
-  syncTheme();
+  applyTheme();
 
   /* Watch for attribute/class changes on parent <html> and <body> that may indicate theme toggle */
   try {

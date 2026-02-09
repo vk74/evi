@@ -1,13 +1,21 @@
 <!DOCTYPE html>
-<!-- Version: 1.0.0 -->
+<!-- Version: 1.2.0 -->
 <!-- Cockpit package: EVI administration panel with left navigation and right content area. -->
 <!-- Provides admin tools: full backup, password management (coming soon), certificate management (coming soon). -->
 <!-- Cockpit package; filename: index.html -->
+<!--
+  Changes in v1.2.0:
+  - Pre-filled backup location with ~/evi/backup default
+  - Added note about restore instructions README being created alongside backup
+  - Estimate Size now renders human-readable formatted summary instead of raw JSON
+  Changes in v1.1.0:
+  - Removed ../base1/patternfly.css (not available in all Cockpit versions)
+  - Dark/light theme synced from Cockpit shell via evi-admin.js
+-->
 <html>
 <head>
   <meta charset="utf-8">
   <title>evi admin tools</title>
-  <link rel="stylesheet" href="../base1/patternfly.css" type="text/css">
   <link rel="stylesheet" href="evi-admin.css" type="text/css">
 </head>
 <body>
@@ -47,6 +55,8 @@
             Create a complete backup of all EVI components: container images, database,
             environment configuration, TLS certificates, JWT secrets, and installation scripts.
             The backup set is self-contained and can be used to restore EVI on any compatible server.
+            A restore instructions file (README-RESTORE-STEP-BY-STEP.md) will be created
+            alongside the backup with step-by-step recovery guide.
           </p>
 
           <form class="evi-admin-form" autocomplete="off">
@@ -54,6 +64,7 @@
             <div class="evi-admin-form-group">
               <label for="backup-dir">Backup location</label>
               <input type="text" id="backup-dir" class="evi-admin-input"
+                     value="~/evi/backup"
                      placeholder="e.g. /home/user/evi/backup">
               <span class="evi-admin-hint">Directory where backup files will be created</span>
             </div>
