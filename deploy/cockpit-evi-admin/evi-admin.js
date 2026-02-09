@@ -1,9 +1,13 @@
-/* Version: 1.3.2
+/* Version: 1.3.3
  * Purpose: Main logic for evi admin tools Cockpit package.
  * Handles navigation between sections, backup form interactions, and command execution
  * via Cockpit API (cockpit.spawn). Each admin function calls scripts through the
  * evi-admin-dispatch.sh dispatcher that resolves paths to deployment scripts.
  * Cockpit package; filename: evi-admin.js
+ *
+ * Changes in v1.3.3:
+ * - Progress bar: smooth tracking during image export via "Writing manifest" sub-steps (50% weight),
+ *   remaining steps mapped to 50-100%; total steps detected dynamically from output
  *
  * Changes in v1.3.2:
  * - get-defaults and mkdir: run as current user so DEFAULT_BACKUP_DIR is e.g. /home/user/evi/backup not /root/evi/backup
@@ -94,8 +98,7 @@
     backupRunning: false,
     currentProcess: null,
     defaultBackupDir: '',
-    backupOutputBuffer: '',
-    backupTotalSteps: 12
+    backupOutputBuffer: ''
   };
 
   /* =====================================================================
@@ -290,33 +293,77 @@
     });
   }
 
-  /* Progress bar: show indeterminate (animated) state */
+  /* Progress bar: show initial state */
   function showProgressIndeterminate() {
     if (!els.progressWrapper) return;
     els.progressWrapper.classList.remove('hidden');
     if (els.progressFill) {
-      els.progressFill.classList.add('evi-admin-progress-indeterminate');
+      els.progressFill.classList.remove('evi-admin-progress-indeterminate');
       els.progressFill.style.width = '0%';
     }
-    if (els.progressText) els.progressText.textContent = 'Backup in progress...';
+    if (els.progressText) els.progressText.textContent = 'Starting backup...';
   }
 
-  /* Progress bar: update from backup output (count [✓] lines) */
+  /*
+   * Progress bar: update from backup output.
+   *
+   * The backup script outputs [✓] for each completed step and "Writing manifest
+   * to image destination" for each container image saved.  The first phase
+   * (image export) is by far the longest, so we give it proportional weight
+   * based on "Writing manifest" sub-steps (one per image: fe, be, db, caddy,
+   * and optionally pgadmin = 4-5 images).  After image export finishes ([✓]),
+   * the remaining steps proceed quickly and each gets equal weight.
+   */
   function updateProgressFromBackupOutput() {
     if (!els.progressFill || !els.progressText) return;
     var cleaned = stripAnsi(state.backupOutputBuffer);
+
+    // Count completed steps ([✓] markers)
     var lines = cleaned.split('\n');
-    var count = 0;
+    var completedSteps = 0;
     for (var i = 0; i < lines.length; i++) {
-      if (lines[i].indexOf('[✓]') !== -1) count++;
+      if (lines[i].indexOf('[✓]') !== -1) completedSteps++;
     }
-    count = Math.min(count, state.backupTotalSteps);
-    if (count > 0) {
-      els.progressFill.classList.remove('evi-admin-progress-indeterminate');
-      var pct = Math.round((count / state.backupTotalSteps) * 100);
-      els.progressFill.style.width = pct + '%';
-      els.progressText.textContent = 'Step ' + count + ' of ' + state.backupTotalSteps + ' completed';
+
+    // Determine total steps from output: base 10 + pgadmin + encryption if present
+    var totalSteps = 10;
+    if (cleaned.indexOf('copying pgadmin') !== -1) totalSteps++;
+    if (cleaned.indexOf('encrypting archive') !== -1) totalSteps++;
+    // Before any step finishes, assume 10 (minimum)
+    if (totalSteps < 10) totalSteps = 10;
+
+    // During image export (step 0 completed, longest phase): show sub-progress
+    // by counting "Writing manifest to image destination" lines (one per image)
+    if (completedSteps === 0) {
+      var manifestCount = 0;
+      for (var j = 0; j < lines.length; j++) {
+        if (lines[j].indexOf('Writing manifest to image destination') !== -1) manifestCount++;
+      }
+      if (manifestCount > 0) {
+        // Image export is ~50% of total time; 4-5 images expected
+        var expectedImages = 5;
+        var imageProgress = Math.min(manifestCount / expectedImages, 1.0);
+        var pct = Math.round(imageProgress * 50);
+        els.progressFill.classList.remove('evi-admin-progress-indeterminate');
+        els.progressFill.style.width = pct + '%';
+        els.progressText.textContent = 'Exporting images... (' + manifestCount + ' of ~' + expectedImages + ')';
+      } else if (cleaned.indexOf('exporting container images') !== -1) {
+        // Export started but no image finished yet — show indeterminate
+        els.progressFill.classList.add('evi-admin-progress-indeterminate');
+        els.progressText.textContent = 'Exporting container images...';
+      }
+      return;
     }
+
+    // After at least one [✓]: map completed steps to 50-100% range
+    // (image export = 50%, remaining steps share the other 50%)
+    els.progressFill.classList.remove('evi-admin-progress-indeterminate');
+    var remainingSteps = totalSteps - 1; // steps after image export
+    var stepsAfterImages = completedSteps - 1; // how many of those are done
+    var pctAfter = remainingSteps > 0 ? Math.round(50 + (stepsAfterImages / remainingSteps) * 50) : 100;
+    pctAfter = Math.min(pctAfter, 100);
+    els.progressFill.style.width = pctAfter + '%';
+    els.progressText.textContent = 'Step ' + completedSteps + ' of ' + totalSteps + ' completed';
   }
 
   /* Progress bar: hide */

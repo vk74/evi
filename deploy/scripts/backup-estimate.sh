@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.2
+# Version: 1.0.3
 # Purpose: Estimate backup size and compression time for EVI backup.
 # Deployment file: backup-estimate.sh
 # Logic:
@@ -9,8 +9,13 @@
 # - Outputs JSON with all estimates
 # - Checks available disk space on target directory
 #
+# Changes in v1.0.3:
+# - Fix pipefail + fallback pattern: "pipeline || echo fallback" concatenates both outputs when
+#   pipeline produces data but exits non-zero (e.g. du on pgadmin dir with UID 5050 permission errors).
+#   Changed all such patterns to: result=$(pipeline) || true; echo "${result:-fallback}"
+#
 # Changes in v1.0.2:
-# - Strip all whitespace from psql output in get_database_size_bytes (fixes arithmetic syntax error when value contained newline)
+# - Strip all whitespace from psql output in get_database_size_bytes
 #
 # Changes in v1.0.1:
 # - Container running check: use podman container inspect instead of podman ps --filter
@@ -60,13 +65,20 @@ load_env() {
 }
 
 # Get size of a file or directory in bytes
+# Note: du may exit non-zero on permission errors while still producing output;
+# with pipefail the fallback "|| echo 0" would APPEND to stdout, so we capture
+# the pipeline result first and fall back only when it is empty.
 get_size_bytes() {
   local path="$1"
   if [[ -e "${path}" ]]; then
     if [[ -d "${path}" ]]; then
-      du -sb "${path}" 2>/dev/null | cut -f1 || echo "0"
+      local result
+      result=$(du -sb "${path}" 2>/dev/null | cut -f1) || true
+      echo "${result:-0}"
     else
-      stat -c%s "${path}" 2>/dev/null || stat -f%z "${path}" 2>/dev/null || echo "0"
+      local result
+      result=$(stat -c%s "${path}" 2>/dev/null || stat -f%z "${path}" 2>/dev/null) || true
+      echo "${result:-0}"
     fi
   else
     echo "0"
@@ -102,13 +114,13 @@ get_database_size_bytes() {
     return
   fi
   
-  # Get database size from PostgreSQL (strip all whitespace so value is safe for arithmetic)
+  # Get database size from PostgreSQL (strip whitespace so value is safe for arithmetic)
   local db_name="${EVI_POSTGRES_DB:-maindb}"
   local size_bytes
   size_bytes=$(podman exec evi-db psql -U postgres -d "${db_name}" -t -c \
-    "SELECT pg_database_size('${db_name}');" 2>/dev/null | tr -d '[:space:]' || echo "52428800")
+    "SELECT pg_database_size('${db_name}');" 2>/dev/null | tr -d '[:space:]') || true
   
-  echo "${size_bytes}"
+  echo "${size_bytes:-52428800}"
 }
 
 # Get available space on target directory in bytes
@@ -121,8 +133,10 @@ get_available_space_bytes() {
     check_dir="$(dirname "${check_dir}")"
   done
   
-  # Get available space
-  df -B1 "${check_dir}" 2>/dev/null | tail -1 | awk '{print $4}' || echo "0"
+  # Get available space (capture first, fall back if empty — avoids pipefail + || output concatenation)
+  local result
+  result=$(df -B1 "${check_dir}" 2>/dev/null | tail -1 | awk '{print $4}') || true
+  echo "${result:-0}"
 }
 
 # Get disk device for a path
@@ -135,7 +149,9 @@ get_disk_device() {
     check_dir="$(dirname "${check_dir}")"
   done
   
-  df "${check_dir}" 2>/dev/null | tail -1 | awk '{print $1}' || echo ""
+  local result
+  result=$(df "${check_dir}" 2>/dev/null | tail -1 | awk '{print $1}') || true
+  echo "${result:-}"
 }
 
 # Estimate compression ratios and times

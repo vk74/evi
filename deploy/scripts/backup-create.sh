@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.4
+# Version: 1.0.5
 # Purpose: Create full EVI backup including container images, database, and configuration.
 # Deployment file: backup-create.sh
 # Logic:
@@ -12,6 +12,9 @@
 # - Archives evi repository
 # - Compresses and optionally encrypts the data archive
 # - Generates README-RESTORE-STEP-BY-STEP.md with server info
+#
+# Changes in v1.0.5:
+# - Disable ANSI color codes when stdout is not a terminal (fixes garbled output in Cockpit console)
 #
 # Changes in v1.0.4:
 # - Print script version at start of backup output
@@ -38,15 +41,23 @@
 
 set -euo pipefail
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-CYAN='\033[0;36m'
-NC='\033[0m'
+# Colors (disabled when stdout is not a terminal, e.g. Cockpit output console)
+if [[ -t 1 ]]; then
+  RED='\033[0;31m'
+  GREEN='\033[0;32m'
+  YELLOW='\033[0;33m'
+  CYAN='\033[0;36m'
+  NC='\033[0m'
+else
+  RED=''
+  GREEN=''
+  YELLOW=''
+  CYAN=''
+  NC=''
+fi
 
 # Script version (printed at start of backup output)
-BACKUP_SCRIPT_VERSION="1.0.4"
+BACKUP_SCRIPT_VERSION="1.0.5"
 
 # Spinner characters
 SPINNER_CHARS="⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
