@@ -1,0 +1,141 @@
+/* Version: 1.0.0
+ * Purpose: Self-contained light/dark theme for the evi-pgadmin Cockpit package page.
+ * Cockpit package stylesheet; filename: evi-pgadmin.css
+ *
+ * Theme is toggled via .theme-dark class on <html>, set by evi-pgadmin.js
+ * based on the parent Cockpit shell computed background color.
+ */
+
+/* ── Reset & base ── */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: "RedHatText", "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* ── Light theme (default) ── */
+
+html {
+  background-color: #f0f0f0;
+  color: #151515;
+}
+
+a {
+  color: #06c;
+}
+
+a:hover {
+  color: #004080;
+}
+
+/* ── Dark theme ── */
+
+html.theme-dark {
+  background-color: #1b1d21;
+  color: #e0e0e0;
+}
+
+html.theme-dark a {
+  color: #73bcf7;
+}
+
+html.theme-dark a:hover {
+  color: #bee1f4;
+}
+
+/* ── Layout ── */
+
+.evi-page {
+  padding: 24px 24px 48px;
+  max-width: 640px;
+}
+
+.evi-page h2 {
+  margin: 0 0 16px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.evi-page p {
+  margin: 8px 0;
+}
+
+/* ── Primary button ── */
+
+.evi-btn-primary {
+  display: inline-block;
+  padding: 10px 24px;
+  margin: 8px 0 16px;
+  font-size: 16px;
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  background-color: #06c;
+  color: #fff;
+}
+
+.evi-btn-primary:hover {
+  background-color: #004080;
+  color: #fff;
+}
+
+html.theme-dark .evi-btn-primary {
+  background-color: #06c;
+  color: #fff;
+}
+
+html.theme-dark .evi-btn-primary:hover {
+  background-color: #0056b3;
+  color: #fff;
+}
+
+/* ── Info alert (popup-blocked hint) ── */
+
+.evi-alert-info {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border: 1px solid #73bcf7;
+  border-left: 4px solid #06c;
+  border-radius: 4px;
+  background-color: #e7f1fa;
+  color: #151515;
+}
+
+html.theme-dark .evi-alert-info {
+  background-color: #0a2a4d;
+  border-color: #06c;
+  color: #e0e0e0;
+}
+
+.evi-alert-info h4 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.evi-alert-info ol {
+  margin: 4px 0 0;
+  padding-left: 20px;
+}
+
+.evi-alert-info li {
+  margin: 2px 0;
+}
+
+/* ── Credentials section ── */
+
+.evi-credentials {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #d2d2d2;
+}
+
+html.theme-dark .evi-credentials {
+  border-top-color: #3c3f42;
+}

@@ -1,0 +1,396 @@
+/* Version: 1.0.0
+ * Purpose: Styles for the EVI admin tools Cockpit package.
+ * Two-panel layout: left navigation sidebar + right content area.
+ * Cockpit package; filename: evi-admin.css
+ */
+
+/* ===== Layout ===== */
+
+.evi-admin {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  font-family: var(--pf-v5-global--FontFamily--text, "RedHatText", "Helvetica Neue", Arial, sans-serif);
+  color: var(--pf-v5-global--Color--100, #151515);
+  background: var(--pf-v5-global--BackgroundColor--200, #f0f0f0);
+}
+
+/* ===== Header ===== */
+
+.evi-admin-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 24px;
+  background: var(--pf-v5-global--BackgroundColor--dark-100, #151515);
+  color: var(--pf-v5-global--Color--light-100, #ffffff);
+  flex-shrink: 0;
+}
+
+.evi-admin-header h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+}
+
+/* ===== Body (nav + content) ===== */
+
+.evi-admin-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ===== Left Navigation ===== */
+
+.evi-admin-nav {
+  width: 240px;
+  min-width: 240px;
+  background: var(--pf-v5-global--BackgroundColor--100, #ffffff);
+  border-right: 1px solid var(--pf-v5-global--BorderColor--100, #d2d2d2);
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.evi-admin-nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0;
+}
+
+.evi-admin-nav-item {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: background-color 0.15s, border-color 0.15s;
+  user-select: none;
+}
+
+.evi-admin-nav-item:hover:not(.disabled) {
+  background: var(--pf-v5-global--BackgroundColor--200, #f0f0f0);
+}
+
+.evi-admin-nav-item.active {
+  background: var(--pf-v5-global--BackgroundColor--200, #f0f0f0);
+  border-left-color: var(--pf-v5-global--primary-color--100, #0066cc);
+  font-weight: 600;
+}
+
+.evi-admin-nav-item.disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.evi-admin-nav-icon {
+  font-size: 18px;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.evi-admin-nav-label {
+  flex: 1;
+  font-size: 14px;
+}
+
+.evi-admin-badge {
+  display: inline-block;
+  width: 100%;
+  margin-top: 4px;
+  margin-left: 28px;
+  padding: 1px 8px;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--pf-v5-global--Color--200, #6a6e73);
+  background: var(--pf-v5-global--BackgroundColor--200, #f0f0f0);
+  border-radius: 10px;
+  width: fit-content;
+}
+
+/* ===== Right Content ===== */
+
+.evi-admin-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 32px;
+}
+
+.evi-admin-section {
+  max-width: 720px;
+}
+
+.evi-admin-section h2 {
+  margin: 0 0 8px 0;
+  font-size: 22px;
+  font-weight: 400;
+}
+
+.evi-admin-description {
+  margin: 0 0 24px 0;
+  color: var(--pf-v5-global--Color--200, #6a6e73);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ===== Visibility helpers ===== */
+
+.hidden {
+  display: none;
+}
+
+/* ===== Form ===== */
+
+.evi-admin-form {
+  margin-bottom: 24px;
+}
+
+.evi-admin-form-group {
+  margin-bottom: 16px;
+}
+
+.evi-admin-form-group label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.evi-admin-input,
+.evi-admin-select {
+  display: block;
+  width: 100%;
+  max-width: 480px;
+  padding: 6px 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--pf-v5-global--Color--100, #151515);
+  background: var(--pf-v5-global--BackgroundColor--100, #ffffff);
+  border: 1px solid var(--pf-v5-global--BorderColor--300, #8a8d90);
+  border-radius: 3px;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.evi-admin-input:focus,
+.evi-admin-select:focus {
+  outline: none;
+  border-color: var(--pf-v5-global--primary-color--100, #0066cc);
+  box-shadow: 0 0 0 1px var(--pf-v5-global--primary-color--100, #0066cc);
+}
+
+.evi-admin-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--pf-v5-global--Color--200, #6a6e73);
+}
+
+/* Checkbox group */
+.evi-admin-form-group-checkbox label {
+  font-weight: 400;
+}
+
+.evi-admin-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.evi-admin-checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  cursor: pointer;
+}
+
+/* ===== Buttons ===== */
+
+.evi-admin-form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.evi-admin-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 0.15s, opacity 0.15s;
+  user-select: none;
+}
+
+.evi-admin-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.evi-admin-btn-primary {
+  color: #ffffff;
+  background: var(--pf-v5-global--primary-color--100, #0066cc);
+}
+
+.evi-admin-btn-primary:hover:not(:disabled) {
+  background: var(--pf-v5-global--primary-color--200, #004080);
+}
+
+.evi-admin-btn-secondary {
+  color: var(--pf-v5-global--Color--100, #151515);
+  background: var(--pf-v5-global--BackgroundColor--100, #ffffff);
+  border: 1px solid var(--pf-v5-global--BorderColor--300, #8a8d90);
+}
+
+.evi-admin-btn-secondary:hover:not(:disabled) {
+  background: var(--pf-v5-global--BackgroundColor--200, #f0f0f0);
+}
+
+.evi-admin-btn-small {
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--pf-v5-global--Color--200, #6a6e73);
+  background: transparent;
+  border: 1px solid var(--pf-v5-global--BorderColor--100, #d2d2d2);
+}
+
+.evi-admin-btn-small:hover:not(:disabled) {
+  background: var(--pf-v5-global--BackgroundColor--200, #f0f0f0);
+}
+
+/* ===== Status indicator ===== */
+
+.evi-admin-status {
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border-radius: 3px;
+  font-size: 14px;
+}
+
+.evi-admin-status.status-running {
+  background: #e7f1fa;
+  border-left: 4px solid var(--pf-v5-global--info-color--100, #2b9af3);
+  color: #002952;
+}
+
+.evi-admin-status.status-success {
+  background: #e9f5e9;
+  border-left: 4px solid var(--pf-v5-global--success-color--100, #3e8635);
+  color: #1e4f18;
+}
+
+.evi-admin-status.status-error {
+  background: #fce8e8;
+  border-left: 4px solid var(--pf-v5-global--danger-color--100, #c9190b);
+  color: #7d1007;
+}
+
+/* ===== Output area ===== */
+
+.evi-admin-output-wrapper {
+  margin-top: 24px;
+}
+
+.evi-admin-output-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.evi-admin-output-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.evi-admin-output {
+  width: 100%;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 12px 16px;
+  margin: 0;
+  font-family: var(--pf-v5-global--FontFamily--monospace, "RedHatMono", "Liberation Mono", monospace);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--pf-v5-global--Color--100, #151515);
+  background: var(--pf-v5-global--BackgroundColor--100, #ffffff);
+  border: 1px solid var(--pf-v5-global--BorderColor--100, #d2d2d2);
+  border-radius: 3px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  box-sizing: border-box;
+}
+
+/* ===== Placeholder sections (coming soon) ===== */
+
+.evi-admin-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--pf-v5-global--Color--200, #6a6e73);
+}
+
+.evi-admin-placeholder-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.4;
+}
+
+.evi-admin-placeholder p {
+  margin: 0 0 8px 0;
+  font-size: 15px;
+}
+
+.evi-admin-placeholder-hint {
+  font-size: 13px;
+  max-width: 400px;
+  line-height: 1.5;
+}
+
+/* ===== Responsive: narrow viewports ===== */
+
+@media (max-width: 640px) {
+  .evi-admin-body {
+    flex-direction: column;
+  }
+  .evi-admin-nav {
+    width: 100%;
+    min-width: unset;
+    border-right: none;
+    border-bottom: 1px solid var(--pf-v5-global--BorderColor--100, #d2d2d2);
+    overflow-y: visible;
+  }
+  .evi-admin-nav-list {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 4px 8px;
+  }
+  .evi-admin-nav-item {
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    padding: 8px 12px;
+  }
+  .evi-admin-nav-item.active {
+    border-left-color: transparent;
+    border-bottom-color: var(--pf-v5-global--primary-color--100, #0066cc);
+  }
+  .evi-admin-badge {
+    margin-left: 8px;
+    margin-top: 0;
+    width: auto;
+  }
+  .evi-admin-content {
+    padding: 16px;
+  }
+}

@@ -2,7 +2,7 @@
   "version": 0,
   "tools": {
     "evi-pgadmin": {
-      "label": "pgAdmin (evi)",
+      "label": "evi pgAdmin",
       "path": "index.html"
     }
   }

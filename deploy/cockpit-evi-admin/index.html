@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<!-- Version: 1.0.0 -->
+<!-- Cockpit package: EVI administration panel with left navigation and right content area. -->
+<!-- Provides admin tools: full backup, password management (coming soon), certificate management (coming soon). -->
+<!-- Cockpit package; filename: index.html -->
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>evi admin tools</title>
+  <link rel="stylesheet" href="../base1/patternfly.css" type="text/css">
+  <link rel="stylesheet" href="evi-admin.css" type="text/css">
+</head>
+<body>
+  <div class="evi-admin">
+    <!-- Header -->
+    <header class="evi-admin-header">
+      <h1>evi admin tools</h1>
+    </header>
+
+    <div class="evi-admin-body">
+      <!-- Left navigation panel -->
+      <nav class="evi-admin-nav">
+        <ul class="evi-admin-nav-list">
+          <li class="evi-admin-nav-item active" data-section="backup">
+            <span class="evi-admin-nav-icon">&#128230;</span>
+            <span class="evi-admin-nav-label">Full Backup</span>
+          </li>
+          <li class="evi-admin-nav-item disabled" data-section="passwords">
+            <span class="evi-admin-nav-icon">&#128273;</span>
+            <span class="evi-admin-nav-label">Password Management</span>
+            <span class="evi-admin-badge">coming soon</span>
+          </li>
+          <li class="evi-admin-nav-item disabled" data-section="certificates">
+            <span class="evi-admin-nav-icon">&#128274;</span>
+            <span class="evi-admin-nav-label">Certificate Management</span>
+            <span class="evi-admin-badge">coming soon</span>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Right content panel -->
+      <main class="evi-admin-content">
+        <!-- === Backup Section === -->
+        <div id="section-backup" class="evi-admin-section active">
+          <h2>Full Backup</h2>
+          <p class="evi-admin-description">
+            Create a complete backup of all EVI components: container images, database,
+            environment configuration, TLS certificates, JWT secrets, and installation scripts.
+            The backup set is self-contained and can be used to restore EVI on any compatible server.
+          </p>
+
+          <form class="evi-admin-form" autocomplete="off">
+            <!-- Backup location -->
+            <div class="evi-admin-form-group">
+              <label for="backup-dir">Backup location</label>
+              <input type="text" id="backup-dir" class="evi-admin-input"
+                     placeholder="e.g. /home/user/evi/backup">
+              <span class="evi-admin-hint">Directory where backup files will be created</span>
+            </div>
+
+            <!-- Compression -->
+            <div class="evi-admin-form-group">
+              <label for="backup-compression">Compression method</label>
+              <select id="backup-compression" class="evi-admin-select">
+                <option value="gzip-standard">gzip &mdash; standard (default)</option>
+                <option value="zstd-fast">zstd &mdash; fast</option>
+                <option value="zstd-max">zstd &mdash; max compression</option>
+              </select>
+            </div>
+
+            <!-- Encryption toggle -->
+            <div class="evi-admin-form-group evi-admin-form-group-checkbox">
+              <label class="evi-admin-checkbox-label">
+                <input type="checkbox" id="backup-encrypt">
+                <span>Encrypt backup with password</span>
+              </label>
+            </div>
+
+            <!-- Password (shown when encrypt is checked) -->
+            <div id="password-group" class="evi-admin-form-group hidden">
+              <label for="backup-password">Encryption password</label>
+              <input type="password" id="backup-password" class="evi-admin-input"
+                     placeholder="Enter password for backup encryption">
+              <span class="evi-admin-hint">The password will be required to restore the backup</span>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="evi-admin-form-actions">
+              <button type="button" id="btn-backup-start" class="evi-admin-btn evi-admin-btn-primary">
+                Start Full Backup
+              </button>
+              <button type="button" id="btn-backup-estimate" class="evi-admin-btn evi-admin-btn-secondary">
+                Estimate Size
+              </button>
+            </div>
+          </form>
+
+          <!-- Status indicator -->
+          <div id="backup-status" class="evi-admin-status hidden"></div>
+
+          <!-- Output area -->
+          <div id="backup-output-wrapper" class="evi-admin-output-wrapper hidden">
+            <div class="evi-admin-output-header">
+              <h3>Output</h3>
+              <button type="button" id="btn-backup-clear" class="evi-admin-btn evi-admin-btn-small">Clear</button>
+            </div>
+            <pre id="backup-output" class="evi-admin-output"></pre>
+          </div>
+        </div>
+
+        <!-- === Password Management Section === -->
+        <div id="section-passwords" class="evi-admin-section hidden">
+          <h2>Password Management</h2>
+          <div class="evi-admin-placeholder">
+            <span class="evi-admin-placeholder-icon">&#128273;</span>
+            <p>Password management tools will be available in a future update.</p>
+            <p class="evi-admin-placeholder-hint">
+              Planned features: reset database passwords, regenerate JWT secrets,
+              update pgAdmin credentials.
+            </p>
+          </div>
+        </div>
+
+        <!-- === Certificate Management Section === -->
+        <div id="section-certificates" class="evi-admin-section hidden">
+          <h2>Certificate Management</h2>
+          <div class="evi-admin-placeholder">
+            <span class="evi-admin-placeholder-icon">&#128274;</span>
+            <p>Certificate management tools will be available in a future update.</p>
+            <p class="evi-admin-placeholder-hint">
+              Planned features: view current certificates, regenerate self-signed certificates,
+              import custom certificates, check certificate expiry.
+            </p>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="../base1/cockpit.js"></script>
+  <script src="evi-admin.js"></script>
+</body>
+</html>

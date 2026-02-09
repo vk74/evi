@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
 #
-# Version: 1.12.0
+# Version: 1.12.1
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
 # - First run: prerequisites, guided env setup (no "keep current" options), deploy from pre-built images (init, pull + systemctl start in install.sh).
 # - Subsequent runs: if evi.env and evi.secrets.env exist, run deploy/scripts/evi-reconfigure.sh (info block, menu: 0 exit, 1 guided configuration, 2 edit evi.env, 3 edit evi.secrets.env, 4 redeploy containers). Guided reconfigure has "keep current setting" in evi-reconfigure.sh.
 # - No podman build; use ./evictl for status, logs, restart, update.
+#
+# Changes in v1.12.1:
+# - Cockpit: install cockpit-evi-admin package ("evi admin tools" panel with backup form, nav sidebar)
+# - Cockpit: generate evi-admin-dispatch.sh from template with actual deployment directory path
+# - Cockpit: renamed pgAdmin sidebar label from "pgAdmin (evi)" to "evi pgAdmin"
 #
 # Changes in v1.12.0:
 # - Guided configuration: step 1–5 labels shown with green "step N:" only (question text default color)
@@ -627,10 +632,29 @@ install_prerequisites_all() {
   if [[ -d "${SCRIPT_DIR}/cockpit-evi-pgadmin" ]] && [[ -f "${SCRIPT_DIR}/cockpit-evi-pgadmin/manifest.json" ]]; then
     log "adding pgAdmin link to cockpit sidebar..."
     sudo mkdir -p /usr/local/share/cockpit/evi-pgadmin
-    sudo cp "${SCRIPT_DIR}/cockpit-evi-pgadmin/manifest.json" "${SCRIPT_DIR}/cockpit-evi-pgadmin/index.html" "${SCRIPT_DIR}/cockpit-evi-pgadmin/evi-pgadmin.js" /usr/local/share/cockpit/evi-pgadmin/
-    info "cockpit sidebar: 'pgAdmin (evi)' link added (opens pgAdmin in same host, port 5445)."
+    sudo cp "${SCRIPT_DIR}/cockpit-evi-pgadmin/manifest.json" "${SCRIPT_DIR}/cockpit-evi-pgadmin/index.html" "${SCRIPT_DIR}/cockpit-evi-pgadmin/evi-pgadmin.js" "${SCRIPT_DIR}/cockpit-evi-pgadmin/evi-pgadmin.css" /usr/local/share/cockpit/evi-pgadmin/
+    info "cockpit sidebar: 'evi pgAdmin' link added (opens pgAdmin in same host, port 5445)."
   else
     warn "cockpit-evi-pgadmin package not found; skipping sidebar link."
+  fi
+
+  # --- Cockpit EVI Admin Tools panel ---
+  if [[ -d "${SCRIPT_DIR}/cockpit-evi-admin" ]] && [[ -f "${SCRIPT_DIR}/cockpit-evi-admin/manifest.json" ]]; then
+    log "adding evi admin tools panel to cockpit sidebar..."
+    sudo mkdir -p /usr/local/share/cockpit/evi-admin
+    sudo cp "${SCRIPT_DIR}/cockpit-evi-admin/manifest.json" \
+            "${SCRIPT_DIR}/cockpit-evi-admin/index.html" \
+            "${SCRIPT_DIR}/cockpit-evi-admin/evi-admin.js" \
+            "${SCRIPT_DIR}/cockpit-evi-admin/evi-admin.css" \
+            /usr/local/share/cockpit/evi-admin/
+    # Generate dispatcher script with actual deployment directory path
+    sed "s|{{DEPLOYMENT_DIR}}|${SCRIPT_DIR}|g" \
+      "${SCRIPT_DIR}/cockpit-evi-admin/evi-admin-dispatch.sh.tpl" | \
+      sudo tee /usr/local/share/cockpit/evi-admin/evi-admin-dispatch.sh > /dev/null
+    sudo chmod 755 /usr/local/share/cockpit/evi-admin/evi-admin-dispatch.sh
+    info "cockpit sidebar: 'evi admin tools' panel added (backup, admin functions)."
+  else
+    warn "cockpit-evi-admin package not found; skipping admin tools panel."
   fi
 
   # --- Configure pgAdmin ---
@@ -2036,8 +2060,8 @@ deploy_up() {
   info "deployment complete!"
   local cockpit_allowed
   cockpit_allowed=$(get_cockpit_allowed_summary)
-  echo "  1. your users can access evi by visiting ${GREEN}https://${EVI_DOMAIN}${NC}"
-  echo "  2. to manage your container environment visit cockpit from ${cockpit_allowed} at https://<server>:9090 (use your server's ip or dns name)."
+  printf "  1. your users can access evi by visiting ${GREEN}https://${EVI_DOMAIN}${NC}\n"
+  echo "  2. to manage your host server and evi application visit cockpit at https://${EVI_DOMAIN}$:9090 from ${cockpit_allowed}."
   echo "     login using your host OS user account and password."
   echo ""
   read -r -p "press enter to continue..."

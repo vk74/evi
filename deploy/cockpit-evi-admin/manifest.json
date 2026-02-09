@@ -1,0 +1,10 @@
+{
+  "version": 0,
+  "tools": {
+    "evi-admin": {
+      "label": "evi admin tools",
+      "path": "index.html",
+      "order": 90
+    }
+  }
+}

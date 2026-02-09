@@ -570,7 +570,7 @@ install_gui_tools() {
     log "adding pgAdmin link to cockpit sidebar..."
     sudo mkdir -p /usr/local/share/cockpit/evi-pgadmin
     sudo cp "${COMMON_DIR}/cockpit-evi-pgadmin/manifest.json" "${COMMON_DIR}/cockpit-evi-pgadmin/index.html" /usr/local/share/cockpit/evi-pgadmin/
-    info "cockpit sidebar: 'pgAdmin (evi)' link added (opens pgAdmin at localhost:5445)."
+    info "cockpit sidebar: 'evi pgAdmin' link added (opens pgAdmin at localhost:5445)."
   else
     warn "cockpit-evi-pgadmin package not found; skipping sidebar link."
   fi
