@@ -1,9 +1,12 @@
-/* Version: 1.3.1
+/* Version: 1.3.2
  * Purpose: Main logic for evi admin tools Cockpit package.
  * Handles navigation between sections, backup form interactions, and command execution
  * via Cockpit API (cockpit.spawn). Each admin function calls scripts through the
  * evi-admin-dispatch.sh dispatcher that resolves paths to deployment scripts.
  * Cockpit package; filename: evi-admin.js
+ *
+ * Changes in v1.3.2:
+ * - get-defaults and mkdir: run as current user so DEFAULT_BACKUP_DIR is e.g. /home/user/evi/backup not /root/evi/backup
  *
  * Changes in v1.3.1:
  * - Backup spawn: run as current user (no superuser) so rootless podman containers are visible
@@ -225,10 +228,9 @@
 
     var backupDir = getResolvedBackupDir();
 
-    // Ensure backup directory exists (mkdir -p)
+    // Ensure backup directory exists (mkdir -p); run as current user so path matches backup-create
     var mkdirProc = cockpit.spawn(['mkdir', '-p', backupDir], {
-      err: 'out',
-      superuser: 'try'
+      err: 'out'
     });
 
     mkdirProc.catch(function (ex) {
@@ -564,11 +566,9 @@
 
   function loadDefaults() {
     // The backup location is pre-filled to ~/evi/backup in the HTML value attribute.
-    // The dispatcher get-defaults provides the resolved home directory path.
-    // Only update if we get a valid resolved path (to replace ~ with actual home).
+    // The dispatcher get-defaults provides the resolved home directory path (must run as current user, not root).
     var proc = cockpit.spawn([DISPATCH_PATH, 'get-defaults'], {
-      err: 'out',
-      superuser: 'try'
+      err: 'out'
     });
 
     proc.then(function (data) {

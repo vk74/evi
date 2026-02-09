@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.1
+# Version: 1.0.2
 # Purpose: Estimate backup size and compression time for EVI backup.
 # Deployment file: backup-estimate.sh
 # Logic:
@@ -8,6 +8,9 @@
 # - Estimates compressed size and time for different compression levels
 # - Outputs JSON with all estimates
 # - Checks available disk space on target directory
+#
+# Changes in v1.0.2:
+# - Strip all whitespace from psql output in get_database_size_bytes (fixes arithmetic syntax error when value contained newline)
 #
 # Changes in v1.0.1:
 # - Container running check: use podman container inspect instead of podman ps --filter
@@ -99,11 +102,11 @@ get_database_size_bytes() {
     return
   fi
   
-  # Get database size from PostgreSQL
+  # Get database size from PostgreSQL (strip all whitespace so value is safe for arithmetic)
   local db_name="${EVI_POSTGRES_DB:-maindb}"
   local size_bytes
   size_bytes=$(podman exec evi-db psql -U postgres -d "${db_name}" -t -c \
-    "SELECT pg_database_size('${db_name}');" 2>/dev/null | tr -d ' ' || echo "52428800")
+    "SELECT pg_database_size('${db_name}');" 2>/dev/null | tr -d '[:space:]' || echo "52428800")
   
   echo "${size_bytes}"
 }
