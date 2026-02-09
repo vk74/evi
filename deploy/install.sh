@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 #
-# Version: 1.11.0
+# Version: 1.12.0
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
 # - First run: prerequisites, guided env setup (no "keep current" options), deploy from pre-built images (init, pull + systemctl start in install.sh).
 # - Subsequent runs: if evi.env and evi.secrets.env exist, run deploy/scripts/evi-reconfigure.sh (info block, menu: 0 exit, 1 guided configuration, 2 edit evi.env, 3 edit evi.secrets.env, 4 redeploy containers). Guided reconfigure has "keep current setting" in evi-reconfigure.sh.
 # - No podman build; use ./evictl for status, logs, restart, update.
+#
+# Changes in v1.12.0:
+# - Guided configuration: step 1–5 labels shown with green "step N:" only (question text default color)
+# - Deployment summary: replaced evictl info with numbered list — (1) main app address https://EVI_DOMAIN, (2) cockpit admin from <allowed> at :9090; get_cockpit_allowed_summary() from EVI_FIREWALL_ADMIN_*
 #
 # Changes in v1.11.0:
 # - pgAdmin: removed interactive email prompt from prerequisites; use hardcoded login evidba@pgadmin.app (override via EVI_PGADMIN_EMAIL in evi.env)
@@ -677,6 +681,20 @@ generate_password() {
   openssl rand -base64 32 | tr -d '/+=' | cut -c1-24
 }
 
+# Returns human-readable "allowed" string for cockpit access (from EVI_FIREWALL_ADMIN_ACCESS and EVI_FIREWALL_ADMIN_ALLOWED).
+# Call after load_deploy_env so these vars are set. Used in deployment summary.
+get_cockpit_allowed_summary() {
+  local access="${EVI_FIREWALL_ADMIN_ACCESS:-skip}"
+  local allowed="${EVI_FIREWALL_ADMIN_ALLOWED:-}"
+  case "${access}" in
+    localhost) printf "%s" "this server only (127.0.0.1)" ;;
+    allowed_ips) printf "%s" "${allowed:-no IPs configured}" ;;
+    allowed_cidr) printf "%s" "${allowed:-no CIDR configured}" ;;
+    any) printf "%s" "any computer" ;;
+    skip|*) printf "%s" "please finish firewall configuration to define allowed ip addresses or subnets connections to port 9090 of your host server." ;;
+  esac
+}
+
 # Apply UFW rules for cockpit (9090) and pgadmin (5445) from EVI_FIREWALL_ADMIN_* in evi.env
 apply_firewall_admin_tools() {
   [[ -f "${TARGET_ENV}" ]] || return 0
@@ -758,7 +776,7 @@ guided_setup() {
   ensure_config_files
   
   # Step 1: Access type (no "keep current" — first-run only)
-  echo "step 1: how will users connect to your evi?"
+  printf "${GREEN}step 1:${NC} how will users connect to your evi?\n"
   echo ""
   echo "  1) private ip or intranet dns name"
   echo "  2) public dns domain"
@@ -812,7 +830,7 @@ guided_setup() {
   local cert_choice=""
   
   echo ""
-  echo "step 2: tls certificate configuration"
+  printf "${GREEN}step 2:${NC} tls certificate configuration\n"
   echo ""
   if [[ "${access_type}" == "public_domain" ]]; then
     echo "  1) let's encrypt (automatic)"
@@ -890,7 +908,7 @@ guided_setup() {
   
   # Step 3: Firewall — from where may admins connect to cockpit (ports 9090, 5445)
   echo ""
-  echo "step 3: from which computers may admins connect to evi cockpit?"
+  printf "${GREEN}step 3:${NC} from which computers may admins connect to evi cockpit?\n"
   echo ""
   echo "cockpit is the web interface for server and container management. choose from where it can be opened in a browser."
   echo ""
@@ -951,7 +969,7 @@ guided_setup() {
   
   # Step 4: Database passwords (no "keep current")
   echo ""
-  echo "step 4: database password configuration"
+  printf "${GREEN}step 4:${NC} database password configuration\n"
   echo ""
   echo "  1) auto-generate secure passwords (recommended)"
   echo "  2) set passwords manually"
@@ -1006,7 +1024,7 @@ guided_setup() {
   
   # Step 5: Demo data (no "keep current")
   echo ""
-  echo "step 5: deploy demo data?"
+  printf "${GREEN}step 5:${NC} deploy demo data?\n"
   echo ""
   echo "  1) yes, deploy demo data"
   echo "  2) no demo data, just clean install"
@@ -2015,7 +2033,13 @@ deploy_up() {
                             "${up_status}" "${up_time}" "${up_errors}" \
                             "${total_time}"
   echo ""
-  info "deployment complete! for daily operations use: ./evictl (status, restart, logs, update)"
+  info "deployment complete!"
+  local cockpit_allowed
+  cockpit_allowed=$(get_cockpit_allowed_summary)
+  echo "  1. your users can access evi by visiting ${GREEN}https://${EVI_DOMAIN}${NC}"
+  echo "  2. to manage your container environment visit cockpit from ${cockpit_allowed} at https://<server>:9090 (use your server's ip or dns name)."
+  echo "     login using your host OS user account and password."
+  echo ""
   read -r -p "press enter to continue..."
 }
 

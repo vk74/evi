@@ -1,8 +1,11 @@
 <!DOCTYPE html>
-<!-- Version: 1.2.0 -->
+<!-- Version: 1.3.0 -->
 <!-- Cockpit package: opens pgAdmin in a new tab (same host, port 5445). Shows login hint; no credentials on page. -->
 <!-- Backend/frontend: served by Cockpit; filename: index.html -->
 <!--
+  Changes in v1.3.0:
+  - PatternFly CSS from base1; page layout and theme sync with Cockpit (day/night)
+  - Open pgAdmin as PatternFly primary button; popup-blocked hint with instructions
   Changes in v1.2.0:
   - Moved script to external evi-pgadmin.js so Cockpit CSP allows execution (inline scripts blocked)
   - Fallback link href is set by external script to http://hostname:5445
@@ -15,11 +18,35 @@
 <head>
   <meta charset="utf-8">
   <title>pgAdmin (evi)</title>
-  <script src="evi-pgadmin.js"></script>
+  <link rel="stylesheet" href="../base1/patternfly.css" type="text/css">
 </head>
 <body>
-  <p>pgAdmin opened in a new tab. If it did not open, use the link below.</p>
-  <p><a id="pgadmin-link" href="#" target="_blank" rel="noopener noreferrer">Open pgAdmin</a></p>
-  <p><strong>Login:</strong> evidba@pgadmin.app. <strong>Password:</strong> use EVI_ADMIN_DB_PASSWORD variable from Podman containers -> evi-db -> Integration tab.</p>
+  <main class="pf-v5-c-page__main">
+    <section class="pf-v5-c-page__main-section">
+      <div class="pf-v5-c-content" style="max-width: 600px;">
+        <h2>pgAdmin (evi)</h2>
+
+        <div id="popup-blocked-hint" class="pf-v5-c-alert pf-m-info pf-m-inline" hidden aria-label="Pop-up blocked by browser">
+          <div class="pf-v5-c-alert__icon"></div>
+          <h4 class="pf-v5-c-alert__title">Pop-up blocked by browser</h4>
+          <div class="pf-v5-c-alert__description">
+            <p>Your browser blocked the automatic tab opening. To allow it permanently for Cockpit:</p>
+            <ol>
+              <li>Click the blocked pop-up icon in the address bar (or check browser notifications).</li>
+              <li>Select "Always allow pop-ups from this site".</li>
+              <li>Next time pgAdmin will open automatically.</li>
+            </ol>
+          </div>
+        </div>
+
+        <p>
+          <a id="pgadmin-link" class="pf-v5-c-button pf-m-primary pf-m-display-lg" href="#" target="_blank" rel="noopener noreferrer">Open pgAdmin</a>
+        </p>
+        <p><strong>Login:</strong> evidba@pgadmin.app</p>
+        <p><strong>Password:</strong> use EVI_ADMIN_DB_PASSWORD variable from Podman containers &rarr; evi-db &rarr; Integration tab.</p>
+      </div>
+    </section>
+  </main>
+  <script src="evi-pgadmin.js"></script>
 </body>
 </html>
