@@ -1,8 +1,11 @@
 <!DOCTYPE html>
-<!-- Version: 1.1.0 -->
+<!-- Version: 1.2.0 -->
 <!-- Cockpit package: opens pgAdmin in a new tab (same host, port 5445). Shows login hint; no credentials on page. -->
 <!-- Backend/frontend: served by Cockpit; filename: index.html -->
 <!--
+  Changes in v1.2.0:
+  - Moved script to external evi-pgadmin.js so Cockpit CSP allows execution (inline scripts blocked)
+  - Fallback link href is set by external script to http://hostname:5445
   Changes in v1.1.0:
   - Open pgAdmin in new tab via window.open(..., _blank) instead of redirect in frame
   - Fallback link if popup is blocked
@@ -12,23 +15,11 @@
 <head>
   <meta charset="utf-8">
   <title>pgAdmin (evi)</title>
-  <script>
-    (function() {
-      var host = window.location.hostname;
-      var pgadminUrl = 'http://' + host + ':5445';
-      window.open(pgadminUrl, '_blank', 'noopener,noreferrer');
-    })();
-  </script>
+  <script src="evi-pgadmin.js"></script>
 </head>
 <body>
   <p>pgAdmin opened in a new tab. If it did not open, use the link below.</p>
-  <p><a id="pgadmin-link" href="" target="_blank" rel="noopener noreferrer">Open pgAdmin</a></p>
+  <p><a id="pgadmin-link" href="#" target="_blank" rel="noopener noreferrer">Open pgAdmin</a></p>
   <p><strong>Login:</strong> evidba@pgadmin.app. <strong>Password:</strong> use EVI_ADMIN_DB_PASSWORD variable from Podman containers -> evi-db -> Integration tab.</p>
-  <script>
-    (function() {
-      var host = window.location.hostname;
-      document.getElementById('pgadmin-link').href = 'http://' + host + ':5445';
-    })();
-  </script>
 </body>
 </html>

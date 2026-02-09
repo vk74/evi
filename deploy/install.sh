@@ -623,7 +623,7 @@ install_prerequisites_all() {
   if [[ -d "${SCRIPT_DIR}/cockpit-evi-pgadmin" ]] && [[ -f "${SCRIPT_DIR}/cockpit-evi-pgadmin/manifest.json" ]]; then
     log "adding pgAdmin link to cockpit sidebar..."
     sudo mkdir -p /usr/local/share/cockpit/evi-pgadmin
-    sudo cp "${SCRIPT_DIR}/cockpit-evi-pgadmin/manifest.json" "${SCRIPT_DIR}/cockpit-evi-pgadmin/index.html" /usr/local/share/cockpit/evi-pgadmin/
+    sudo cp "${SCRIPT_DIR}/cockpit-evi-pgadmin/manifest.json" "${SCRIPT_DIR}/cockpit-evi-pgadmin/index.html" "${SCRIPT_DIR}/cockpit-evi-pgadmin/evi-pgadmin.js" /usr/local/share/cockpit/evi-pgadmin/
     info "cockpit sidebar: 'pgAdmin (evi)' link added (opens pgAdmin in same host, port 5445)."
   else
     warn "cockpit-evi-pgadmin package not found; skipping sidebar link."
@@ -1269,8 +1269,8 @@ menu_env_config() {
     log "=== containers environment configuration ==="
     echo ""
     echo "0) back to main menu"
-    echo "1) guided setup (recommended for first-time setup)"
-    echo "2) manual configuration (advanced)"
+    echo "1) guided configuration (recommended for first-time setup)"
+    echo "2) manual configuration (advanced, can be adjusted after guided config)"
     echo ""
     read -r -p "select [0-2]: " opt
     case $opt in
