@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.5.5
+# Version: 1.5.6
 # Purpose: Interactive installer and manager for evi production deployment.
 # Deployment file: install.sh
 # Logic:
@@ -11,6 +11,11 @@
 # - TLS certificate management (auto-generate or user-provided)
 # - Deployment orchestration and status display
 # - Optional cleanup of source files after successful deployment
+#
+# Changes in v1.5.6:
+# - pgAdmin: removed interactive email prompt; use hardcoded login evidba@pgadmin.app (override via EVI_PGADMIN_EMAIL in evi.env)
+# - Admin tools summary: pgAdmin block shows explicit account and password
+# - Cockpit: install cockpit-evi-pgadmin package to add "pgAdmin (evi)" link in sidebar (redirects to host:5445; no credentials on page)
 #
 # Changes in v1.5.5:
 # - Paths updated for dev-ops layout: COMMON_DIR, ENV_DIR, SCRIPTS_DIR point to dev-ops/common/
@@ -77,6 +82,9 @@ TARGET_SECRETS="${ENV_DIR}/evi.secrets.env"
 
 # Password minimum length
 MIN_PASSWORD_LENGTH=12
+
+# pgAdmin web-console login username (hardcoded; override via EVI_PGADMIN_EMAIL in evi.env)
+EVI_PGADMIN_EMAIL_DEFAULT="evidba@pgadmin.app"
 
 # Colors
 RED='\033[0;31m'
@@ -535,20 +543,8 @@ install_gui_tools() {
     return 0
   fi
 
-  # --- Request pgAdmin email (before installation) ---
   ensure_config_files
   echo ""
-  echo "pgadmin requires an email address for the administrator account."
-  echo "this email will be used to log in to pgadmin web interface."
-  echo ""
-  local pgadmin_email=""
-  while [[ -z "${pgadmin_email}" ]]; do
-    read -r -p "enter valid e-mail to be used as pgadmin web-console login name (don't use .local or similar domains): " pgadmin_email
-    if ! validate_email "${pgadmin_email}"; then
-      warn "invalid email format. email must be valid (e.g., user@domain.com) and cannot use .local or localhost domain"
-      pgadmin_email=""
-    fi
-  done
 
   # --- Install Cockpit ---
   log "installing cockpit..."
@@ -569,6 +565,16 @@ install_gui_tools() {
   
   info "cockpit installed. access at https://localhost:9090"
 
+  # --- Cockpit sidebar link to pgAdmin ---
+  if [[ -d "${COMMON_DIR}/cockpit-evi-pgadmin" ]] && [[ -f "${COMMON_DIR}/cockpit-evi-pgadmin/manifest.json" ]]; then
+    log "adding pgAdmin link to cockpit sidebar..."
+    sudo mkdir -p /usr/local/share/cockpit/evi-pgadmin
+    sudo cp "${COMMON_DIR}/cockpit-evi-pgadmin/manifest.json" "${COMMON_DIR}/cockpit-evi-pgadmin/index.html" /usr/local/share/cockpit/evi-pgadmin/
+    info "cockpit sidebar: 'pgAdmin (evi)' link added (opens pgAdmin at localhost:5445)."
+  else
+    warn "cockpit-evi-pgadmin package not found; skipping sidebar link."
+  fi
+
   # --- Configure pgAdmin ---
   log "configuring pgadmin..."
   
@@ -580,15 +586,15 @@ install_gui_tools() {
       echo "EVI_PGADMIN_ENABLED=true" >> "${TARGET_ENV}"
     fi
     
-    # Set pgAdmin email
+    # Set pgAdmin email (hardcoded default)
     if grep -q "^EVI_PGADMIN_EMAIL=" "${TARGET_ENV}"; then
-      sed -i "s|^EVI_PGADMIN_EMAIL=.*|EVI_PGADMIN_EMAIL=${pgadmin_email}|" "${TARGET_ENV}"
+      sed -i "s|^EVI_PGADMIN_EMAIL=.*|EVI_PGADMIN_EMAIL=${EVI_PGADMIN_EMAIL_DEFAULT}|" "${TARGET_ENV}"
     else
-      echo "EVI_PGADMIN_EMAIL=${pgadmin_email}" >> "${TARGET_ENV}"
+      echo "EVI_PGADMIN_EMAIL=${EVI_PGADMIN_EMAIL_DEFAULT}" >> "${TARGET_ENV}"
     fi
     
     info "pgadmin enabled in evi.env"
-    info "pgadmin email set to: ${pgadmin_email}"
+    info "pgadmin login: ${EVI_PGADMIN_EMAIL_DEFAULT}"
   fi
   
   echo ""
@@ -604,9 +610,9 @@ install_gui_tools() {
   echo ""
   echo "pgadmin:"
   printf "  to manage your evi database use pgadmin web-console at ${GREEN}http://localhost:5445${NC}.\n"
-  echo "  evi-pgadmin and evi-db are 2 different containers, you need 2 separate user accounts, but they can use the same password."
-  printf "  1. login to web-console using ${GREEN}${pgadmin_email}${NC} and EVI_ADMIN_DB_PASSWORD\n"
-  printf "  2. in web-console login to database using ${GREEN}evidba${NC} user account and EVI_ADMIN_DB_PASSWORD (preconfigured).\n"
+  printf "  account: ${GREEN}${EVI_PGADMIN_EMAIL_DEFAULT}${NC}\n"
+  printf "  password: ${GREEN}EVI_ADMIN_DB_PASSWORD${NC}\n"
+  echo "  evi-pgadmin and evi-db are 2 different containers; in pgadmin web-console the preconfigured database connection uses user evidba and EVI_ADMIN_DB_PASSWORD."
   echo "  3. when evi deployment completes, EVI_ADMIN_DB_PASSWORD can be found in cockpit -> podman containers -> integration tab."
   echo "  4. should you need to set your own db password, proceed to step 2 (container environment configuration) option 2 (manual configuration)."
   echo "  edit evi.secrets.env file, EVI_ADMIN_DB_PASSWORD variable."

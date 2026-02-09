@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
 #
-# Version: 1.10.0
+# Version: 1.11.0
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
 # - First run: prerequisites, guided env setup (no "keep current" options), deploy from pre-built images (init, pull + systemctl start in install.sh).
 # - Subsequent runs: if evi.env and evi.secrets.env exist, run deploy/scripts/evi-reconfigure.sh (info block, menu: 0 exit, 1 guided configuration, 2 edit evi.env, 3 edit evi.secrets.env, 4 redeploy containers). Guided reconfigure has "keep current setting" in evi-reconfigure.sh.
 # - No podman build; use ./evictl for status, logs, restart, update.
+#
+# Changes in v1.11.0:
+# - pgAdmin: removed interactive email prompt from prerequisites; use hardcoded login evidba@pgadmin.app (override via EVI_PGADMIN_EMAIL in evi.env)
+# - load_deploy_env() defaults EVI_PGADMIN_EMAIL to evidba@pgadmin.app when unset
+# - run_deploy_init() pgAdmin validation simplified to non-empty check only
+# - Prerequisites summary: pgAdmin block shows explicit account and password (evidba@pgadmin.app, EVI_ADMIN_DB_PASSWORD)
+# - Cockpit: install cockpit-evi-pgadmin package to add "pgAdmin (evi)" link in sidebar (redirects to host:5445; no credentials on page)
 #
 # Changes in v1.10.0:
 # - Guided setup (first run): removed "keep current setting" from all steps; reordered steps to 1-access, 2-TLS, 3-firewall, 4-passwords, 5-demo. Options renumbered (e.g. step 1: 1-3, step 4: 1-2).
@@ -132,6 +139,9 @@ INSTALL_VERSION=$(sed -n '1,20p' "${SCRIPT_DIR}/$(basename "${BASH_SOURCE[0]:-$0
 
 # Password minimum length
 MIN_PASSWORD_LENGTH=12
+
+# pgAdmin web-console login username (hardcoded; override via EVI_PGADMIN_EMAIL in evi.env)
+EVI_PGADMIN_EMAIL_DEFAULT="evidba@pgadmin.app"
 
 # Colors
 RED='\033[0;31m'
@@ -577,14 +587,6 @@ install_prerequisites_all() {
 
   ensure_config_files
   echo ""
-  local pgadmin_email=""
-  while [[ -z "${pgadmin_email}" ]]; do
-    read -r -p "enter e-mail of administrator's user account. the e-mail will be used as a username to login to pgadmin web-console: " pgadmin_email
-    if ! validate_email "${pgadmin_email}"; then
-      warn "invalid email format. email must be valid (e.g., user@domain.com) and cannot use .local or localhost domain"
-      pgadmin_email=""
-    fi
-  done
 
   # --- Core prerequisites ---
   log "installing core prerequisites (podman, curl, openssl)..."
@@ -617,6 +619,16 @@ install_prerequisites_all() {
   systemctl --user enable --now podman.socket
   info "cockpit installed. access at https://<server-ip>:9090"
 
+  # --- Cockpit sidebar link to pgAdmin ---
+  if [[ -d "${SCRIPT_DIR}/cockpit-evi-pgadmin" ]] && [[ -f "${SCRIPT_DIR}/cockpit-evi-pgadmin/manifest.json" ]]; then
+    log "adding pgAdmin link to cockpit sidebar..."
+    sudo mkdir -p /usr/local/share/cockpit/evi-pgadmin
+    sudo cp "${SCRIPT_DIR}/cockpit-evi-pgadmin/manifest.json" "${SCRIPT_DIR}/cockpit-evi-pgadmin/index.html" /usr/local/share/cockpit/evi-pgadmin/
+    info "cockpit sidebar: 'pgAdmin (evi)' link added (opens pgAdmin in same host, port 5445)."
+  else
+    warn "cockpit-evi-pgadmin package not found; skipping sidebar link."
+  fi
+
   # --- Configure pgAdmin ---
   log "configuring pgadmin..."
   if [[ -f "${TARGET_ENV}" ]]; then
@@ -626,12 +638,12 @@ install_prerequisites_all() {
       echo "EVI_PGADMIN_ENABLED=true" >> "${TARGET_ENV}"
     fi
     if grep -q "^EVI_PGADMIN_EMAIL=" "${TARGET_ENV}"; then
-      sed -i "s|^EVI_PGADMIN_EMAIL=.*|EVI_PGADMIN_EMAIL=${pgadmin_email}|" "${TARGET_ENV}"
+      sed -i "s|^EVI_PGADMIN_EMAIL=.*|EVI_PGADMIN_EMAIL=${EVI_PGADMIN_EMAIL_DEFAULT}|" "${TARGET_ENV}"
     else
-      echo "EVI_PGADMIN_EMAIL=${pgadmin_email}" >> "${TARGET_ENV}"
+      echo "EVI_PGADMIN_EMAIL=${EVI_PGADMIN_EMAIL_DEFAULT}" >> "${TARGET_ENV}"
     fi
     info "pgadmin enabled in evi.env"
-    info "pgadmin email set to: ${pgadmin_email}"
+    info "pgadmin login: ${EVI_PGADMIN_EMAIL_DEFAULT}"
   fi
 
   echo ""
@@ -650,7 +662,8 @@ install_prerequisites_all() {
   echo ""
   echo "pgadmin:"
   printf "  to manage your evi database use pgadmin from any computer at ${GREEN}http://<server>:5445${NC} (use your server's ip address or dns name).\n"
-  printf "  login to web-console using ${GREEN}${pgadmin_email}${NC} and ${GREEN}EVI_ADMIN_DB_PASSWORD${NC}\n"
+  printf "  account: ${GREEN}${EVI_PGADMIN_EMAIL_DEFAULT}${NC}\n"
+  printf "  password: ${GREEN}EVI_ADMIN_DB_PASSWORD${NC}\n"
   echo ""
   printf "${YELLOW}\033[1mIMPORTANT:\033[0m${YELLOW} access to cockpit (9090) and pgadmin (5445) is configured in step 2 of environment configuration (localhost, specific hosts, or subnet).${NC}\n"
   echo ""
@@ -1582,7 +1595,7 @@ load_deploy_env() {
   export EVI_PGADMIN_IMAGE="${EVI_PGADMIN_IMAGE:-docker.io/dpage/pgadmin4:8}"
   export EVI_PGADMIN_HOST="${EVI_PGADMIN_HOST:-0.0.0.0}"
   export EVI_PGADMIN_PORT="${EVI_PGADMIN_PORT:-5445}"
-  export EVI_PGADMIN_EMAIL="${EVI_PGADMIN_EMAIL:-}"
+  export EVI_PGADMIN_EMAIL="${EVI_PGADMIN_EMAIL:-${EVI_PGADMIN_EMAIL_DEFAULT}}"
 }
 
 # Deploy init: ensure dirs, JWT secret, TLS, Caddyfile, Quadlets. All logic in install.sh.
@@ -1771,7 +1784,6 @@ run_deploy_init() {
   [[ "${EVI_TLS_MODE}" == "letsencrypt" || "${EVI_TLS_MODE}" == "manual" ]] || die "Invalid EVI_TLS_MODE: '${EVI_TLS_MODE}'. Must be one of: letsencrypt, manual."
   if [[ "${EVI_PGADMIN_ENABLED}" == "true" ]]; then
     [[ -n "${EVI_PGADMIN_EMAIL}" ]] || die "EVI_PGADMIN_EMAIL is required when EVI_PGADMIN_ENABLED=true."
-    [[ ! "${EVI_PGADMIN_EMAIL}" =~ \.local$ ]] && [[ ! "${EVI_PGADMIN_EMAIL}" =~ @localhost$ ]] && [[ "${EVI_PGADMIN_EMAIL}" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]] || die "EVI_PGADMIN_EMAIL must be a valid email address."
   fi
   [[ -n "${EVI_PROXY_IMAGE:-}" ]] || die "EVI_PROXY_IMAGE is required"
   [[ -n "${EVI_FE_IMAGE:-}" ]] || die "EVI_FE_IMAGE is required"

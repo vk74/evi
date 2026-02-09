@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 #
-# Version: 1.5.6
+# Version: 1.5.7
 # Purpose: evi production deployment controller (rootless Podman + Quadlet).
 # Deployment file: evictl
 # Logic:
 # - Provides CLI subcommands (init/up/down/restart/status/logs/update/doctor/health/cert/build/cleanup)
 # - Provides interactive menu mode when run without args
 # - Renders Quadlet units from templates, renders Caddyfile, and manages secrets
+#
+# Changes in v1.5.7:
+# - pgAdmin: default login evidba@pgadmin.app (EVI_PGADMIN_EMAIL_DEFAULT); override via evi.env; init validation simplified
 #
 # Changes in v1.5.6:
 # - Paths updated for dev-ops layout: COMMON_DIR points to dev-ops/common/; DEPLOYMENT_DIR removed
@@ -101,6 +104,9 @@ EVI_QUADLET_DIR_DEFAULT="${HOME}/.config/containers/systemd"
 EVI_ENV_FILE_DEFAULT="${ENV_DIR}/evi.env"
 EVI_SECRETS_FILE_DEFAULT="${ENV_DIR}/evi.secrets.env"
 
+# pgAdmin web-console login username (hardcoded default; override via EVI_PGADMIN_EMAIL in evi.env)
+EVI_PGADMIN_EMAIL_DEFAULT="evidba@pgadmin.app"
+
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -146,7 +152,7 @@ load_env_files() {
   export EVI_PGADMIN_IMAGE="${EVI_PGADMIN_IMAGE:-docker.io/dpage/pgadmin4:8}"
   export EVI_PGADMIN_HOST="${EVI_PGADMIN_HOST:-127.0.0.1}"
   export EVI_PGADMIN_PORT="${EVI_PGADMIN_PORT:-5445}"
-  export EVI_PGADMIN_EMAIL="${EVI_PGADMIN_EMAIL:-}"
+  export EVI_PGADMIN_EMAIL="${EVI_PGADMIN_EMAIL:-${EVI_PGADMIN_EMAIL_DEFAULT}}"
 
   # Validation
   [[ -n "${EVI_DOMAIN:-}" ]] || die "EVI_DOMAIN is not set in evi.env"
@@ -465,15 +471,9 @@ cmd_init() {
   [[ -n "${EVI_BE_IMAGE}" ]] || die "EVI_BE_IMAGE is required"
   [[ -n "${EVI_DB_IMAGE}" ]] || die "EVI_DB_IMAGE is required"
   
-  # Validate pgAdmin email if enabled
+  # Validate pgAdmin email if enabled (default is hardcoded evidba@pgadmin.app)
   if [[ "${EVI_PGADMIN_ENABLED:-false}" == "true" ]]; then
-    if [[ -z "${EVI_PGADMIN_EMAIL}" ]]; then
-      die "EVI_PGADMIN_EMAIL is required when EVI_PGADMIN_ENABLED=true. Set it in evi.env or use install.sh to configure pgAdmin"
-    fi
-    # Basic email format validation (reject .local and localhost)
-    if [[ "${EVI_PGADMIN_EMAIL}" =~ \.local$ ]] || [[ "${EVI_PGADMIN_EMAIL}" =~ @localhost$ ]] || [[ ! "${EVI_PGADMIN_EMAIL}" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
-      die "EVI_PGADMIN_EMAIL must be a valid email address (e.g., admin@example.com). Cannot use .local or localhost domain"
-    fi
+    [[ -n "${EVI_PGADMIN_EMAIL}" ]] || die "EVI_PGADMIN_EMAIL is required when EVI_PGADMIN_ENABLED=true."
   fi
 
   # Secrets

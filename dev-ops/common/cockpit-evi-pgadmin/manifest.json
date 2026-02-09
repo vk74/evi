@@ -1,0 +1,9 @@
+{
+  "version": 0,
+  "tools": {
+    "evi-pgadmin": {
+      "label": "pgAdmin (evi)",
+      "path": "index.html"
+    }
+  }
+}

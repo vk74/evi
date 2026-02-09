@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.7.4
+# Version: 1.7.5
 # Purpose: evi production deployment controller (rootless Podman + Quadlet).
 # Deployment file: evictl
 # Logic:
@@ -9,6 +9,9 @@
 # - Shows container status table on menu entry
 # - Renders Quadlet units from templates, renders Caddyfile, and manages secrets
 # - Supports full backup and restore of EVI environment
+#
+# Changes in v1.7.5:
+# - pgAdmin: default login evidba@pgadmin.app (EVI_PGADMIN_EMAIL_DEFAULT); override via evi.env; help text shows fixed login
 #
 # Changes in v1.7.4:
 # - Menu banner shows script version (parsed from header)
@@ -132,6 +135,9 @@ EVI_QUADLET_DIR_DEFAULT="${HOME}/.config/containers/systemd"
 EVI_ENV_FILE_DEFAULT="${ENV_DIR}/evi.env"
 EVI_SECRETS_FILE_DEFAULT="${ENV_DIR}/evi.secrets.env"
 
+# pgAdmin web-console login username (hardcoded default; override via EVI_PGADMIN_EMAIL in evi.env)
+EVI_PGADMIN_EMAIL_DEFAULT="evidba@pgadmin.app"
+
 EVICTL_VERSION=$(sed -n '1,20p' "${SCRIPT_DIR}/$(basename "${BASH_SOURCE[0]:-$0}")" 2>/dev/null | grep -m1 '^# Version: ' | sed 's/^# Version:[[:space:]]*//' || echo "?")
 
 # Colors
@@ -187,7 +193,7 @@ load_env_files() {
   export EVI_PGADMIN_IMAGE="${EVI_PGADMIN_IMAGE:-docker.io/dpage/pgadmin4:8}"
   export EVI_PGADMIN_HOST="${EVI_PGADMIN_HOST:-0.0.0.0}"
   export EVI_PGADMIN_PORT="${EVI_PGADMIN_PORT:-5445}"
-  export EVI_PGADMIN_EMAIL="${EVI_PGADMIN_EMAIL:-}"
+  export EVI_PGADMIN_EMAIL="${EVI_PGADMIN_EMAIL:-${EVI_PGADMIN_EMAIL_DEFAULT}}"
 
   # Validation
   [[ -n "${EVI_DOMAIN:-}" ]] || die "EVI_DOMAIN is not set in evi.env"
@@ -920,7 +926,7 @@ cmd_info() {
     log "pgadmin:"
     printf "  web console for database administration\n"
     printf "  url: ${GREEN}http://<server-ip>:${EVI_PGADMIN_PORT}${NC} (from any computer)\n"
-    printf "  login: email from ${GREEN}EVI_PGADMIN_EMAIL${NC}\n"
+    printf "  login: ${GREEN}evidba@pgadmin.app${NC}\n"
     printf "  password: ${GREEN}EVI_ADMIN_DB_PASSWORD${NC}\n"
     printf "  note: evi-pgadmin and evi-db are different containers, but can use same password\n"
   else
