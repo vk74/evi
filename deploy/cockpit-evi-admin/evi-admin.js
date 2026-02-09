@@ -1,9 +1,15 @@
-/* Version: 1.2.0
+/* Version: 1.3.0
  * Purpose: Main logic for evi admin tools Cockpit package.
  * Handles navigation between sections, backup form interactions, and command execution
  * via Cockpit API (cockpit.spawn). Each admin function calls scripts through the
  * evi-admin-dispatch.sh dispatcher that resolves paths to deployment scripts.
  * Cockpit package; filename: evi-admin.js
+ *
+ * Changes in v1.3.0:
+ * - Estimate: strip ANSI codes and extract JSON from mixed stderr+stdout so formatted table always shows
+ * - Backup location: keep ~/evi/backup in UI; resolve to absolute path only when calling scripts
+ * - Password visibility toggle (eye icon) for encryption password field
+ * - Progress bar during backup with step count from [✓] lines in script output
  *
  * Changes in v1.2.0:
  * - Estimate Size renders human-readable formatted summary instead of raw JSON output
@@ -81,7 +87,9 @@
   var state = {
     backupRunning: false,
     currentProcess: null,
-    defaultBackupDir: ''
+    defaultBackupDir: '',
+    backupOutputBuffer: '',
+    backupTotalSteps: 12
   };
 
   /* =====================================================================
@@ -143,12 +151,33 @@
 
     // Clear output button
     els.btnClear.addEventListener('click', clearOutput);
+
+    // Password visibility toggle (eye icon)
+    if (els.btnTogglePassword) {
+      els.btnTogglePassword.addEventListener('click', function () {
+        var isPassword = els.passwordInput.type === 'password';
+        els.passwordInput.type = isPassword ? 'text' : 'password';
+        if (els.iconEye) els.iconEye.classList.toggle('hidden', isPassword);
+        if (els.iconEyeOff) els.iconEyeOff.classList.toggle('hidden', !isPassword);
+        els.btnTogglePassword.setAttribute('title', isPassword ? 'Hide password' : 'Show password');
+        els.btnTogglePassword.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+      });
+    }
+  }
+
+  /* Resolved backup directory for scripts: show ~/evi/backup in UI, pass absolute path to scripts */
+  function getResolvedBackupDir() {
+    var raw = els.dirInput.value.trim();
+    if (!raw || raw === '~/evi/backup') {
+      return state.defaultBackupDir || raw || '~/evi/backup';
+    }
+    return raw;
   }
 
   /* Collect form values into an environment variable array for cockpit.spawn */
   function collectBackupEnv() {
     var env = [
-      'BACKUP_DIR=' + els.dirInput.value.trim(),
+      'BACKUP_DIR=' + getResolvedBackupDir(),
       'BACKUP_COMPRESSION=' + els.compressionSelect.value,
       'BACKUP_NONINTERACTIVE=true'
     ];
@@ -191,7 +220,7 @@
     showOutput();
     showStatus('running', 'Preparing backup directory...');
 
-    var backupDir = els.dirInput.value.trim();
+    var backupDir = getResolvedBackupDir();
 
     // Ensure backup directory exists (mkdir -p)
     var mkdirProc = cockpit.spawn(['mkdir', '-p', backupDir], {
@@ -214,6 +243,8 @@
   /* Execute the actual backup after directory is ready */
   function runBackup() {
     showStatus('running', 'Backup in progress...');
+    state.backupOutputBuffer = '';
+    showProgressIndeterminate();
 
     var envVars = collectBackupEnv();
 
@@ -227,12 +258,15 @@
 
     proc.stream(function (data) {
       appendOutput(data);
+      state.backupOutputBuffer += data;
+      updateProgressFromBackupOutput();
     });
 
     proc.then(function () {
       state.backupRunning = false;
       state.currentProcess = null;
       setFormEnabled(true);
+      hideProgress();
       showStatus('success', 'Backup completed successfully.');
     });
 
@@ -240,6 +274,7 @@
       state.backupRunning = false;
       state.currentProcess = null;
       setFormEnabled(true);
+      hideProgress();
       var msg = 'Backup failed.';
       if (ex.exit_status) {
         msg += ' Exit code: ' + ex.exit_status + '.';
@@ -251,6 +286,40 @@
     });
   }
 
+  /* Progress bar: show indeterminate (animated) state */
+  function showProgressIndeterminate() {
+    if (!els.progressWrapper) return;
+    els.progressWrapper.classList.remove('hidden');
+    if (els.progressFill) {
+      els.progressFill.classList.add('evi-admin-progress-indeterminate');
+      els.progressFill.style.width = '0%';
+    }
+    if (els.progressText) els.progressText.textContent = 'Backup in progress...';
+  }
+
+  /* Progress bar: update from backup output (count [✓] lines) */
+  function updateProgressFromBackupOutput() {
+    if (!els.progressFill || !els.progressText) return;
+    var cleaned = stripAnsi(state.backupOutputBuffer);
+    var lines = cleaned.split('\n');
+    var count = 0;
+    for (var i = 0; i < lines.length; i++) {
+      if (lines[i].indexOf('[✓]') !== -1) count++;
+    }
+    count = Math.min(count, state.backupTotalSteps);
+    if (count > 0) {
+      els.progressFill.classList.remove('evi-admin-progress-indeterminate');
+      var pct = Math.round((count / state.backupTotalSteps) * 100);
+      els.progressFill.style.width = pct + '%';
+      els.progressText.textContent = 'Step ' + count + ' of ' + state.backupTotalSteps + ' completed';
+    }
+  }
+
+  /* Progress bar: hide */
+  function hideProgress() {
+    if (els.progressWrapper) els.progressWrapper.classList.add('hidden');
+  }
+
   function estimateBackup() {
     if (state.backupRunning) return;
 
@@ -259,7 +328,7 @@
     showStatus('running', 'Estimating backup size...');
     setFormEnabled(false);
 
-    var backupDir = els.dirInput.value.trim() || '~/evi/backup';
+    var backupDir = getResolvedBackupDir() || '~/evi/backup';
     var collected = '';
 
     var proc = cockpit.spawn([DISPATCH_PATH, 'backup-estimate', backupDir], {
@@ -328,16 +397,43 @@
     return str;
   }
 
+  /* Strip ANSI escape sequences from script output */
+  function stripAnsi(str) {
+    return str.replace(/\x1b\[[0-9;]*m/g, '');
+  }
+
+  /* Extract JSON object from mixed output (stderr + stdout); returns { json: string, prefix: string } */
+  function extractJsonFromOutput(raw) {
+    var cleaned = stripAnsi(raw);
+    var first = cleaned.indexOf('{');
+    var last = cleaned.lastIndexOf('}');
+    if (first === -1 || last === -1 || last < first) {
+      return { json: null, prefix: cleaned.trim() };
+    }
+    return {
+      json: cleaned.slice(first, last + 1),
+      prefix: cleaned.slice(0, first).trim()
+    };
+  }
+
   /* Parse backup-estimate.sh JSON and render formatted text */
-  function formatEstimate(rawJson) {
+  function formatEstimate(rawOutput) {
+    var extracted = extractJsonFromOutput(rawOutput);
     var data;
     try {
-      data = JSON.parse(rawJson);
+      if (!extracted.json) {
+        throw new Error('No JSON found');
+      }
+      data = JSON.parse(extracted.json);
     } catch (e) {
-      return 'Could not parse estimate data.\n\n' + rawJson;
+      return 'Could not parse estimate data.\n\n' + stripAnsi(rawOutput);
     }
 
     var lines = [];
+    if (extracted.prefix) {
+      lines.push(extracted.prefix);
+      lines.push('');
+    }
     var sep = '─'.repeat(52);
 
     lines.push('  BACKUP SIZE ESTIMATE');
@@ -449,6 +545,7 @@
     els.output.textContent = '';
     els.outputWrapper.classList.add('hidden');
     hideStatus();
+    hideProgress();
   }
 
   function setFormEnabled(enabled) {
@@ -482,11 +579,7 @@
           var val = parts.slice(1).join('=');
           if (key === 'DEFAULT_BACKUP_DIR' && val) {
             state.defaultBackupDir = val;
-            // Only replace default ~/evi/backup with the resolved absolute path
-            var current = els.dirInput.value.trim();
-            if (!current || current === '~/evi/backup') {
-              els.dirInput.value = val;
-            }
+            // Keep ~/evi/backup in the UI; resolved path is used only when calling scripts
           }
         }
       }
@@ -508,10 +601,16 @@
     els.encryptCheckbox = document.getElementById('backup-encrypt');
     els.passwordGroup = document.getElementById('password-group');
     els.passwordInput = document.getElementById('backup-password');
+    els.btnTogglePassword = document.getElementById('btn-toggle-password');
+    els.iconEye = els.btnTogglePassword ? els.btnTogglePassword.querySelector('.evi-admin-icon-eye') : null;
+    els.iconEyeOff = els.btnTogglePassword ? els.btnTogglePassword.querySelector('.evi-admin-icon-eye-off') : null;
     els.btnStart = document.getElementById('btn-backup-start');
     els.btnEstimate = document.getElementById('btn-backup-estimate');
     els.btnClear = document.getElementById('btn-backup-clear');
     els.status = document.getElementById('backup-status');
+    els.progressWrapper = document.getElementById('backup-progress');
+    els.progressFill = document.getElementById('backup-progress-fill');
+    els.progressText = document.getElementById('backup-progress-text');
     els.outputWrapper = document.getElementById('backup-output-wrapper');
     els.output = document.getElementById('backup-output');
 

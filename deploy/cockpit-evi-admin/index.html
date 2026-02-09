@@ -1,9 +1,12 @@
 <!DOCTYPE html>
-<!-- Version: 1.2.0 -->
+<!-- Version: 1.3.0 -->
 <!-- Cockpit package: EVI administration panel with left navigation and right content area. -->
 <!-- Provides admin tools: full backup, password management (coming soon), certificate management (coming soon). -->
 <!-- Cockpit package; filename: index.html -->
 <!--
+  Changes in v1.3.0:
+  - Backup progress bar (animated, step counter) between status and output
+  - Encryption password field: input group with show/hide password button (eye icon)
   Changes in v1.2.0:
   - Pre-filled backup location with ~/evi/backup default
   - Added note about restore instructions README being created alongside backup
@@ -90,8 +93,14 @@
             <!-- Password (shown when encrypt is checked) -->
             <div id="password-group" class="evi-admin-form-group hidden">
               <label for="backup-password">Encryption password</label>
-              <input type="password" id="backup-password" class="evi-admin-input"
-                     placeholder="Enter password for backup encryption">
+              <div class="evi-admin-input-group">
+                <input type="password" id="backup-password" class="evi-admin-input"
+                       placeholder="Enter password for backup encryption">
+                <button type="button" id="btn-toggle-password" class="evi-admin-btn-toggle-password" title="Show password" aria-label="Show password">
+                  <svg class="evi-admin-icon-eye" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg class="evi-admin-icon-eye-off hidden" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                </button>
+              </div>
               <span class="evi-admin-hint">The password will be required to restore the backup</span>
             </div>
 
@@ -108,6 +117,14 @@
 
           <!-- Status indicator -->
           <div id="backup-status" class="evi-admin-status hidden"></div>
+
+          <!-- Progress bar (shown during backup) -->
+          <div id="backup-progress" class="evi-admin-progress-wrapper hidden">
+            <div class="evi-admin-progress-bar">
+              <div id="backup-progress-fill" class="evi-admin-progress-fill"></div>
+            </div>
+            <div id="backup-progress-text" class="evi-admin-progress-text">Backup in progress...</div>
+          </div>
 
           <!-- Output area -->
           <div id="backup-output-wrapper" class="evi-admin-output-wrapper hidden">

@@ -1,8 +1,12 @@
-/* Version: 1.1.0
+/* Version: 1.2.0
  * Purpose: Styles for the EVI admin tools Cockpit package.
  * Two-panel layout: left navigation sidebar + right content area.
  * Includes dark theme support via .theme-dark class on <html>, synced from Cockpit shell.
  * Cockpit package; filename: evi-admin.css
+ *
+ * Changes in v1.2.0:
+ * - Password input group with visibility toggle button (eye icon)
+ * - Backup progress bar (fill, indeterminate animation, step text, dark theme)
  *
  * Changes in v1.1.0:
  * - Added dark theme: html.theme-dark overrides for all CSS custom properties
@@ -210,6 +214,49 @@ html.theme-dark {
   color: var(--pf-v5-global--Color--200, #6a6e73);
 }
 
+/* Password input with visibility toggle */
+.evi-admin-input-group {
+  position: relative;
+  display: block;
+  max-width: 480px;
+}
+
+.evi-admin-input-group .evi-admin-input {
+  padding-right: 44px;
+}
+
+.evi-admin-btn-toggle-password {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--pf-v5-global--Color--200, #6a6e73);
+  cursor: pointer;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.evi-admin-btn-toggle-password:hover {
+  color: var(--pf-v5-global--Color--100, #151515);
+  background: var(--pf-v5-global--BackgroundColor--200, #f0f0f0);
+}
+
+.evi-admin-btn-toggle-password .evi-admin-icon-eye,
+.evi-admin-btn-toggle-password .evi-admin-icon-eye-off {
+  display: block;
+}
+
+.evi-admin-btn-toggle-password .hidden {
+  display: none;
+}
+
 /* Checkbox group */
 .evi-admin-form-group-checkbox label {
   font-weight: 400;
@@ -328,6 +375,60 @@ html.theme-dark .evi-admin-status.status-success {
 html.theme-dark .evi-admin-status.status-error {
   background: #3b1010;
   color: #f5b5b5;
+}
+
+/* ===== Backup progress bar ===== */
+
+.evi-admin-progress-wrapper {
+  margin-bottom: 16px;
+}
+
+.evi-admin-progress-bar {
+  height: 8px;
+  background: var(--pf-v5-global--BackgroundColor--200, #f0f0f0);
+  border: 1px solid var(--pf-v5-global--BorderColor--100, #d2d2d2);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.evi-admin-progress-fill {
+  height: 100%;
+  min-width: 4px;
+  background: var(--pf-v5-global--primary-color--100, #0066cc);
+  border-radius: 3px;
+  transition: width 0.25s ease-out;
+}
+
+.evi-admin-progress-fill.evi-admin-progress-indeterminate {
+  width: 40% !important;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--pf-v5-global--primary-color--100, #0066cc) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: evi-admin-progress-stripe 1.2s linear infinite;
+}
+
+@keyframes evi-admin-progress-stripe {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.evi-admin-progress-text {
+  font-size: 13px;
+  color: var(--pf-v5-global--Color--200, #6a6e73);
+}
+
+html.theme-dark .evi-admin-progress-bar {
+  background: var(--pf-v5-global--BackgroundColor--dark-100, #0f1114);
+  border-color: var(--pf-v5-global--BorderColor--100, #3c3f42);
+}
+
+html.theme-dark .evi-admin-progress-text {
+  color: var(--pf-v5-global--Color--200, #a2a5a8);
 }
 
 /* ===== Output area ===== */

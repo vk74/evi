@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 #
-# Version: 1.12.1
+# Version: 1.12.2
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
 # - First run: prerequisites, guided env setup (no "keep current" options), deploy from pre-built images (init, pull + systemctl start in install.sh).
 # - Subsequent runs: if evi.env and evi.secrets.env exist, run deploy/scripts/evi-reconfigure.sh (info block, menu: 0 exit, 1 guided configuration, 2 edit evi.env, 3 edit evi.secrets.env, 4 redeploy containers). Guided reconfigure has "keep current setting" in evi-reconfigure.sh.
 # - No podman build; use ./evictl for status, logs, restart, update.
+#
+# Changes in v1.12.2:
+# - Cockpit evi-admin: backup form UI — estimate JSON parsing with ANSI strip, ~/evi/backup in UI, password visibility toggle, progress bar during backup
 #
 # Changes in v1.12.1:
 # - Cockpit: install cockpit-evi-admin package ("evi admin tools" panel with backup form, nav sidebar)
@@ -2061,7 +2064,7 @@ deploy_up() {
   local cockpit_allowed
   cockpit_allowed=$(get_cockpit_allowed_summary)
   printf "  1. your users can access evi by visiting ${GREEN}https://${EVI_DOMAIN}${NC}\n"
-  echo "  2. to manage your host server and evi application visit cockpit at ${GREEN}https://${EVI_DOMAIN}:9090${NC} from ${cockpit_allowed}. login using your host OS user account and password."
+  echo "  2. to manage your host server and evi application visit cockpit at https://${EVI_DOMAIN}:9090 from ${cockpit_allowed}. login using your host OS user account and password."
   echo ""
   read -r -p "press enter to continue..."
 }
