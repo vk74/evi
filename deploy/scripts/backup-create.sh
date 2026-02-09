@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.2
+# Version: 1.0.4
 # Purpose: Create full EVI backup including container images, database, and configuration.
 # Deployment file: backup-create.sh
 # Logic:
@@ -12,6 +12,12 @@
 # - Archives evi repository
 # - Compresses and optionally encrypts the data archive
 # - Generates README-RESTORE-STEP-BY-STEP.md with server info
+#
+# Changes in v1.0.4:
+# - Print script version at start of backup output
+#
+# Changes in v1.0.3:
+# - Container running check: use podman container inspect instead of podman ps --filter (fixes "evi-db not running" on some podman versions)
 #
 # Changes in v1.0.2:
 # - Archive and README use evi (evi-v*.tar.gz, cd evi)
@@ -37,6 +43,9 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
 NC='\033[0m'
+
+# Script version (printed at start of backup output)
+BACKUP_SCRIPT_VERSION="1.0.4"
 
 # Spinner characters
 SPINNER_CHARS="⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
@@ -167,7 +176,7 @@ dump_database() {
   local dump_file="${db_dir}/maindb.dump"
   
   # Check if evi-db is running
-  if ! podman ps --filter "name=^evi-db$" --format "{{.Names}}" 2>/dev/null | grep -q "evi-db"; then
+  if ! podman container inspect evi-db --format '{{.State.Running}}' 2>/dev/null | grep -q "true"; then
     err "evi-db container is not running"
     return 1
   fi
@@ -252,7 +261,7 @@ create_manifest() {
   created_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   
   local pg_version="17"
-  if podman ps --filter "name=^evi-db$" --format "{{.Names}}" 2>/dev/null | grep -q "evi-db"; then
+  if podman container inspect evi-db --format '{{.State.Running}}' 2>/dev/null | grep -q "true"; then
     pg_version=$(podman exec evi-db psql -U postgres -t -c "SHOW server_version;" 2>/dev/null | tr -d ' ' | cut -d. -f1 || echo "17")
   fi
   
@@ -608,6 +617,7 @@ main() {
   local data_dir="${TEMP_DIR}/evi-data"
   mkdir -p "${data_dir}"
   
+  log "backup-create.sh version ${BACKUP_SCRIPT_VERSION}"
   log ""
   log "creating backup..."
   

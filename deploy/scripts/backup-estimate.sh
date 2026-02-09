@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.0
+# Version: 1.0.1
 # Purpose: Estimate backup size and compression time for EVI backup.
 # Deployment file: backup-estimate.sh
 # Logic:
@@ -8,6 +8,9 @@
 # - Estimates compressed size and time for different compression levels
 # - Outputs JSON with all estimates
 # - Checks available disk space on target directory
+#
+# Changes in v1.0.1:
+# - Container running check: use podman container inspect instead of podman ps --filter
 #
 # Exit codes:
 #   0 - Success
@@ -90,7 +93,7 @@ get_image_size_bytes() {
 # Get database size estimate
 get_database_size_bytes() {
   # Check if evi-db container is running
-  if ! podman ps --filter "name=^evi-db$" --format "{{.Names}}" 2>/dev/null | grep -q "evi-db"; then
+  if ! podman container inspect evi-db --format '{{.State.Running}}' 2>/dev/null | grep -q "true"; then
     warn "evi-db container not running, using estimate"
     echo "52428800"  # 50 MB default estimate
     return

@@ -1,9 +1,12 @@
-/* Version: 1.3.0
+/* Version: 1.3.1
  * Purpose: Main logic for evi admin tools Cockpit package.
  * Handles navigation between sections, backup form interactions, and command execution
  * via Cockpit API (cockpit.spawn). Each admin function calls scripts through the
  * evi-admin-dispatch.sh dispatcher that resolves paths to deployment scripts.
  * Cockpit package; filename: evi-admin.js
+ *
+ * Changes in v1.3.1:
+ * - Backup spawn: run as current user (no superuser) so rootless podman containers are visible
  *
  * Changes in v1.3.0:
  * - Estimate: strip ANSI codes and extract JSON from mixed stderr+stdout so formatted table always shows
@@ -250,8 +253,7 @@
 
     var proc = cockpit.spawn([DISPATCH_PATH, 'backup-create'], {
       environ: envVars,
-      err: 'out',
-      superuser: 'try'
+      err: 'out'
     });
 
     state.currentProcess = proc;
@@ -332,8 +334,7 @@
     var collected = '';
 
     var proc = cockpit.spawn([DISPATCH_PATH, 'backup-estimate', backupDir], {
-      err: 'out',
-      superuser: 'try'
+      err: 'out'
     });
 
     proc.stream(function (data) {
