@@ -15,6 +15,7 @@
 #
 # Changes in v1.0.4:
 # - Print script version at start of backup output
+# - Fix copy_pgadmin_data: use podman unshare to read pgadmin4.db owned by remapped UID 5050
 #
 # Changes in v1.0.3:
 # - Container running check: use podman container inspect instead of podman ps --filter (fixes "evi-db not running" on some podman versions)
@@ -233,7 +234,7 @@ copy_jwt_secrets() {
   fi
 }
 
-# Copy pgAdmin data
+# Copy pgAdmin data (pgadmin4.db is owned by remapped UID 5050, so podman unshare is required)
 copy_pgadmin_data() {
   local pgadmin_dir="$1"
   local source_dir="${EVI_STATE_DIR}/pgadmin"
@@ -241,9 +242,12 @@ copy_pgadmin_data() {
   if [[ "${EVI_PGADMIN_ENABLED}" == "true" ]] && [[ -d "${source_dir}" ]]; then
     mkdir -p "${pgadmin_dir}"
     
-    # Copy database and config
-    [[ -f "${source_dir}/data/pgadmin4.db" ]] && cp "${source_dir}/data/pgadmin4.db" "${pgadmin_dir}/"
-    [[ -f "${source_dir}/servers.json" ]] && cp "${source_dir}/servers.json" "${pgadmin_dir}/"
+    # pgadmin4.db belongs to container-mapped UID 5050; use podman unshare to read it
+    if [[ -f "${source_dir}/data/pgadmin4.db" ]]; then
+      podman unshare cp "${source_dir}/data/pgadmin4.db" "${pgadmin_dir}/" 2>/dev/null \
+        || warn "Could not copy pgadmin4.db (permission denied); pgAdmin data skipped"
+    fi
+    [[ -f "${source_dir}/servers.json" ]] && cp "${source_dir}/servers.json" "${pgadmin_dir}/" 2>/dev/null || true
   fi
 }
 
