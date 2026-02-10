@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 #
-# Version: 1.14.3
+# Version: 1.14.4
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
-# - First run: prerequisites, guided env setup (no "keep current" options), deploy from pre-built images (init, pull + systemctl start in install.sh).
-# - Subsequent runs: if evi.env and evi.secrets.env exist, run deploy/scripts/evi-reconfigure.sh (info block, menu: 0 exit, 1 guided configuration, 2 edit evi.env, 3 edit evi.secrets.env, 4 redeploy, 5 uninstall). Guided reconfigure has "keep current setting" in evi-reconfigure.sh.
+# - Single entry point: main_menu() always. When evi.env and evi.secrets.env exist (CONFIG_EXISTS=1), main menu shows banner "evi configuration already exists", same options 0-5, option 3 label "redeploy and restart evi containers" (do_redeploy); otherwise option 3 "deploy and start evi containers" (deploy_up).
+# - Guided configuration: guided_setup() supports reconfigure mode (guided_setup reconfigure). In reconfigure, each step has "0) keep current setting"; choices 1, 2, 3 match first-run semantics so one code path serves both. No empty-password guard when keeping passwords.
 # - No podman build; daily operations (status, logs, restart, backup, etc.) via Cockpit (evi admin panel at :9090).
+#
+# Changes in v1.14.4:
+# - Unified first-run and re-run: single main_menu() for both; CONFIG_EXISTS flag; banner when config exists; option 3 = deploy vs redeploy. Removed evi-reconfigure.sh entry point.
+# - guided_setup(reconfigure): same steps with "0) keep current" and indices 1,2,3 aligned to first-run; menu_env_config calls guided_setup reconfigure when CONFIG_EXISTS.
 #
 # Changes in v1.14.3:
 # - Deployment summary: new display_final_summary() with two blocks (evi application, admin tools cockpit/pgadmin), styled like prerequisites summary; self-signed cert note when EVI_TLS_MODE=manual
@@ -163,6 +167,8 @@ TEMPLATE_ENV="${ENV_DIR}/evi.template.env"
 TEMPLATE_SECRETS="${ENV_DIR}/evi.secrets.template.env"
 TARGET_ENV="${ENV_DIR}/evi.env"
 TARGET_SECRETS="${ENV_DIR}/evi.secrets.env"
+CONFIG_EXISTS=0
+[[ -f "${TARGET_ENV}" ]] && [[ -f "${TARGET_SECRETS}" ]] && CONFIG_EXISTS=1
 TPL_DIR="${SCRIPT_DIR}/quadlet-templates"
 PROXY_DIR="${SCRIPT_DIR}/reverse-proxy"
 
@@ -815,33 +821,81 @@ apply_firewall_admin_tools() {
 }
 
 guided_setup() {
+  local reconfigure_mode=0
+  [[ "${1:-}" == "reconfigure" ]] && reconfigure_mode=1
   log "=== guided environment configuration ==="
   echo ""
-  echo "this wizard will help you configure evi for deployment."
+  if [[ "${reconfigure_mode}" -eq 1 ]]; then
+    echo "this wizard will help you change your evi configuration. you can keep current settings or set new ones."
+  else
+    echo "this wizard will help you configure evi for deployment."
+  fi
   echo ""
   
   ensure_config_files
   
-  # Step 1: Access type (no "keep current" — first-run only)
+  local current_domain="" current_tls_mode="" current_acme_email="" current_firewall_access="" current_firewall_allowed="" current_seed_demo_data=""
+  if [[ "${reconfigure_mode}" -eq 1 ]]; then
+    current_domain=$(grep "^EVI_DOMAIN=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "")
+    current_tls_mode=$(grep "^EVI_TLS_MODE=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | tr -d "'" || echo "letsencrypt")
+    current_acme_email=$(grep "^EVI_ACME_EMAIL=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "")
+    current_firewall_access=$(grep "^EVI_FIREWALL_ADMIN_ACCESS=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | tr -d "'" || echo "")
+    current_firewall_allowed=$(grep "^EVI_FIREWALL_ADMIN_ALLOWED=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "")
+    current_seed_demo_data=$(grep "^EVI_SEED_DEMO_DATA=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | tr -d "'" | tr '[:upper:]' '[:lower:]' || echo "false")
+  fi
+  
+  # Step 1: Access type (option 0 = keep current when reconfigure)
   printf "${GREEN}step 1:${NC} how will users connect to your evi?\n"
   echo ""
+  if [[ "${reconfigure_mode}" -eq 1 ]]; then
+    local step1_keep_label="not set"
+    [[ -n "${current_domain}" ]] && step1_keep_label="${current_domain}"
+    echo "  0) keep current setting (${step1_keep_label})"
+  fi
   echo "  1) private ip or intranet dns name"
   echo "  2) public dns domain"
   echo "  3) public ip address"
   echo ""
   
   local access_type=""
+  local domain=""
+  local tls_mode=""
+  local acme_email=""
+  local cert_choice=""
   while [[ -z "${access_type}" ]]; do
-    read -r -p "select [1-3]: " step1_choice
+    if [[ "${reconfigure_mode}" -eq 1 ]]; then
+      read -r -p "select [0-3]: " step1_choice
+    else
+      read -r -p "select [1-3]: " step1_choice
+    fi
     case "${step1_choice}" in
+      0)
+        if [[ "${reconfigure_mode}" -eq 1 ]] && [[ -n "${current_domain}" ]]; then
+          domain="${current_domain}"
+          if [[ "${current_tls_mode}" == "letsencrypt" ]]; then
+            access_type="public_domain"
+            tls_mode="letsencrypt"
+            acme_email="${current_acme_email}"
+            cert_choice="letsencrypt"
+          elif validate_ip "${current_domain}"; then
+            access_type="public_ip"
+            tls_mode="manual"
+          else
+            access_type="internal"
+            tls_mode="manual"
+          fi
+        elif [[ "${reconfigure_mode}" -eq 1 ]]; then
+          warn "no current setting; please select 1, 2, or 3"
+        fi
+        ;;
       1) access_type="internal" ;;
       2) access_type="public_domain" ;;
       3) access_type="public_ip" ;;
-      *) warn "please select 1, 2, or 3" ;;
+      *) warn "please select $([[ "${reconfigure_mode}" -eq 1 ]] && echo "0, " )1, 2, or 3" ;;
     esac
   done
   
-  local domain=""
+  if [[ -z "${domain}" ]]; then
   if [[ "${access_type}" == "public_domain" ]]; then
     while [[ -z "${domain}" ]]; do
       read -r -p "enter your public domain name (e.g., evi.example.com): " domain
@@ -869,26 +923,41 @@ guided_setup() {
     done
     # internal always uses manual TLS
   fi
+  fi
   
-  # Step 2: TLS certificate (always step 2; no "keep current")
-  local tls_mode=""
-  local acme_email=""
+  # Step 2: TLS certificate (option 0 = keep current when reconfigure)
   local generate_certs="yes"
-  local cert_choice=""
   
   echo ""
   printf "${GREEN}step 2:${NC} tls certificate configuration\n"
   echo ""
   if [[ "${access_type}" == "public_domain" ]]; then
+    if [[ "${reconfigure_mode}" -eq 1 ]] && [[ -n "${current_tls_mode}" ]]; then
+      local step2_keep_label="${current_tls_mode}"
+      echo "  0) keep current setting (${step2_keep_label})"
+    fi
     echo "  1) let's encrypt (automatic)"
     echo "  2) use my own certificates"
     echo ""
     while [[ -z "${cert_choice}" ]]; do
-      read -r -p "select [1-2]: " step2_tls
+      if [[ "${reconfigure_mode}" -eq 1 ]] && [[ -n "${current_tls_mode}" ]]; then
+        read -r -p "select [0-2]: " step2_tls
+      else
+        read -r -p "select [1-2]: " step2_tls
+      fi
       case "${step2_tls}" in
+        0)
+          if [[ "${reconfigure_mode}" -eq 1 ]] && [[ -n "${current_tls_mode}" ]]; then
+            tls_mode="${current_tls_mode}"
+            cert_choice="keep"
+            [[ "${current_tls_mode}" == "letsencrypt" ]] && acme_email="${current_acme_email}"
+          else
+            warn "please select 1 or 2"
+          fi
+          ;;
         1) tls_mode="letsencrypt"; cert_choice="letsencrypt" ;;
         2) tls_mode="manual"; cert_choice="own"; generate_certs="no" ;;
-        *) warn "please select 1 or 2" ;;
+        *) warn "please select $([[ "${reconfigure_mode}" -eq 1 ]] && [[ -n "${current_tls_mode}" ]] && echo "0, " )1 or 2" ;;
       esac
     done
     if [[ "${tls_mode}" == "letsencrypt" ]]; then
@@ -903,15 +972,37 @@ guided_setup() {
   else
     # internal or public_ip: manual TLS only
     tls_mode="manual"
+    if [[ "${reconfigure_mode}" -eq 1 ]]; then
+      local step2m_keep="auto-generate"
+      [[ -f "${TLS_DIR}/cert.pem" ]] && [[ -f "${TLS_DIR}/key.pem" ]] && step2m_keep="use my own"
+      echo "  0) keep current setting (${step2m_keep})"
+    fi
     echo "  1) auto-generate self-signed certificate (recommended)"
     echo "  2) use my own certificates"
     echo ""
     while [[ -z "${cert_choice}" ]]; do
-      read -r -p "select [1-2]: " step2_tls
+      if [[ "${reconfigure_mode}" -eq 1 ]]; then
+        read -r -p "select [0-2]: " step2_tls
+      else
+        read -r -p "select [1-2]: " step2_tls
+      fi
       case "${step2_tls}" in
+        0)
+          if [[ "${reconfigure_mode}" -eq 1 ]]; then
+            if [[ -f "${TLS_DIR}/cert.pem" ]] && [[ -f "${TLS_DIR}/key.pem" ]]; then
+              generate_certs="no"
+              cert_choice="keep"
+            else
+              generate_certs="yes"
+              cert_choice="keep"
+            fi
+          else
+            warn "please select 1 or 2"
+          fi
+          ;;
         1) generate_certs="yes"; cert_choice="auto" ;;
         2) generate_certs="no"; cert_choice="own" ;;
-        *) warn "please select 1 or 2" ;;
+        *) warn "please select $([[ "${reconfigure_mode}" -eq 1 ]] && echo "0, " )1 or 2" ;;
       esac
     done
   fi
@@ -959,6 +1050,11 @@ guided_setup() {
   echo ""
   echo "cockpit is the web interface for administration of evi host server and containers. you should connect to cockpit only from trusted locations. choose from where it can be opened in a browser."
   echo ""
+  if [[ "${reconfigure_mode}" -eq 1 ]]; then
+    local step3_keep_label="${current_firewall_access:-not set}"
+    [[ -n "${current_firewall_allowed}" ]] && step3_keep_label="${current_firewall_access} (${current_firewall_allowed})"
+    echo "  0) keep current setting (${step3_keep_label})"
+  fi
   echo "  1) from specific computer(s) by address"
   echo "     (enter one or more IP addresses, e.g. 192.168.1.10 or 192.168.1.10, 192.168.1.11)"
   echo ""
@@ -977,14 +1073,26 @@ guided_setup() {
   local firewall_access=""
   local firewall_allowed=""
   while [[ -z "${firewall_access}" ]]; do
-    read -r -p "select [1-5]: " step3_c
+    if [[ "${reconfigure_mode}" -eq 1 ]]; then
+      read -r -p "select [0-5]: " step3_c
+    else
+      read -r -p "select [1-5]: " step3_c
+    fi
     case "${step3_c}" in
+      0)
+        if [[ "${reconfigure_mode}" -eq 1 ]] && [[ -n "${current_firewall_access}" ]]; then
+          firewall_access="${current_firewall_access}"
+          firewall_allowed="${current_firewall_allowed}"
+        elif [[ "${reconfigure_mode}" -eq 1 ]]; then
+          warn "no current setting; please select 1, 2, 3, 4, or 5"
+        fi
+        ;;
       1) firewall_access="allowed_ips" ;;
       2) firewall_access="allowed_cidr" ;;
       3) firewall_access="localhost" ;;
       4) firewall_access="any" ;;
       5) firewall_access="skip" ;;
-      *) warn "please select 1, 2, 3, 4, or 5" ;;
+      *) warn "please select $([[ "${reconfigure_mode}" -eq 1 ]] && echo "0, " )1, 2, 3, 4, or 5" ;;
     esac
   done
   if [[ "${firewall_access}" == "allowed_ips" ]]; then
@@ -1014,21 +1122,33 @@ guided_setup() {
     done
   fi
   
-  # Step 4: Database passwords (no "keep current")
+  # Step 4: Database passwords (option 0 = keep current when reconfigure)
   echo ""
   printf "${GREEN}step 4:${NC} database password configuration\n"
   echo ""
+  if [[ "${reconfigure_mode}" -eq 1 ]]; then
+    echo "  0) keep current setting"
+  fi
   echo "  1) auto-generate secure passwords (recommended)"
   echo "  2) set passwords manually"
   echo ""
   
   local pass_choice=""
   while [[ -z "${pass_choice}" ]]; do
-    read -r -p "select [1-2]: " step4_c
+    if [[ "${reconfigure_mode}" -eq 1 ]]; then
+      read -r -p "select [0-2]: " step4_c
+    else
+      read -r -p "select [1-2]: " step4_c
+    fi
     case "${step4_c}" in
+      0)
+        if [[ "${reconfigure_mode}" -eq 1 ]]; then
+          pass_choice="keep"
+        fi
+        ;;
       1) pass_choice="auto" ;;
       2) pass_choice="manual" ;;
-      *) warn "please select 1 or 2" ;;
+      *) warn "please select $([[ "${reconfigure_mode}" -eq 1 ]] && echo "0, " )1 or 2" ;;
     esac
   done
   
@@ -1069,21 +1189,35 @@ guided_setup() {
     info "passwords will be auto-generated."
   fi
   
-  # Step 5: Demo data (no "keep current")
+  # Step 5: Demo data (option 0 = keep current when reconfigure)
   echo ""
   printf "${GREEN}step 5:${NC} deploy demo data?\n"
   echo ""
+  if [[ "${reconfigure_mode}" -eq 1 ]]; then
+    local step5_keep_label="no"
+    [[ "${current_seed_demo_data}" == "true" ]] && step5_keep_label="yes"
+    echo "  0) keep current setting (${step5_keep_label})"
+  fi
   echo "  1) yes, deploy demo data"
   echo "  2) no demo data, just clean install"
   echo ""
   
   local demo_data_choice=""
   while [[ -z "${demo_data_choice}" ]]; do
-    read -r -p "select [1-2]: " step5_c
+    if [[ "${reconfigure_mode}" -eq 1 ]]; then
+      read -r -p "select [0-2]: " step5_c
+    else
+      read -r -p "select [1-2]: " step5_c
+    fi
     case "${step5_c}" in
+      0)
+        if [[ "${reconfigure_mode}" -eq 1 ]]; then
+          demo_data_choice="${step5_keep_label}"
+        fi
+        ;;
       1) demo_data_choice="yes" ;;
       2) demo_data_choice="no" ;;
-      *) warn "please select 1 or 2" ;;
+      *) warn "please select $([[ "${reconfigure_mode}" -eq 1 ]] && echo "0, " )1 or 2" ;;
     esac
   done
   
@@ -1340,7 +1474,7 @@ menu_env_config() {
     read -r -p "select [0-2]: " opt
     case $opt in
       0) break ;;
-      1) guided_setup ; break ;;   # return to main menu after guided config
+      1) if [[ "${CONFIG_EXISTS}" -eq 1 ]]; then guided_setup reconfigure; else guided_setup; fi; break ;;
       2) menu_manual_config ;;
       *) warn "invalid option" ;;
     esac
@@ -2841,12 +2975,20 @@ main_menu() {
     
     display_status
     
+    if [[ "${CONFIG_EXISTS}" -eq 1 ]]; then
+      echo "evi configuration already exists. you are modifying an existing configuration."
+      echo ""
+    fi
     echo "  0) exit"
     echo ""
     printf "  ${GRAY}--- new deployment ---${NC}\n"
     echo "  1) install prerequisites on host server (requires sudo)"
     echo "  2) containers environment configuration (rootless)"
-    echo "  3) deploy and start evi containers (rootless)"
+    if [[ "${CONFIG_EXISTS}" -eq 1 ]]; then
+      echo "  3) redeploy and restart evi containers (rootless)"
+    else
+      echo "  3) deploy and start evi containers (rootless)"
+    fi
     echo ""
     printf "  ${GRAY}--- restore installation from backup ---${NC}\n"
     echo "  4) install containers and restore app data from backup"
@@ -2859,7 +3001,7 @@ main_menu() {
       0) log "bye!"; exit 0 ;;
       1) install_prerequisites_all ;;
       2) menu_env_config ;;
-      3) deploy_up ;;
+      3) if [[ "${CONFIG_EXISTS}" -eq 1 ]]; then do_redeploy; else deploy_up; fi ;;
       4) restore_from_backup ;;
       5) uninstall_evi ;;
       *) warn "invalid option" ;;
@@ -2867,11 +3009,5 @@ main_menu() {
   done
 }
 
-# Start: if config exists, run reconfigure script (menu: guided, edit evi.env/secrets, redeploy); else main menu
-if [[ -f "${TARGET_ENV}" ]] && [[ -f "${TARGET_SECRETS}" ]]; then
-  # shellcheck disable=SC1090
-  source "${SCRIPTS_DIR}/evi-reconfigure.sh"
-  evi_reconfigure_main
-else
-  main_menu
-fi
+# Start: single entry point; main_menu shows banner and redeploy option when config exists
+main_menu
