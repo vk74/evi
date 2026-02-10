@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 #
-# Version: 1.14.1
+# Version: 1.14.2
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
 # - First run: prerequisites, guided env setup (no "keep current" options), deploy from pre-built images (init, pull + systemctl start in install.sh).
 # - Subsequent runs: if evi.env and evi.secrets.env exist, run deploy/scripts/evi-reconfigure.sh (info block, menu: 0 exit, 1 guided configuration, 2 edit evi.env, 3 edit evi.secrets.env, 4 redeploy containers). Guided reconfigure has "keep current setting" in evi-reconfigure.sh.
 # - No podman build; daily operations (status, logs, restart, backup, etc.) via Cockpit (evi admin panel at :9090).
+#
+# Changes in v1.14.2:
+# - After completing guided configuration (step 2, sub-step 1), return to main menu instead of env config menu so user can immediately choose deployment (option 3)
 #
 # Changes in v1.14.1:
 # - Restore: apply firewall rules (ports 80/443 and admin 9090/5445 from evi.env) after restoring env
@@ -1332,7 +1335,7 @@ menu_env_config() {
     read -r -p "select [0-2]: " opt
     case $opt in
       0) break ;;
-      1) guided_setup ;;
+      1) guided_setup ; break ;;   # return to main menu after guided config
       2) menu_manual_config ;;
       *) warn "invalid option" ;;
     esac
