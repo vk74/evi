@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 #
-# Version: 1.14.5
+# Version: 1.15.0
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
 # - Single entry point: main_menu() always. When evi.env and evi.secrets.env exist (CONFIG_EXISTS=1), main menu shows banner "evi configuration already exists", same options 0-5, option 3 label "redeploy and restart evi containers" (do_redeploy); otherwise option 3 "deploy and start evi containers" (deploy_up).
 # - Guided configuration: guided_setup() supports reconfigure mode (guided_setup reconfigure). In reconfigure, each step has "0) keep current setting" (step 2: "keep current certificate"); step 5 (demo data) skipped — demo data can be deployed only during initial setup.
 # - No podman build; daily operations (status, logs, restart, backup, etc.) via Cockpit (evi admin panel at :9090).
+#
+# Changes in v1.15.0:
+# - Step 6 (EVI version): "which evi version do you want to deploy?" — 1) latest (use template), 2) manually set container versions (list tags from registry via evi-registry-tags.sh, then choose per evi-fe/evi-be/evi-db). Reconfigure: 0) keep current.
+# - Apply: EVI_FE_IMAGE, EVI_BE_IMAGE, EVI_DB_IMAGE written to evi.env only when user chose manual; otherwise unchanged (latest/keep).
 #
 # Changes in v1.14.5:
 # - Re-run improvements: menu option "guided configuration (recommended for first-time setup)" renamed to "guided configuration".
@@ -848,6 +852,9 @@ guided_setup() {
     current_firewall_access=$(grep "^EVI_FIREWALL_ADMIN_ACCESS=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | tr -d "'" || echo "")
     current_firewall_allowed=$(grep "^EVI_FIREWALL_ADMIN_ALLOWED=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "")
     current_seed_demo_data=$(grep "^EVI_SEED_DEMO_DATA=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2 | tr -d '"' | tr -d "'" | tr '[:upper:]' '[:lower:]' || echo "false")
+    current_fe_image=$(grep "^EVI_FE_IMAGE=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "")
+    current_be_image=$(grep "^EVI_BE_IMAGE=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "")
+    current_db_image=$(grep "^EVI_DB_IMAGE=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "")
   fi
   
   # Step 1: Access type (option 0 = keep current when reconfigure)
@@ -1219,6 +1226,117 @@ guided_setup() {
     info "demo data can be deployed only during initial setup; current setting unchanged."
   fi
   
+  # Step 6: EVI version (latest = use template/env; manual = choose per container from registry tags)
+  local version_choice="" chosen_fe_image="" chosen_be_image="" chosen_db_image=""
+  local registry_base=""
+  local fe_line
+  fe_line=$(grep "^EVI_FE_IMAGE=" "${TARGET_ENV}" 2>/dev/null || grep "^EVI_FE_IMAGE=" "${TEMPLATE_ENV}" 2>/dev/null || true)
+  if [[ -n "${fe_line}" ]]; then
+    local fe_value
+    fe_value=$(echo "${fe_line}" | cut -d'=' -f2- | tr -d '"' | tr -d "'")
+    if [[ "${fe_value}" == *:* ]]; then
+      registry_base="${fe_value%%:*}"
+      registry_base="${registry_base%/evi-fe}"
+    fi
+  fi
+  
+  echo ""
+  printf "${GREEN}step 6:${NC} which evi version do you want to deploy?\n"
+  echo ""
+  if [[ "${reconfigure_mode}" -eq 1 ]] && [[ -n "${current_fe_image:-}" ]]; then
+    echo "  0) keep current setting (current container images)"
+  fi
+  echo "  1) latest (use versions from template — recommended)"
+  echo "  2) manually set container versions (choose from registry or enter tag)"
+  echo ""
+  while [[ -z "${version_choice}" ]]; do
+    if [[ "${reconfigure_mode}" -eq 1 ]] && [[ -n "${current_fe_image:-}" ]]; then
+      read -r -p "select [0-2]: " step6_c
+    else
+      read -r -p "select [1-2]: " step6_c
+    fi
+    case "${step6_c}" in
+      0)
+        if [[ "${reconfigure_mode}" -eq 1 ]] && [[ -n "${current_fe_image:-}" ]]; then
+          version_choice="keep"
+        else
+          warn "please select 1 or 2"
+        fi
+        ;;
+      1) version_choice="latest" ;;
+      2) version_choice="manual" ;;
+      *) warn "please select $([[ "${reconfigure_mode}" -eq 1 ]] && [[ -n "${current_fe_image:-}" ]] && echo "0, " )1 or 2" ;;
+    esac
+  done
+  
+  if [[ "${version_choice}" == "manual" ]]; then
+    ensure_executable
+    if [[ -n "${registry_base}" ]]; then
+      for comp in evi-fe evi-be evi-db; do
+        local tags_list
+        tags_list=$("${SCRIPTS_DIR}/evi-registry-tags.sh" "${registry_base}" "${comp}" 2>/dev/null || true)
+        echo ""
+        printf "  available tags for %s:\n" "${comp}"
+        if [[ -n "${tags_list}" ]]; then
+          local idx=1
+          while IFS= read -r tag; do
+            [[ -z "${tag}" ]] && continue
+            printf "    %d) %s\n" "${idx}" "${tag}"
+            idx=$((idx + 1))
+          done <<< "${tags_list}"
+          printf "    or enter tag manually\n"
+        else
+          warn "could not fetch tags from registry; enter tag manually (e.g. 0.10.1 or 0.10.2-beta)"
+        fi
+        local chosen_tag=""
+        while [[ -z "${chosen_tag}" ]]; do
+          read -r -p "  version for ${comp} (number or tag, e.g. 0.10.1): " chosen_tag
+          chosen_tag=$(echo "${chosen_tag}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+          if [[ -z "${chosen_tag}" ]]; then
+            warn "enter a non-empty tag or number"
+          elif [[ -n "${tags_list}" ]] && [[ "${chosen_tag}" =~ ^[0-9]+$ ]]; then
+            local idx=1
+            local found=""
+            while IFS= read -r tag; do
+              [[ -z "${tag}" ]] && continue
+              if [[ "${idx}" -eq "${chosen_tag}" ]]; then
+                found="${tag}"
+                break
+              fi
+              idx=$((idx + 1))
+            done <<< "${tags_list}"
+            if [[ -n "${found}" ]]; then
+              chosen_tag="${found}"
+            fi
+          fi
+        done
+        local full_image="${registry_base}/${comp}:${chosen_tag}"
+        case "${comp}" in
+          evi-fe) chosen_fe_image="${full_image}" ;;
+          evi-be) chosen_be_image="${full_image}" ;;
+          evi-db) chosen_db_image="${full_image}" ;;
+        esac
+      done
+    else
+      warn "could not detect registry from env; enter full image:tag for each container."
+      for comp in evi-fe evi-be evi-db; do
+        local full_image=""
+        while [[ -z "${full_image}" ]]; do
+          read -r -p "  full image for ${comp} (e.g. ghcr.io/org/evi-fe:0.10.1): " full_image
+          full_image=$(echo "${full_image}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+          if [[ -z "${full_image}" ]]; then
+            warn "enter a non-empty image:tag"
+          fi
+        done
+        case "${comp}" in
+          evi-fe) chosen_fe_image="${full_image}" ;;
+          evi-be) chosen_be_image="${full_image}" ;;
+          evi-db) chosen_db_image="${full_image}" ;;
+        esac
+      done
+    fi
+  fi
+  
   # Summary
   echo ""
   log "=== configuration summary ==="
@@ -1239,6 +1357,13 @@ guided_setup() {
   local firewall_summary="${firewall_access}"
   [[ -n "${firewall_allowed}" ]] && firewall_summary="${firewall_access} (${firewall_allowed})"
   printf "  cockpit access: %s\n" "${firewall_summary}"
+  if [[ "${version_choice}" == "latest" ]]; then
+    printf "  evi version:   latest (from template)\n"
+  elif [[ "${version_choice}" == "keep" ]]; then
+    printf "  evi version:   keep current\n"
+  else
+    printf "  evi version:   %s, %s, %s\n" "${chosen_fe_image:-—}" "${chosen_be_image:-—}" "${chosen_db_image:-—}"
+  fi
   echo ""
   
   if ! confirm "save and apply this configuration?"; then
@@ -1287,6 +1412,13 @@ guided_setup() {
     sed -i "s|^EVI_FIREWALL_ADMIN_ALLOWED=.*|EVI_FIREWALL_ADMIN_ALLOWED=${firewall_allowed}|" "${TARGET_ENV}"
   else
     echo "EVI_FIREWALL_ADMIN_ALLOWED=${firewall_allowed}" >> "${TARGET_ENV}"
+  fi
+  
+  # Update EVI_*_IMAGE only when user chose manually set container versions
+  if [[ "${version_choice}" == "manual" ]] && [[ -n "${chosen_fe_image}" ]] && [[ -n "${chosen_be_image}" ]] && [[ -n "${chosen_db_image}" ]]; then
+    sed -i "s|^EVI_FE_IMAGE=.*|EVI_FE_IMAGE=${chosen_fe_image}|" "${TARGET_ENV}"
+    sed -i "s|^EVI_BE_IMAGE=.*|EVI_BE_IMAGE=${chosen_be_image}|" "${TARGET_ENV}"
+    sed -i "s|^EVI_DB_IMAGE=.*|EVI_DB_IMAGE=${chosen_db_image}|" "${TARGET_ENV}"
   fi
   
   info "configuration saved to evi.env and evi.secrets.env"
