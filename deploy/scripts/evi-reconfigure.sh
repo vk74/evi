@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 #
-# Version: 1.1.0
+# Version: 1.2.0
 # Purpose: Menu and handlers for evi when configuration already exists (subsequent run).
 # Deployment file: evi-reconfigure.sh (frontend; called from install.sh)
 # Logic: Intended to be sourced by install.sh when both evi.env and evi.secrets.env exist.
-#        Defines evi_reconfigure_main() and guided_reconfigure(). Menu: 0 exit, 1 guided (calls guided_reconfigure), 2 edit evi.env, 3 edit evi.secrets.env, 4 redeploy.
+#        Defines evi_reconfigure_main() and guided_reconfigure(). Menu: 0 exit, 1 guided (calls guided_reconfigure), 2 edit evi.env, 3 edit evi.secrets.env, 4 redeploy, 5 uninstall.
 #        guided_reconfigure: same step order as install.sh (1-access, 2-TLS, 3-firewall, 4-passwords, 5-demo) with "keep current setting" as option 1; empty-password guard.
+#
+# Changes in v1.2.0:
+# - Added uninstall option (5): calls uninstall_evi from install.sh
 #
 # Changes in v1.1.0:
 # - Added guided_reconfigure(): full guided flow with "keep current setting" in every step; step order 1-access, 2-TLS, 3-firewall, 4-passwords, 5-demo.
@@ -450,13 +453,17 @@ evi_reconfigure_main() {
     echo "  3) edit secrets file (evi.secrets.env)"
     echo "  4) redeploy containers"
     echo ""
-    read -r -p "select [0-4]: " opt
+    printf "  ${GRAY}--- uninstall ---${NC}\n"
+    echo "  5) uninstall evi (remove everything)"
+    echo ""
+    read -r -p "select [0-5]: " opt
     case $opt in
       0) log "bye!"; exit 0 ;;
       1) guided_reconfigure ;;
       2) edit_file "${TARGET_ENV}" ;;
       3) edit_file "${TARGET_SECRETS}" ;;
       4) do_redeploy ;;
+      5) uninstall_evi ;;
       *) warn "invalid option" ;;
     esac
   done

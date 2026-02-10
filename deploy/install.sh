@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
 #
-# Version: 1.14.2
+# Version: 1.14.3
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
 # - First run: prerequisites, guided env setup (no "keep current" options), deploy from pre-built images (init, pull + systemctl start in install.sh).
-# - Subsequent runs: if evi.env and evi.secrets.env exist, run deploy/scripts/evi-reconfigure.sh (info block, menu: 0 exit, 1 guided configuration, 2 edit evi.env, 3 edit evi.secrets.env, 4 redeploy containers). Guided reconfigure has "keep current setting" in evi-reconfigure.sh.
+# - Subsequent runs: if evi.env and evi.secrets.env exist, run deploy/scripts/evi-reconfigure.sh (info block, menu: 0 exit, 1 guided configuration, 2 edit evi.env, 3 edit evi.secrets.env, 4 redeploy, 5 uninstall). Guided reconfigure has "keep current setting" in evi-reconfigure.sh.
 # - No podman build; daily operations (status, logs, restart, backup, etc.) via Cockpit (evi admin panel at :9090).
+#
+# Changes in v1.14.3:
+# - Deployment summary: new display_final_summary() with two blocks (evi application, admin tools cockpit/pgadmin), styled like prerequisites summary; self-signed cert note when EVI_TLS_MODE=manual
+# - Main menu and reconfigure menu: new group "uninstall" with option 5 "uninstall evi (remove everything)"
+# - New uninstall_evi(): double confirmation, removes containers/volumes/secrets/images, state and config dirs, quadlets, cockpit panels, UFW rules, sysctl, apt packages (podman, cockpit, curl, openssl); prints instruction to run rm -rf ~/evi
 #
 # Changes in v1.14.2:
 # - After completing guided configuration (step 2, sub-step 1), return to main menu instead of env config menu so user can immediately choose deployment (option 3)
@@ -1638,6 +1643,45 @@ display_deployment_summary() {
   echo ""
 }
 
+# Print final deployment summary: evi app and admin tools (cockpit, pgadmin). Uses EVI_* from load_deploy_env.
+display_final_summary() {
+  local cockpit_allowed
+  cockpit_allowed=$(get_cockpit_allowed_summary)
+  local domain="${EVI_DOMAIN:-}"
+  [[ -z "${domain}" ]] && domain="<server>"
+
+  echo ""
+  printf "${GREEN}=== deployment complete! ===${NC}\n"
+  echo ""
+  echo "evi application:"
+  printf "  ${GREEN}✓${NC} your evi is ready\n"
+  printf "  address:  ${GREEN}https://%s${NC}\n" "${domain}"
+  echo "  open this address in a browser from any computer that can reach the server."
+  echo "  to login, use the credentials provided by your evi administrator."
+  echo ""
+  echo "admin tools (cockpit):"
+  printf "  ${GREEN}✓${NC} cockpit server management\n"
+  printf "  address:  ${GREEN}https://%s:9090${NC}\n" "${domain}"
+  printf "  allowed:  %s\n" "${cockpit_allowed}"
+  echo "  login using your host OS user account and password."
+  echo ""
+
+  if [[ "${EVI_PGADMIN_ENABLED:-false}" == "true" ]]; then
+    printf "  ${GREEN}✓${NC} pgadmin database management\n"
+    printf "  address:  ${GREEN}http://%s:5445${NC}\n" "${domain}"
+    printf "  account:  ${GREEN}%s${NC}\n" "${EVI_PGADMIN_EMAIL:-${EVI_PGADMIN_EMAIL_DEFAULT}}"
+    echo "  password: (same as EVI_ADMIN_DB_PASSWORD in evi.secrets.env)"
+    echo ""
+  fi
+
+  if [[ "${EVI_TLS_MODE:-}" == "manual" ]]; then
+    printf "${YELLOW}\033[1mIMPORTANT:\033[0m${YELLOW} if you used self-signed certificates, the browser will show a security warning — this is expected.${NC}\n"
+    echo ""
+  fi
+
+  read -r -p "press enter to continue..."
+}
+
 # --- Deployment ---
 
 # Load evi.env and evi.secrets.env for deploy (init and pull/start). Exports all EVI_* needed.
@@ -2074,14 +2118,7 @@ deploy_up() {
                             "${init_status}" "${init_time}" "${init_errors}" \
                             "${up_status}" "${up_time}" "${up_errors}" \
                             "${total_time}"
-  echo ""
-  info "deployment complete!"
-  local cockpit_allowed
-  cockpit_allowed=$(get_cockpit_allowed_summary)
-  printf "  1. your users can access evi by visiting ${GREEN}https://${EVI_DOMAIN}${NC}\n"
-  echo "  2. to manage your host server and evi application visit cockpit at https://${EVI_DOMAIN}:9090 from ${cockpit_allowed}. login using your host OS user account and password."
-  echo ""
-  read -r -p "press enter to continue..."
+  display_final_summary
 }
 
 # --- Backup Restore ---
@@ -2663,6 +2700,136 @@ restore_from_backup() {
   execute_restore "${selected_data_archive}" "${restore_password}"
 }
 
+# Full uninstall: containers, volumes, secrets, images, state, config, quadlets, cockpit packages, prerequisites.
+# Requires double confirmation. Prints instruction to run 'rm -rf ~/evi' at the end (script cannot delete itself).
+uninstall_evi() {
+  echo ""
+  log "=== uninstall evi ==="
+  echo ""
+  printf "${RED}\033[1mWARNING: this will permanently remove evi and all its data. This cannot be undone.\033[0m${NC}\n"
+  echo ""
+  echo "the following will be removed:"
+  echo "  - all evi containers and data volumes"
+  echo "  - evi state and config under your home directory"
+  echo "  - cockpit evi panels and prerequisites (podman, cockpit, etc.)"
+  echo ""
+  read -r -p "type 'yes' (full word) to confirm uninstall: " confirm1
+  if [[ "${confirm1}" != "yes" ]]; then
+    log "uninstall cancelled."
+    read -r -p "press enter to continue..."
+    return
+  fi
+  read -r -p "type 'yes' again to proceed: " confirm2
+  if [[ "${confirm2}" != "yes" ]]; then
+    log "uninstall cancelled."
+    read -r -p "press enter to continue..."
+    return
+  fi
+
+  echo ""
+  log "stopping evi services..."
+  systemctl --user stop evi-reverse-proxy evi-fe evi-be evi-db evi-pgadmin 2>/dev/null || true
+  printf "  ${SYM_OK} services stopped\n"
+
+  log "removing containers..."
+  for c in evi-db evi-be evi-fe evi-reverse-proxy evi-pgadmin; do
+    if podman rm -f "${c}" 2>/dev/null; then
+      printf "  ${SYM_OK} removed container %s\n" "${c}"
+    else
+      printf "  ${SYM_PENDING} container %s (not found or already removed)\n" "${c}"
+    fi
+  done
+
+  log "removing podman volumes..."
+  local vol
+  for vol in $(podman volume ls --format "{{.Name}}" 2>/dev/null | grep "^evi-" || true); do
+    if podman volume rm "${vol}" 2>/dev/null; then
+      printf "  ${SYM_OK} removed volume %s\n" "${vol}"
+    else
+      printf "  ${SYM_WARN} could not remove volume %s\n" "${vol}"
+    fi
+  done
+
+  log "removing podman secrets..."
+  if podman secret rm evi_jwt_private_key 2>/dev/null; then
+    printf "  ${SYM_OK} removed secret evi_jwt_private_key\n"
+  else
+    printf "  ${SYM_PENDING} secret evi_jwt_private_key (not found or already removed)\n"
+  fi
+
+  log "removing evi container images..."
+  local img
+  for img in $(podman images --format "{{.Repository}}:{{.Tag}}" 2>/dev/null | grep -E "evi|pgadmin|caddy" || true); do
+    if podman rmi -f "${img}" 2>/dev/null; then
+      printf "  ${SYM_OK} removed image %s\n" "${img}"
+    fi
+  done
+
+  local quadlet_dir="${EVI_QUADLET_DIR_DEFAULT:-${HOME}/.config/containers/systemd}"
+  log "removing quadlet files..."
+  if [[ -d "${quadlet_dir}" ]]; then
+    rm -f "${quadlet_dir}"/evi-*.container "${quadlet_dir}"/evi-*.volume "${quadlet_dir}"/evi-*.network 2>/dev/null || true
+    printf "  ${SYM_OK} quadlet files removed\n"
+  fi
+
+  local state_dir="${EVI_STATE_DIR_DEFAULT:-${HOME}/.local/share/evi}"
+  log "removing state data..."
+  if [[ -d "${state_dir}" ]]; then
+    rm -rf "${state_dir}"
+    printf "  ${SYM_OK} removed %s\n" "${state_dir}"
+  fi
+
+  local config_dir="${EVI_CONFIG_DIR_DEFAULT:-${HOME}/.config/evi}"
+  log "removing config data..."
+  if [[ -d "${config_dir}" ]]; then
+    rm -rf "${config_dir}"
+    printf "  ${SYM_OK} removed %s\n" "${config_dir}"
+  fi
+
+  log "reloading systemd..."
+  systemctl --user daemon-reload 2>/dev/null || true
+  printf "  ${SYM_OK} daemon reloaded\n"
+
+  echo ""
+  log "removing system packages (requires sudo)..."
+  if ! sudo -v 2>/dev/null; then
+    warn "sudo failed; skipping cockpit removal, ufw, sysctl and package removal."
+  else
+    log "removing cockpit evi panels..."
+    sudo rm -rf /usr/local/share/cockpit/evi-pgadmin /usr/local/share/cockpit/evi-admin 2>/dev/null || true
+    printf "  ${SYM_OK} cockpit panels removed\n"
+
+    if command -v ufw >/dev/null 2>&1 && sudo ufw status 2>/dev/null | grep -q "Status: active"; then
+      log "removing ufw rules for evi ports..."
+      sudo ufw delete allow 80/tcp 2>/dev/null || true
+      sudo ufw delete allow 443/tcp 2>/dev/null || true
+      sudo ufw delete allow 9090/tcp 2>/dev/null || true
+      sudo ufw delete allow 5445/tcp 2>/dev/null || true
+      printf "  ${SYM_OK} ufw rules removed\n"
+    fi
+
+    log "removing sysctl config..."
+    sudo rm -f /etc/sysctl.d/99-evi-rootless.conf 2>/dev/null || true
+    sudo sysctl --system >/dev/null 2>&1 || true
+    printf "  ${SYM_OK} sysctl config removed\n"
+
+    log "removing prerequisites (podman, cockpit, curl, openssl)..."
+    sudo apt-get remove -y cockpit cockpit-podman podman curl openssl 2>/dev/null || true
+    printf "  ${SYM_OK} packages removed\n"
+  fi
+
+  echo ""
+  printf "${GREEN}=== uninstall complete ===${NC}\n"
+  echo ""
+  printf "${YELLOW}to finish cleanup, remove the evi project directory:${NC}\n"
+  echo ""
+  printf "  ${CYAN}rm -rf ~/evi${NC}\n"
+  echo ""
+  echo "then press enter to exit."
+  read -r -p ""
+  exit 0
+}
+
 # --- Main Menu (first run: no config yet) ---
 main_menu() {
   ensure_executable
@@ -2684,13 +2851,17 @@ main_menu() {
     printf "  ${GRAY}--- restore installation from backup ---${NC}\n"
     echo "  4) install containers and restore app data from backup"
     echo ""
-    read -r -p "select [0-4]: " opt
+    printf "  ${GRAY}--- uninstall ---${NC}\n"
+    echo "  5) uninstall evi (remove everything)"
+    echo ""
+    read -r -p "select [0-5]: " opt
     case $opt in
       0) log "bye!"; exit 0 ;;
       1) install_prerequisites_all ;;
       2) menu_env_config ;;
       3) deploy_up ;;
       4) restore_from_backup ;;
+      5) uninstall_evi ;;
       *) warn "invalid option" ;;
     esac
   done
