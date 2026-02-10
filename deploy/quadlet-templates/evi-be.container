@@ -20,7 +20,7 @@ Wants=evi-db.service
 After=evi-db.service
 
 [Container]
-# Rendered by evictl
+# Rendered by install.sh (deploy)
 Image={{EVI_BE_IMAGE}}
 ContainerName=evi-be
 

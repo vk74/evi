@@ -26,7 +26,7 @@ Requires=evi-network.service
 After=evi-network.service
 
 [Container]
-# Rendered by evictl
+# Rendered by install.sh (deploy)
 Image={{EVI_PROXY_IMAGE}}
 ContainerName=evi-reverse-proxy
 
@@ -43,7 +43,7 @@ Volume={{EVI_STATE_DIR}}/reverse-proxy/Caddyfile:/etc/caddy/Caddyfile:ro,Z
 Volume=evi_caddy_data:/data:Z
 Volume=evi_caddy_config:/config:Z
 
-# Optional: manual TLS cert/key mounted as read-only files when enabled by evictl
+# Optional: manual TLS cert/key mounted as read-only files when enabled by install.sh (deploy)
 {{EVI_PROXY_TLS_MOUNTS}}
 
 # Resource limits (optional)

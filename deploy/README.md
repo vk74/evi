@@ -65,14 +65,7 @@ During environment configuration, **Step 2** asks from which computers administr
 
 ## Admin operations after installation
 
-When installation completes, run evictl for regular admin operations (status, restart, logs, updates, backups etc). 
-
-```bash
-cd evi
-./evictl
-```
-
-Additionally you can install gui tool Cockpit for containers monitoring and operations. Cockpit is one of optional admin tools which could be installed by install.sh in the prerequisites step.
+When installation completes, use **Cockpit** for regular admin operations: status, restart, logs, backups, etc. Cockpit can be installed by install.sh in the prerequisites step. Open Cockpit at `https://<server>:9090` and use the **evi admin** panel for backup and (in future) certificate and password management. For container status and logs use Cockpit’s Podman Containers tab.
 
 
 

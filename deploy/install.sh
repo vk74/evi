@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 #
-# Version: 1.13.0
+# Version: 1.14.0
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
 # - First run: prerequisites, guided env setup (no "keep current" options), deploy from pre-built images (init, pull + systemctl start in install.sh).
 # - Subsequent runs: if evi.env and evi.secrets.env exist, run deploy/scripts/evi-reconfigure.sh (info block, menu: 0 exit, 1 guided configuration, 2 edit evi.env, 3 edit evi.secrets.env, 4 redeploy containers). Guided reconfigure has "keep current setting" in evi-reconfigure.sh.
-# - No podman build; use ./evictl for status, logs, restart, update.
+# - No podman build; daily operations (status, logs, restart, backup, etc.) via Cockpit (evi admin panel at :9090).
+#
+# Changes in v1.14.0:
+# - Removed evictl from deploy: no chmod, no references. Daily ops and upgrade via Cockpit; redeploy/restore via install.sh and deploy scripts.
 #
 # Changes in v1.13.0:
 # - Main menu: grouped options (deployment / restore), added option 4 "install app data and containers from backup"
@@ -201,9 +204,6 @@ require_cmd() {
 ensure_executable() {
   if [[ -d "${SCRIPTS_DIR}" ]]; then
     chmod +x "${SCRIPTS_DIR}"/*.sh 2>/dev/null || true
-  fi
-  if [[ -f "${SCRIPT_DIR}/evictl" ]]; then
-    chmod +x "${SCRIPT_DIR}/evictl"
   fi
 }
 
@@ -945,7 +945,7 @@ guided_setup() {
   echo ""
   printf "${GREEN}step 3:${NC} from which computers may admins connect to evi cockpit?\n"
   echo ""
-  echo "cockpit is the web interface for server and container management. choose from where it can be opened in a browser."
+  echo "cockpit is the web interface for administration of evi host server and containers. you should connect to cockpit only from trusted locations. choose from where it can be opened in a browser."
   echo ""
   echo "  1) from specific computer(s) by address"
   echo "     (enter one or more IP addresses, e.g. 192.168.1.10 or 192.168.1.10, 192.168.1.11)"
@@ -1893,7 +1893,7 @@ deploy_pull_images() {
 }
 
 # Redeploy: init and restart services using existing images (no pull). Applies new env/secrets to current containers.
-# Does not remove evi-db volume. For upgrading to new image versions use evictl update (or similar) separately.
+# Does not remove evi-db volume. For upgrading to new image versions use Cockpit or re-run install/redeploy with updated images.
 do_redeploy() {
   log "starting redeploy (using existing images, no pull)..."
   ensure_executable
@@ -1945,7 +1945,7 @@ do_redeploy() {
     fi
   done
   echo ""
-  info "redeploy complete! to upgrade to new image versions use: ./evictl update (or similar). for daily operations: ./evictl (status, restart, logs)"
+  info "redeploy complete! for upgrades and daily operations use Cockpit (evi admin panel at :9090)."
   read -r -p "press enter to continue..."
 }
 
@@ -2658,12 +2658,12 @@ main_menu() {
     
     echo "  0) exit"
     echo ""
-    printf "  ${GRAY}--- deployment ---${NC}\n"
+    printf "  ${GRAY}--- new deployment ---${NC}\n"
     echo "  1) install prerequisites on host server (requires sudo)"
     echo "  2) containers environment configuration (rootless)"
     echo "  3) deploy and start evi containers (rootless)"
     echo ""
-    printf "  ${GRAY}--- install from backup ---${NC}\n"
+    printf "  ${GRAY}--- restore installation from backup ---${NC}\n"
     echo "  4) install app data and containers from backup"
     echo ""
     read -r -p "select [0-4]: " opt

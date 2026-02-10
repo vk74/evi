@@ -15,7 +15,7 @@ Requires=evi-network.service
 After=evi-network.service
 
 [Container]
-# Rendered by evictl
+# Rendered by install.sh (deploy)
 Image={{EVI_FE_IMAGE}}
 ContainerName=evi-fe
 

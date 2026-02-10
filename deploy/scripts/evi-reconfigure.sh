@@ -13,7 +13,7 @@
 # - Menu option 1 now calls guided_reconfigure instead of install.sh guided_setup.
 #
 # Changes in v1.0.1:
-# - Redeploy: no image pull; applies config and restarts existing images. Info block clarifies this; upgrade to new images via evictl update.
+# - Redeploy: no image pull; applies config and restarts existing images. Info block clarifies this; upgrade to new images via Cockpit or install.sh.
 #
 # Changes in v1.0.0:
 # - Initial version: info block, menu with keep-current-first guided option, edit evi.env/secrets, redeploy.
@@ -442,7 +442,7 @@ evi_reconfigure_main() {
     echo ""
     echo "evi configuration is present. you can change environment and secrets, then redeploy to apply changes."
     echo "redeploy regenerates config from evi.env and evi.secrets.env and restarts containers (no image pull — uses existing images)."
-    echo "the evi-db data volume is never removed — your database data is preserved. to upgrade to new image versions use: ./evictl update"
+    echo "the evi-db data volume is never removed — your database data is preserved. to upgrade to new image versions use Cockpit or re-run install.sh with updated images"
     echo ""
     echo "  0) exit"
     echo "  1) guided configuration (step-by-step)"

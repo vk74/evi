@@ -19,7 +19,7 @@ Requires=evi-network.service evi-db-volume.service
 After=evi-network.service evi-db-volume.service
 
 [Container]
-# Rendered by evictl
+# Rendered by install.sh (deploy)
 Image={{EVI_DB_IMAGE}}
 ContainerName=evi-db
 

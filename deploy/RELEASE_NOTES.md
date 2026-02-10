@@ -22,7 +22,6 @@ pre-MVP release.
 - deploy/db/migrations/m_001_future_migrations.sql
 - deploy/env/evi.secrets.template.env
 - deploy/env/evi.template.env
-- deploy/evictl
 - deploy/install.sh
 - deploy/pgadmin/servers.json.template
 - deploy/quadlet-templates/evi-be.container

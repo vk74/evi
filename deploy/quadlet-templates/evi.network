@@ -11,7 +11,7 @@
 Description=evi internal network (Podman)
 
 [Network]
-# Rendered by evictl
+# Rendered by install.sh (deploy)
 NetworkName={{EVI_NETWORK}}
 
 

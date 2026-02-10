@@ -327,8 +327,8 @@ main() {
   log "${GREEN}restore completed!${NC}"
   log ""
   log "next steps:"
-  log "  1. start evi: ${CYAN}./evictl up${NC}"
-  log "  2. verify: ${CYAN}./evictl health${NC}"
+  log "  1. start evi: run ${CYAN}./install.sh${NC} and choose deploy (option 3), or start services via Cockpit"
+  log "  2. verify: check app at https://your-domain and Cockpit at :9090"
 }
 
 main "$@"

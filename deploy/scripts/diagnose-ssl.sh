@@ -64,7 +64,7 @@ if [[ -f "${ENV_DIR}/evi.env" ]]; then
   fi
   
   if grep -q "^EVI_TLS_DOMAIN=" "${ENV_DIR}/evi.env"; then
-    warn "  Found EVI_TLS_DOMAIN (this variable is NOT used by evictl, should use EVI_TLS_MODE instead)"
+    warn "  Found EVI_TLS_DOMAIN (this variable is NOT used by deploy; use EVI_TLS_MODE instead)"
     TLS_DOMAIN=$(grep "^EVI_TLS_DOMAIN=" "${ENV_DIR}/evi.env" | cut -d'=' -f2 | tr -d '"' | tr -d "'")
     info "  EVI_TLS_DOMAIN=${TLS_DOMAIN}"
   fi
@@ -101,7 +101,7 @@ if [[ -f "${STATE_DIR}/reverse-proxy/Caddyfile" ]]; then
   echo "  --- End Caddyfile ---"
 else
   warn "Generated Caddyfile not found at ${STATE_DIR}/reverse-proxy/Caddyfile"
-  warn "  Run 'evictl init' to generate it"
+  warn "  Run install.sh and deploy (option 3) or reconfigure to generate it"
 fi
 echo ""
 

@@ -109,10 +109,10 @@ Backup the following daily:
     * Restore dev-ops/common/env/evi.env (or recreate manually)
     * Restore ${HOME}/.local/share/evi/secrets/jwt_private_key.pem (if auto-generated)
     * Restore dev-ops/common/env/tls/ (only if manual TLS mode with custom certificates)
-2. Regenerate systemd services and secrets by using evictl:
-   cd ~/evi/deployment   
-   ./evictl init
-This recreates quadlet files, podman secrets, and Caddyfile.
+2. Regenerate systemd services and secrets:
+   - **Deploy (production):** `cd ~/evi/deploy && ./install.sh` then choose deploy (option 3).
+   - **Dev-build:** `cd ~/evi/dev-ops/dev-build && ./evictl init`.
+   This recreates quadlet files, podman secrets, and Caddyfile.
 3. Restore evi-db volume:
     Option A (pg_dump restore): Create new volume, restore from SQL dump
     Option B (volume-level restore): Restore volume filesystem from backup
