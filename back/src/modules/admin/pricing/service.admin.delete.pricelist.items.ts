@@ -1,17 +1,20 @@
 /**
  * @file service.admin.delete.pricelist.items.ts
- * Version: 1.0.0
+ * Version: 1.0.1
  * Service for deleting price list items from the database.
  * Backend file that handles price list items deletion with validation and event generation.
- * 
+ *
  * Functionality:
  * - Validates input data for item deletion
  * - Checks if items exist before deletion
  * - Performs batch deletion with transaction support
  * - Generates events through event bus
  * - Handles errors and provides detailed results
- * 
+ *
  * File: service.admin.delete.pricelist.items.ts (backend)
+ *
+ * Changes in v1.0.1:
+ * - Pass priceListId to deletePriceListItems so deletes are scoped to single price list
  */
 
 import { Pool, PoolClient } from 'pg'
@@ -142,9 +145,9 @@ export async function deletePriceListItemsService(
       const existingItemCodes = deletedItemCodes
       const notFoundItemCodes = request.itemCodes.filter(code => !existingItemCodes.includes(code))
 
-      // Delete existing items
+      // Delete existing items (scoped to this price list)
       if (existingItemCodes.length > 0) {
-        await client.query(queries.deletePriceListItems, [existingItemCodes])
+        await client.query(queries.deletePriceListItems, [existingItemCodes, priceListId])
       }
 
       await client.query('COMMIT')

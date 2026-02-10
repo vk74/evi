@@ -1,17 +1,20 @@
 /**
  * @file service.admin.update.pricelist.items.ts
- * Version: 1.0.1
+ * Version: 1.0.2
  * Service for updating price list items in the database.
  * Backend file that handles price list items updates with validation and event generation.
- * 
+ *
  * Functionality:
  * - Validates input data for item updates
  * - Checks if items exist before updating
  * - Performs batch updates with transaction support
  * - Generates events through event bus
  * - Handles errors and provides detailed results
- * 
+ *
  * File: service.admin.update.pricelist.items.ts (backend)
+ *
+ * Changes in v1.0.2:
+ * - Pass priceListId as 8th parameter to updatePriceListItem so updates are scoped to single price list
  */
 
 import { Pool, PoolClient } from 'pg'
@@ -214,7 +217,8 @@ export async function updatePriceListItemsService(
             update.changes.itemName || null,    // $4
             update.changes.listPrice || null,   // $5
             update.changes.wholesalePrice !== undefined ? update.changes.wholesalePrice : null,  // $6
-            userUuid                            // $7
+            userUuid,                           // $7
+            priceListId                         // $8 - WHERE price_list_id (scope to single list)
           ])
 
           if (updateResult.rowCount && updateResult.rowCount > 0) {

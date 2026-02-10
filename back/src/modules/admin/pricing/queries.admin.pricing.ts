@@ -1,5 +1,5 @@
     /**
-     * version: 1.10.0
+     * version: 1.11.0
      * SQL queries for pricing administration module.
      * Contains parameterized queries related to pricing (currencies and price lists).
      * Includes integrity check queries and queries for event payload data.
@@ -48,6 +48,10 @@
      * Changes in v1.10.0:
      * - Restored fetchAllTaxableCategories query to work with app.regions_taxable_categories table structure
      * - Query now extracts unique categories from regions_taxable_categories with region information
+     *
+     * Changes in v1.11.0:
+     * - updatePriceListItem: WHERE now includes price_list_id = $8 so updates apply only to one price list
+     * - deletePriceListItems: WHERE now includes price_list_id = $2 so deletes apply only to one price list
      */
 
 export const queries = {
@@ -398,12 +402,12 @@ export const queries = {
     `,
 
     /**
-     * Delete price list items by item codes
-     * Parameters: item_codes array
+     * Delete price list items by item codes and price list
+     * Parameters: item_codes array, price_list_id
      */
     deletePriceListItems: `
         DELETE FROM app.price_lists
-        WHERE item_code = ANY($1)
+        WHERE item_code = ANY($1) AND price_list_id = $2
         RETURNING item_code
     `,
 
@@ -417,8 +421,8 @@ export const queries = {
     `,
 
     /**
-     * Update price list item by item code
-     * Parameters: item_code, item_type, item_code, item_name, list_price, wholesale_price, updated_by
+     * Update price list item by item code and price list
+     * Parameters: item_code, item_type, item_code, item_name, list_price, wholesale_price, updated_by, price_list_id
      */
     updatePriceListItem: `
         UPDATE app.price_lists SET
@@ -429,7 +433,7 @@ export const queries = {
             wholesale_price = COALESCE($6, wholesale_price),
             updated_by = $7,
             updated_at = NOW()
-        WHERE item_code = $1
+        WHERE item_code = $1 AND price_list_id = $8
         RETURNING item_code
     `,
 
