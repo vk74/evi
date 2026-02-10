@@ -2682,7 +2682,7 @@ main_menu() {
     echo "  3) deploy and start evi containers (rootless)"
     echo ""
     printf "  ${GRAY}--- restore installation from backup ---${NC}\n"
-    echo "  4) install app data and containers from backup"
+    echo "  4) install containers and restore app data from backup"
     echo ""
     read -r -p "select [0-4]: " opt
     case $opt in
