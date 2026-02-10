@@ -2499,7 +2499,7 @@ execute_restore() {
 # Interactive restore from backup (called from main menu option 4)
 restore_from_backup() {
   echo ""
-  log "=== install app data and containers from backup ==="
+  log "=== install containers and restore app data from backup ==="
   echo ""
 
   # Check prerequisites

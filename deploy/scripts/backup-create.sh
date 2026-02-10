@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.6
+# Version: 1.0.7
 # Purpose: Create EVI app data and containers backup including container images, database, and configuration.
 # Deployment file: backup-create.sh
 # Logic:
@@ -12,6 +12,10 @@
 # - Archives evi repository
 # - Compresses and optionally encrypts the data archive
 # - Generates README-RESTORE-STEP-BY-STEP.md with server info
+#
+# Changes in v1.0.7:
+# - README: Backup Information and Source Server Information as simple key-value lists (no tables)
+# - README: wording fix — "the data restore does NOT require internet connection"
 #
 # Changes in v1.0.6:
 # - Added architecture and platform fields to manifest.json (uname -m -> amd64/arm64)
@@ -439,23 +443,19 @@ and installation scripts.
 
 ## Backup Information
 
-| Field | Value |
-|-------|-------|
-| Created | ${created_at} |
-| EVI Version | ${evi_version} |
-| Encrypted | ${encrypted} |
+Created: ${created_at}
+EVI Version: ${evi_version}
+Encrypted: ${encrypted}
 
 ## Source Server Information
 
-| Field | Value |
-|-------|-------|
-| Hostname | ${hostname} |
-| IP Address(es) | ${server_ips} |
-| OS | ${os_version} |
-| Architecture | ${arch} (${platform}) |
-| Domain | ${domain} |
-| TLS Mode | ${tls_mode} |
-| Certificate Type | ${cert_type} |
+Hostname: ${hostname}
+IP Address(es): ${server_ips}
+OS: ${os_version}
+Architecture: ${arch} (${platform})
+Domain: ${domain}
+TLS Mode: ${tls_mode}
+Certificate Type: ${cert_type}
 
 ## Preparation Notes
 
@@ -464,7 +464,7 @@ When restoring to a new server, consider the following:
 - **Prerequisites required**: The target server must have podman, cockpit, curl, and openssl
   installed before restoring. Run \`./install.sh\` and select option 1 (install prerequisites).
   This step requires internet access. After prerequisites are installed, the data restore
-  itself does NOT require internet.
+  does NOT require internet connection.
 
 - **OS compatibility**: This backup was created on ${os_version} (${arch}).
   For best results, restore to the same OS distribution and architecture.
