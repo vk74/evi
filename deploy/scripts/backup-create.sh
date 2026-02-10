@@ -1,17 +1,22 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.7
+# Version: 1.0.8
 # Purpose: Create EVI app data and containers backup including container images, database, and configuration.
 # Deployment file: backup-create.sh
 # Logic:
 # - Creates backup directory with timestamp
 # - Exports container images using podman save
 # - Dumps PostgreSQL database using pg_dump
-# - Copies environment files, TLS certificates, JWT secrets, pgAdmin data
+# - Copies environment files, TLS certificates, JWT secrets, pgAdmin data, UFW status snapshot
 # - Creates manifest.json with backup metadata (including architecture/platform)
 # - Archives evi repository
 # - Compresses and optionally encrypts the data archive
 # - Generates README-RESTORE-STEP-BY-STEP.md with server info
+#
+# Changes in v1.0.8:
+# - Save UFW status snapshot (ufw/ufw-status.txt) for documentation
+# - Restore applies firewall rules from evi.env (install.sh); README: firewall no longer in "NOT Included"
+# - manifest.json: added components.ufw flag
 #
 # Changes in v1.0.7:
 # - README: Backup Information and Source Server Information as simple key-value lists (no tables)
@@ -67,7 +72,7 @@ else
 fi
 
 # Script version (printed at start of backup output)
-BACKUP_SCRIPT_VERSION="1.0.6"
+BACKUP_SCRIPT_VERSION="1.0.8"
 
 # Spinner characters
 SPINNER_CHARS="⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
@@ -272,6 +277,17 @@ copy_pgadmin_data() {
   fi
 }
 
+# Save UFW status snapshot for documentation (informational; restore uses env variables)
+copy_ufw_status() {
+  local ufw_dir="$1"
+  if command -v ufw >/dev/null 2>&1; then
+    if sudo ufw status 2>/dev/null | grep -q "Status: active"; then
+      mkdir -p "${ufw_dir}"
+      sudo ufw status verbose > "${ufw_dir}/ufw-status.txt" 2>/dev/null || true
+    fi
+  fi
+}
+
 # Create manifest.json
 create_manifest() {
   local manifest_file="$1"
@@ -315,6 +331,11 @@ create_manifest() {
   local jwt_enabled="false"
   [[ -f "${EVI_STATE_DIR}/secrets/jwt_private_key.pem" ]] && jwt_enabled="true"
   
+  local ufw_enabled="false"
+  if command -v ufw >/dev/null 2>&1 && sudo ufw status 2>/dev/null | grep -q "Status: active"; then
+    ufw_enabled="true"
+  fi
+  
   cat > "${manifest_file}" <<EOF
 {
   "backup_format_version": "1.0",
@@ -342,7 +363,8 @@ create_manifest() {
     "env": true,
     "tls": ${tls_enabled},
     "jwt": ${jwt_enabled},
-    "pgadmin": ${EVI_PGADMIN_ENABLED}
+    "pgadmin": ${EVI_PGADMIN_ENABLED},
+    "ufw": ${ufw_enabled}
   }
 }
 EOF
@@ -546,7 +568,6 @@ $([ "${EVI_PGADMIN_ENABLED}" = "true" ] && echo "- pgAdmin configuration and dat
 
 - Host OS packages (podman, cockpit, curl, openssl) — install via option 1 in install.sh
 - Operating system configuration
-- Firewall rules — reconfigured during prerequisites installation
 
 ## Support
 
@@ -729,6 +750,12 @@ main() {
     stop_spinner
     ok "copying pgadmin data"
   fi
+  
+  # Copy UFW status snapshot (informational)
+  start_spinner "copying ufw status..."
+  copy_ufw_status "${data_dir}/ufw"
+  stop_spinner
+  ok "copying ufw status"
   
   # Create manifest
   start_spinner "creating manifest..."

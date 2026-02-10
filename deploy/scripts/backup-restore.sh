@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.0
-# Purpose: Restore EVI from backup archive (placeholder for MVP).
+# Version: 1.0.1
+# Purpose: Restore EVI from backup archive (standalone script).
 # Deployment file: backup-restore.sh
 # Logic:
 # - Decrypts data archive if encrypted
 # - Extracts archive contents
 # - Loads container images into podman
-# - Restores environment files, TLS certificates, JWT secrets
+# - Restores environment files, TLS certificates, JWT secrets, pgAdmin data
 # - Restores PostgreSQL database using pg_restore
 # - Renders quadlet files
 #
@@ -18,7 +18,8 @@
 #   3 - Database restore error
 #   4 - Image load error
 #
-# NOTE: This is a placeholder for MVP. Full implementation pending.
+# Changes in v1.0.1:
+# - After restoring pgAdmin data, set ownership to 5050:5050 recursively so pgadmin container can read pgadmin4.db
 
 set -euo pipefail
 
@@ -263,6 +264,7 @@ main() {
     cp -f "${data_dir}/pgadmin"/* "${EVI_STATE_DIR}/pgadmin/" 2>/dev/null || true
     [[ -f "${data_dir}/pgadmin/pgadmin4.db" ]] && \
       cp -f "${data_dir}/pgadmin/pgadmin4.db" "${EVI_STATE_DIR}/pgadmin/data/" 2>/dev/null || true
+    podman unshare chown -R 5050:5050 "${EVI_STATE_DIR}/pgadmin/data" 2>/dev/null || true
     stop_spinner
     ok "restoring pgadmin data"
   fi

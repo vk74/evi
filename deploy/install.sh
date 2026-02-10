@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 #
-# Version: 1.14.0
+# Version: 1.14.1
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
 # - First run: prerequisites, guided env setup (no "keep current" options), deploy from pre-built images (init, pull + systemctl start in install.sh).
 # - Subsequent runs: if evi.env and evi.secrets.env exist, run deploy/scripts/evi-reconfigure.sh (info block, menu: 0 exit, 1 guided configuration, 2 edit evi.env, 3 edit evi.secrets.env, 4 redeploy containers). Guided reconfigure has "keep current setting" in evi-reconfigure.sh.
 # - No podman build; daily operations (status, logs, restart, backup, etc.) via Cockpit (evi admin panel at :9090).
+#
+# Changes in v1.14.1:
+# - Restore: apply firewall rules (ports 80/443 and admin 9090/5445 from evi.env) after restoring env
+# - deploy_ensure_dirs(): chown -R 5050:5050 for pgadmin/data so restored pgadmin4.db has correct ownership
 #
 # Changes in v1.14.0:
 # - Removed evictl from deploy: no chmod, no references. Daily ops and upgrade via Cockpit; redeploy/restore via install.sh and deploy scripts.
@@ -1657,7 +1661,7 @@ deploy_ensure_dirs() {
   mkdir -p "${EVI_STATE_DIR}/pgadmin" "${EVI_STATE_DIR}/pgadmin/data"
   mkdir -p "${EVI_CONFIG_DIR}" "${EVI_QUADLET_DIR}"
   if [[ -d "${EVI_STATE_DIR}/pgadmin/data" ]]; then
-    podman unshare chown 5050:5050 "${EVI_STATE_DIR}/pgadmin/data" 2>/dev/null || true
+    podman unshare chown -R 5050:5050 "${EVI_STATE_DIR}/pgadmin/data" 2>/dev/null || true
   fi
 }
 
@@ -2391,6 +2395,17 @@ execute_restore() {
   deploy_render_caddyfile
   deploy_render_quadlets
   printf "  ${SYM_OK} rendered caddyfile and quadlet files\n"
+
+  # Step 12b: Restore firewall rules
+  if command -v ufw >/dev/null 2>&1 && sudo ufw status 2>/dev/null | grep -q "Status: active"; then
+    log "restoring firewall rules..."
+    sudo ufw allow 80/tcp 2>/dev/null || true
+    sudo ufw allow 443/tcp 2>/dev/null || true
+    apply_firewall_admin_tools
+    printf "  ${SYM_OK} firewall rules restored\n"
+  else
+    printf "  ${SYM_PENDING} ufw not active, skipping firewall\n"
+  fi
 
   # Step 13: Reload systemd
   systemctl --user daemon-reload
