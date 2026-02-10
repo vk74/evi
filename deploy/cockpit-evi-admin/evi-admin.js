@@ -491,8 +491,8 @@
     lines.push('');
     lines.push('  Backup Components:');
     lines.push('');
-    lines.push('    ' + padRight('Container images', 28) + padLeft(formatBytes(data.images_bytes || 0), 12));
-    lines.push('    ' + padRight('Database', 28) + padLeft(formatBytes(data.database_bytes || 0), 12));
+    lines.push('    ' + padRight('Container images', 28) + padLeft(formatBytes(data.images_export_bytes || data.images_bytes || 0), 12));
+    lines.push('    ' + padRight('Database', 28) + padLeft(formatBytes(data.database_dump_bytes || data.database_bytes || 0), 12));
     lines.push('    ' + padRight('Environment files', 28) + padLeft(formatBytes(data.env_bytes || 0), 12));
     lines.push('    ' + padRight('TLS certificates', 28) + padLeft(formatBytes(data.tls_bytes || 0), 12));
     lines.push('    ' + padRight('JWT secrets', 28) + padLeft(formatBytes(data.jwt_bytes || 0), 12));
@@ -503,7 +503,7 @@
 
     lines.push('    ' + padRight('Installation scripts', 28) + padLeft(formatBytes(data.install_repo_bytes || 0), 12));
     lines.push('    ' + '─'.repeat(40));
-    lines.push('    ' + padRight('Total (uncompressed)', 28) + padLeft(formatBytes(data.total_uncompressed_bytes || 0), 12));
+    lines.push('    ' + padRight('Total (measured)', 28) + padLeft(formatBytes(data.total_measured_bytes || data.total_uncompressed_bytes || 0), 12));
     lines.push('');
 
     // Compression options

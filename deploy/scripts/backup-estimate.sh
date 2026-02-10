@@ -1,13 +1,21 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.3
+# Version: 1.1.0
 # Purpose: Estimate backup size and compression time for EVI backup.
 # Deployment file: backup-estimate.sh
 # Logic:
-# - Calculates size of all backup components (images, database, env, tls, jwt, pgadmin)
-# - Estimates compressed size and time for different compression levels
-# - Outputs JSON with all estimates
-# - Checks available disk space on target directory
+# - Measures actual export sizes (podman save | wc -c, pg_dump -Fc | wc -c) for accurate estimates
+# - Keeps virtual/raw sizes in JSON for reference
+# - Estimates compressed size and time using multi-phase time model
+# - Outputs JSON with all estimates; checks available disk space on target directory
+#
+# Changes in v1.1.0:
+# - Measurement-based estimation: get_image_export_size_bytes() pipes podman save to wc -c
+# - get_database_dump_size_bytes() pipes pg_dump -Fc to wc -c for real dump size
+# - Compression ratios updated for already-compressed input (0.92, 0.85, 0.55)
+# - Time estimation: multi-phase model (save + dump + tar + compress + I/O)
+# - JSON: images_virtual_bytes, images_export_bytes, database_raw_bytes, database_dump_bytes,
+#   total_measured_bytes; progress messages on stderr during measurement
 #
 # Changes in v1.0.3:
 # - Fix pipefail + fallback pattern: "pipeline || echo fallback" concatenates both outputs when
@@ -85,7 +93,7 @@ get_size_bytes() {
   fi
 }
 
-# Get size of podman image in bytes
+# Get virtual (uncompressed) size of podman image in bytes (for informational JSON)
 get_image_size_bytes() {
   local image="$1"
   if [[ -z "${image}" ]]; then
@@ -93,33 +101,53 @@ get_image_size_bytes() {
     return
   fi
   
-  # Check if image exists locally
   if ! podman image exists "${image}" 2>/dev/null; then
     echo "0"
     return
   fi
   
-  # Get image size (podman reports in human-readable format, we need to parse)
   local size_str
   size_str=$(podman image inspect "${image}" --format '{{.Size}}' 2>/dev/null || echo "0")
   echo "${size_str}"
 }
 
-# Get database size estimate
-get_database_size_bytes() {
-  # Check if evi-db container is running
-  if ! podman container inspect evi-db --format '{{.State.Running}}' 2>/dev/null | grep -q "true"; then
-    warn "evi-db container not running, using estimate"
-    echo "52428800"  # 50 MB default estimate
+# Get actual podman save export size in bytes (streamed to wc -c, no disk write)
+get_image_export_size_bytes() {
+  local image="$1"
+  if [[ -z "${image}" ]] || ! podman image exists "${image}" 2>/dev/null; then
+    echo "0"
     return
   fi
-  
-  # Get database size from PostgreSQL (strip whitespace so value is safe for arithmetic)
+  local result
+  result=$(podman save "${image}" 2>/dev/null | wc -c | tr -d ' ') || true
+  echo "${result:-0}"
+}
+
+# Get database on-disk size in bytes (for informational JSON)
+get_database_size_bytes() {
+  if ! podman container inspect evi-db --format '{{.State.Running}}' 2>/dev/null | grep -q "true"; then
+    warn "evi-db container not running, using estimate"
+    echo "52428800"
+    return
+  fi
   local db_name="${EVI_POSTGRES_DB:-maindb}"
   local size_bytes
   size_bytes=$(podman exec evi-db psql -U postgres -d "${db_name}" -t -c \
     "SELECT pg_database_size('${db_name}');" 2>/dev/null | tr -d '[:space:]') || true
-  
+  echo "${size_bytes:-52428800}"
+}
+
+# Get actual pg_dump -Fc output size in bytes (streamed to wc -c)
+get_database_dump_size_bytes() {
+  if ! podman container inspect evi-db --format '{{.State.Running}}' 2>/dev/null | grep -q "true"; then
+    warn "evi-db container not running, using estimate"
+    echo "52428800"
+    return
+  fi
+  local db_name="${EVI_POSTGRES_DB:-maindb}"
+  local size_bytes
+  size_bytes=$(podman exec evi-db pg_dump -U postgres -d "${db_name}" \
+    -Fc --clean --if-exists --no-owner 2>/dev/null | wc -c | tr -d ' ') || true
   echo "${size_bytes:-52428800}"
 }
 
@@ -154,38 +182,49 @@ get_disk_device() {
   echo "${result:-}"
 }
 
-# Estimate compression ratios and times
+# Estimate total backup time in seconds (multi-phase: save + dump + tar + compress + I/O)
+estimate_time() {
+  local actual_data_mb="$1"
+  local num_images="$2"
+  local compression="$3"
+  local save_time=$((num_images * 5))
+  local dump_time=5
+  local overhead=10
+  local compress_time=0
+  case "${compression}" in
+    zstd-fast) compress_time=$(echo "${actual_data_mb} / 200" | bc) ;;
+    gzip-standard) compress_time=$(echo "${actual_data_mb} / 50" | bc) ;;
+    zstd-max) compress_time=$(echo "${actual_data_mb} / 10" | bc) ;;
+    *) compress_time=$(echo "${actual_data_mb} / 50" | bc) ;;
+  esac
+  [[ -z "${compress_time}" ]] || [[ "${compress_time}" -lt 0 ]] 2>/dev/null && compress_time=0
+  local io_time
+  io_time=$(echo "${actual_data_mb} / 200" | bc)
+  [[ -z "${io_time}" ]] || [[ "${io_time}" -lt 0 ]] 2>/dev/null && io_time=0
+  local total=$((save_time + dump_time + overhead + compress_time + io_time))
+  [[ "${total}" -lt 1 ]] && total=1
+  echo "${total}"
+}
+
+# Estimate compressed sizes and times (input is measured bytes, already-compressed data)
 estimate_compression() {
   local total_bytes="$1"
-  
-  # Compression ratios (approximate for mixed content: images + database + text)
-  # Images are already compressed (tar layers), database dumps compress well
-  local ratio_zstd_fast=0.65    # zstd -1
-  local ratio_gzip_std=0.55     # gzip -6
-  local ratio_zstd_max=0.45     # zstd -19
-  
-  # Compression speeds (MB/s, conservative estimates)
-  local speed_zstd_fast=200     # ~200 MB/s
-  local speed_gzip_std=50       # ~50 MB/s
-  local speed_zstd_max=10       # ~10 MB/s
-  
-  # Calculate compressed sizes
-  local size_zstd_fast=$(echo "${total_bytes} * ${ratio_zstd_fast}" | bc | cut -d. -f1)
-  local size_gzip_std=$(echo "${total_bytes} * ${ratio_gzip_std}" | bc | cut -d. -f1)
-  local size_zstd_max=$(echo "${total_bytes} * ${ratio_zstd_max}" | bc | cut -d. -f1)
-  
-  # Calculate compression times (in seconds)
-  local total_mb=$(echo "${total_bytes} / 1048576" | bc)
-  local time_zstd_fast=$(echo "${total_mb} / ${speed_zstd_fast}" | bc)
-  local time_gzip_std=$(echo "${total_mb} / ${speed_gzip_std}" | bc)
-  local time_zstd_max=$(echo "${total_mb} / ${speed_zstd_max}" | bc)
-  
-  # Minimum 1 second
-  [[ "${time_zstd_fast}" -lt 1 ]] && time_zstd_fast=1
-  [[ "${time_gzip_std}" -lt 1 ]] && time_gzip_std=1
-  [[ "${time_zstd_max}" -lt 1 ]] && time_zstd_max=1
-  
-  # Output as JSON fragment
+  local num_images="$2"
+  # Ratios for already-compressed input (image tars + pg_dump -Fc)
+  local ratio_zstd_fast=0.92
+  local ratio_gzip_std=0.85
+  local ratio_zstd_max=0.55
+  local size_zstd_fast size_gzip_std size_zstd_max
+  size_zstd_fast=$(echo "${total_bytes} * ${ratio_zstd_fast}" | bc | cut -d. -f1)
+  size_gzip_std=$(echo "${total_bytes} * ${ratio_gzip_std}" | bc | cut -d. -f1)
+  size_zstd_max=$(echo "${total_bytes} * ${ratio_zstd_max}" | bc | cut -d. -f1)
+  local total_mb
+  total_mb=$(echo "${total_bytes} / 1048576" | bc)
+  [[ -z "${total_mb}" ]] || [[ "${total_mb}" -lt 0 ]] && total_mb=0
+  local time_zstd_fast time_gzip_std time_zstd_max
+  time_zstd_fast=$(estimate_time "${total_mb}" "${num_images}" "zstd-fast")
+  time_gzip_std=$(estimate_time "${total_mb}" "${num_images}" "gzip-standard")
+  time_zstd_max=$(estimate_time "${total_mb}" "${num_images}" "zstd-max")
   cat <<EOF
   "compression_estimates": {
     "zstd-fast": {"time_seconds": ${time_zstd_fast}, "size_bytes": ${size_zstd_fast}},
@@ -205,25 +244,41 @@ main() {
   
   load_env
   
-  # Calculate sizes
-  local images_bytes=0
-  local fe_size be_size db_size proxy_size pgadmin_size
-  
-  fe_size=$(get_image_size_bytes "${EVI_FE_IMAGE}")
-  be_size=$(get_image_size_bytes "${EVI_BE_IMAGE}")
-  db_size=$(get_image_size_bytes "${EVI_DB_IMAGE}")
-  proxy_size=$(get_image_size_bytes "${EVI_PROXY_IMAGE}")
-  
-  images_bytes=$((fe_size + be_size + db_size + proxy_size))
-  
+  # Virtual sizes (informational)
+  local images_virtual=0
+  local fe_v be_v db_v proxy_v pgadmin_v
+  fe_v=$(get_image_size_bytes "${EVI_FE_IMAGE}")
+  be_v=$(get_image_size_bytes "${EVI_BE_IMAGE}")
+  db_v=$(get_image_size_bytes "${EVI_DB_IMAGE}")
+  proxy_v=$(get_image_size_bytes "${EVI_PROXY_IMAGE}")
+  images_virtual=$((fe_v + be_v + db_v + proxy_v))
+  local num_images=4
   if [[ "${EVI_PGADMIN_ENABLED}" == "true" ]]; then
-    pgadmin_size=$(get_image_size_bytes "${EVI_PGADMIN_IMAGE}")
-    images_bytes=$((images_bytes + pgadmin_size))
+    pgadmin_v=$(get_image_size_bytes "${EVI_PGADMIN_IMAGE}")
+    images_virtual=$((images_virtual + pgadmin_v))
+    num_images=5
   fi
   
-  # Database size
-  local database_bytes
-  database_bytes=$(get_database_size_bytes)
+  # Measured export sizes (actual data that goes into backup)
+  warn "Measuring actual image export sizes (this may take 30-60 seconds)..."
+  local images_export=0
+  local fe_e be_e db_e proxy_e pgadmin_e
+  fe_e=$(get_image_export_size_bytes "${EVI_FE_IMAGE}")
+  be_e=$(get_image_export_size_bytes "${EVI_BE_IMAGE}")
+  db_e=$(get_image_export_size_bytes "${EVI_DB_IMAGE}")
+  proxy_e=$(get_image_export_size_bytes "${EVI_PROXY_IMAGE}")
+  images_export=$((fe_e + be_e + db_e + proxy_e))
+  if [[ "${EVI_PGADMIN_ENABLED}" == "true" ]]; then
+    pgadmin_e=$(get_image_export_size_bytes "${EVI_PGADMIN_IMAGE}")
+    images_export=$((images_export + pgadmin_e))
+  fi
+  
+  # Database: raw on-disk size (informational) and actual dump size (measured)
+  local database_raw_bytes
+  database_raw_bytes=$(get_database_size_bytes)
+  warn "Measuring database dump size..."
+  local database_dump_bytes
+  database_dump_bytes=$(get_database_dump_size_bytes)
   
   # Environment files
   local env_bytes=0
@@ -257,12 +312,13 @@ main() {
     fi
   fi
   
-  # Install repo size (estimate)
+  # Install repo size
   local install_repo_bytes
   install_repo_bytes=$(get_size_bytes "${DEPLOYMENT_DIR}")
   
-  # Total
-  local total_uncompressed=$((images_bytes + database_bytes + env_bytes + tls_bytes + jwt_bytes + pgadmin_data_bytes + install_repo_bytes))
+  # Total measured bytes (actual data that gets compressed in backup)
+  local total_measured_bytes
+  total_measured_bytes=$((images_export + database_dump_bytes + env_bytes + tls_bytes + jwt_bytes + pgadmin_data_bytes + install_repo_bytes))
   
   # Available space
   local available_bytes
@@ -272,32 +328,34 @@ main() {
   local evi_volume_disk target_disk same_disk
   evi_volume_disk=$(get_disk_device "${EVI_STATE_DIR}")
   target_disk=$(get_disk_device "${target_dir}")
-  
   if [[ -n "${evi_volume_disk}" ]] && [[ "${evi_volume_disk}" == "${target_disk}" ]]; then
     same_disk="true"
   else
     same_disk="false"
   fi
   
-  # Estimate compressed size (using gzip-standard as default)
-  local estimated_compressed=$((total_uncompressed * 55 / 100))
+  # Default estimated compressed size (gzip-standard ratio)
+  local estimated_compressed_bytes
+  estimated_compressed_bytes=$(echo "${total_measured_bytes} * 85 / 100" | bc | cut -d. -f1)
   
   # Output JSON
   cat <<EOF
 {
-  "images_bytes": ${images_bytes},
-  "database_bytes": ${database_bytes},
+  "images_virtual_bytes": ${images_virtual},
+  "images_export_bytes": ${images_export},
+  "database_raw_bytes": ${database_raw_bytes},
+  "database_dump_bytes": ${database_dump_bytes},
   "env_bytes": ${env_bytes},
   "tls_bytes": ${tls_bytes},
   "jwt_bytes": ${jwt_bytes},
   "pgadmin_bytes": ${pgadmin_data_bytes},
   "install_repo_bytes": ${install_repo_bytes},
-  "total_uncompressed_bytes": ${total_uncompressed},
-  "estimated_compressed_bytes": ${estimated_compressed},
+  "total_measured_bytes": ${total_measured_bytes},
+  "estimated_compressed_bytes": ${estimated_compressed_bytes},
   "target_directory": "${target_dir}",
   "available_bytes": ${available_bytes},
   "same_disk_as_evi": ${same_disk},
-$(estimate_compression "${total_uncompressed}")
+$(estimate_compression "${total_measured_bytes}" "${num_images}")
 }
 EOF
 }

@@ -44,14 +44,13 @@ command -v git >/dev/null 2>&1 || { sudo apt-get update && sudo apt-get install 
 git clone --filter=blob:none --sparse https://vk74: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@github.com/vk74/evi.git evi && cd evi
 git sparse-checkout set deploy
 (cd deploy && for f in * .[!.]* ..?*; do [ -e "$f" ] && mv "$f" ..; done)
-mkdir backup
+mkdir backup restore
 rmdir deploy
 ```
 
-## 2. Make the scripts executable and start the installer
+## 2. Start the installer
 
 ```bash
-chmod +x install.sh evictl
 ./install.sh
 ```
 
