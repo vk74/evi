@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
 #
-# Version: 1.14.4
+# Version: 1.14.5
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
 # - Single entry point: main_menu() always. When evi.env and evi.secrets.env exist (CONFIG_EXISTS=1), main menu shows banner "evi configuration already exists", same options 0-5, option 3 label "redeploy and restart evi containers" (do_redeploy); otherwise option 3 "deploy and start evi containers" (deploy_up).
-# - Guided configuration: guided_setup() supports reconfigure mode (guided_setup reconfigure). In reconfigure, each step has "0) keep current setting"; choices 1, 2, 3 match first-run semantics so one code path serves both. No empty-password guard when keeping passwords.
+# - Guided configuration: guided_setup() supports reconfigure mode (guided_setup reconfigure). In reconfigure, each step has "0) keep current setting" (step 2: "keep current certificate"); step 5 (demo data) skipped — demo data can be deployed only during initial setup.
 # - No podman build; daily operations (status, logs, restart, backup, etc.) via Cockpit (evi admin panel at :9090).
+#
+# Changes in v1.14.5:
+# - Re-run improvements: menu option "guided configuration (recommended for first-time setup)" renamed to "guided configuration".
+# - Step 2 (TLS): option 0 renamed to "keep current certificate"; when user selects 0, wizard no longer asks to place certificates — current cert in TLS_DIR is used as-is.
+# - Step 5 (demo data): skipped in reconfigure mode; note "demo data can be deployed only during initial setup"; EVI_SEED_DEMO_DATA not updated on reconfigure.
 #
 # Changes in v1.14.4:
 # - Unified first-run and re-run: single main_menu() for both; CONFIG_EXISTS flag; banner when config exists; option 3 = deploy vs redeploy. Removed evi-reconfigure.sh entry point.
@@ -925,7 +930,7 @@ guided_setup() {
   fi
   fi
   
-  # Step 2: TLS certificate (option 0 = keep current when reconfigure)
+  # Step 2: TLS certificate (option 0 = keep current certificate when reconfigure)
   local generate_certs="yes"
   
   echo ""
@@ -933,8 +938,7 @@ guided_setup() {
   echo ""
   if [[ "${access_type}" == "public_domain" ]]; then
     if [[ "${reconfigure_mode}" -eq 1 ]] && [[ -n "${current_tls_mode}" ]]; then
-      local step2_keep_label="${current_tls_mode}"
-      echo "  0) keep current setting (${step2_keep_label})"
+      echo "  0) keep current certificate"
     fi
     echo "  1) let's encrypt (automatic)"
     echo "  2) use my own certificates"
@@ -973,9 +977,7 @@ guided_setup() {
     # internal or public_ip: manual TLS only
     tls_mode="manual"
     if [[ "${reconfigure_mode}" -eq 1 ]]; then
-      local step2m_keep="auto-generate"
-      [[ -f "${TLS_DIR}/cert.pem" ]] && [[ -f "${TLS_DIR}/key.pem" ]] && step2m_keep="use my own"
-      echo "  0) keep current setting (${step2m_keep})"
+      echo "  0) keep current certificate"
     fi
     echo "  1) auto-generate self-signed certificate (recommended)"
     echo "  2) use my own certificates"
@@ -1007,8 +1009,8 @@ guided_setup() {
     done
   fi
   
-  # Handle own certificates (manual mode, user provides files)
-  if [[ "${tls_mode}" == "manual" ]] && [[ "${generate_certs}" == "no" ]]; then
+  # Handle own certificates (manual mode, user provides files; skip when keeping current cert)
+  if [[ "${tls_mode}" == "manual" ]] && [[ "${generate_certs}" == "no" ]] && [[ "${cert_choice}" != "keep" ]]; then
     echo ""
     echo "please place your certificates in: ${TLS_DIR}/"
     echo "  - cert.pem (server certificate)"
@@ -1189,41 +1191,31 @@ guided_setup() {
     info "passwords will be auto-generated."
   fi
   
-  # Step 5: Demo data (option 0 = keep current when reconfigure)
-  echo ""
-  printf "${GREEN}step 5:${NC} deploy demo data?\n"
-  echo ""
-  if [[ "${reconfigure_mode}" -eq 1 ]]; then
-    local step5_keep_label="no"
-    [[ "${current_seed_demo_data}" == "true" ]] && step5_keep_label="yes"
-    echo "  0) keep current setting (${step5_keep_label})"
-  fi
-  echo "  1) yes, deploy demo data"
-  echo "  2) no demo data, just clean install"
-  echo ""
-  
+  # Step 5: Demo data (only during initial setup; skipped in reconfigure — demo data can be deployed only during initial setup)
   local demo_data_choice=""
-  while [[ -z "${demo_data_choice}" ]]; do
-    if [[ "${reconfigure_mode}" -eq 1 ]]; then
-      read -r -p "select [0-2]: " step5_c
-    else
-      read -r -p "select [1-2]: " step5_c
-    fi
-    case "${step5_c}" in
-      0)
-        if [[ "${reconfigure_mode}" -eq 1 ]]; then
-          demo_data_choice="${step5_keep_label}"
-        fi
-        ;;
-      1) demo_data_choice="yes" ;;
-      2) demo_data_choice="no" ;;
-      *) warn "please select $([[ "${reconfigure_mode}" -eq 1 ]] && echo "0, " )1 or 2" ;;
-    esac
-  done
-  
   local seed_demo_data="false"
-  if [[ "${demo_data_choice}" == "yes" ]]; then
-    seed_demo_data="true"
+  if [[ "${reconfigure_mode}" -ne 1 ]]; then
+    echo ""
+    printf "${GREEN}step 5:${NC} deploy demo data?\n"
+    echo ""
+    echo "  1) yes, deploy demo data"
+    echo "  2) no demo data, just clean install"
+    echo ""
+    while [[ -z "${demo_data_choice}" ]]; do
+      read -r -p "select [1-2]: " step5_c
+      case "${step5_c}" in
+        1) demo_data_choice="yes" ;;
+        2) demo_data_choice="no" ;;
+        *) warn "please select 1 or 2" ;;
+      esac
+    done
+    if [[ "${demo_data_choice}" == "yes" ]]; then
+      seed_demo_data="true"
+    fi
+  else
+    seed_demo_data="${current_seed_demo_data:-false}"
+    demo_data_choice="unchanged"
+    info "demo data can be deployed only during initial setup; current setting unchanged."
   fi
   
   # Summary
@@ -1275,11 +1267,13 @@ guided_setup() {
     sed -i "s|^EVI_ADMIN_DB_PASSWORD=.*|EVI_ADMIN_DB_PASSWORD=${admin_password}|" "${TARGET_SECRETS}"
   fi
   
-  # Update EVI_SEED_DEMO_DATA
-  if grep -q "^EVI_SEED_DEMO_DATA=" "${TARGET_ENV}"; then
-    sed -i "s|^EVI_SEED_DEMO_DATA=.*|EVI_SEED_DEMO_DATA=${seed_demo_data}|" "${TARGET_ENV}"
-  else
-    echo "EVI_SEED_DEMO_DATA=${seed_demo_data}" >> "${TARGET_ENV}"
+  # Update EVI_SEED_DEMO_DATA (only on initial setup; reconfigure leaves it unchanged)
+  if [[ "${reconfigure_mode}" -ne 1 ]]; then
+    if grep -q "^EVI_SEED_DEMO_DATA=" "${TARGET_ENV}"; then
+      sed -i "s|^EVI_SEED_DEMO_DATA=.*|EVI_SEED_DEMO_DATA=${seed_demo_data}|" "${TARGET_ENV}"
+    else
+      echo "EVI_SEED_DEMO_DATA=${seed_demo_data}" >> "${TARGET_ENV}"
+    fi
   fi
 
   # Update EVI_FIREWALL_ADMIN_ACCESS and EVI_FIREWALL_ADMIN_ALLOWED
@@ -1468,7 +1462,7 @@ menu_env_config() {
     log "=== containers environment configuration ==="
     echo ""
     echo "0) back to main menu"
-    echo "1) guided configuration (recommended for first-time setup)"
+    echo "1) guided configuration"
     echo "2) manual configuration (advanced, can be adjusted after guided config)"
     echo ""
     read -r -p "select [0-2]: " opt
@@ -1602,7 +1596,7 @@ display_deployment_summary() {
   
   echo ""
   echo "+--------------------------------------------------------------+"
-  printf "|           ${CYAN}deployment summary${NC}                           |\n"
+  printf "|           ${CYAN}deployment summary${NC}                                 |\n"
   echo "+--------------------------------------------------------------+"
   echo ""
   
@@ -1788,15 +1782,15 @@ display_final_summary() {
   printf "${GREEN}=== deployment complete! ===${NC}\n"
   echo ""
   echo "evi application:"
-  printf "  ${GREEN}✓${NC} your evi is ready\n"
+  printf "  ${GREEN}✓${NC} your evi app is ready\n"
   printf "  address:  ${GREEN}https://%s${NC}\n" "${domain}"
   echo "  open this address in a browser from any computer that can reach the server."
-  echo "  to login, use the credentials provided by your evi administrator."
+  echo "  to login, use the default admin credentials and don't forget to change password."
   echo ""
   echo "admin tools (cockpit):"
   printf "  ${GREEN}✓${NC} cockpit server management\n"
   printf "  address:  ${GREEN}https://%s:9090${NC}\n" "${domain}"
-  printf "  allowed:  %s\n" "${cockpit_allowed}"
+  printf "  allowed from:  %s\n" "${cockpit_allowed}"
   echo "  login using your host OS user account and password."
   echo ""
 
@@ -1804,7 +1798,7 @@ display_final_summary() {
     printf "  ${GREEN}✓${NC} pgadmin database management\n"
     printf "  address:  ${GREEN}http://%s:5445${NC}\n" "${domain}"
     printf "  account:  ${GREEN}%s${NC}\n" "${EVI_PGADMIN_EMAIL:-${EVI_PGADMIN_EMAIL_DEFAULT}}"
-    echo "  password: (same as EVI_ADMIN_DB_PASSWORD in evi.secrets.env)"
+    echo "  password: (find it in cockpit -> podman containers -> evi-db -> integration tab -> EVI_ADMIN_DB_PASSWORD or in evi.secrets.env file)"
     echo ""
   fi
 
