@@ -11,6 +11,7 @@
 # Changes in v1.15.3:
 # - Step 6 (manual container versions): list order reversed — 1 = newest, last number = oldest; list limited to 30 versions.
 # - Step 6: prompt "(enter version number or press enter to use X.Y.Z version)"; empty input selects latest (first in list).
+# - Configuration summary: when step 6 choice is "latest", show actual image:tag from env instead of "latest (from template)".
 #
 # Changes in v1.15.2:
 # - Colors: use ANSI-C quoting ($'...') so status symbols and colors render in terminal; added BOLD for IMPORTANT lines.
@@ -1388,7 +1389,16 @@ guided_setup() {
   [[ -n "${firewall_allowed}" ]] && firewall_summary="${firewall_access} (${firewall_allowed})"
   printf "  cockpit access: %s\n" "${firewall_summary}"
   if [[ "${version_choice}" == "latest" ]]; then
-    printf "  evi version:   latest (from template)\n"
+    # Show actual image:tag from env (template on first run; unchanged when user chose latest)
+    local latest_fe latest_be latest_db
+    latest_fe=$(grep "^EVI_FE_IMAGE=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "")
+    latest_be=$(grep "^EVI_BE_IMAGE=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "")
+    latest_db=$(grep "^EVI_DB_IMAGE=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "")
+    if [[ -n "${latest_fe}" ]] && [[ -n "${latest_be}" ]] && [[ -n "${latest_db}" ]]; then
+      printf "  evi version:   %s, %s, %s\n" "${latest_fe}" "${latest_be}" "${latest_db}"
+    else
+      printf "  evi version:   latest (from template)\n"
+    fi
   elif [[ "${version_choice}" == "keep" ]]; then
     printf "  evi version:   keep current\n"
   else
