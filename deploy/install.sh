@@ -1,12 +1,21 @@
 #!/usr/bin/env bash
 #
-# Version: 1.15.0
+# Version: 1.15.2
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
 # - Single entry point: main_menu() always. When evi.env and evi.secrets.env exist (CONFIG_EXISTS=1), main menu shows banner "evi configuration already exists", same options 0-5, option 3 label "redeploy and restart evi containers" (do_redeploy); otherwise option 3 "deploy and start evi containers" (deploy_up).
 # - Guided configuration: guided_setup() supports reconfigure mode (guided_setup reconfigure). In reconfigure, each step has "0) keep current setting" (step 2: "keep current certificate"); step 5 (demo data) skipped — demo data can be deployed only during initial setup.
 # - No podman build; daily operations (status, logs, restart, backup, etc.) via Cockpit (evi admin panel at :9090).
+#
+# Changes in v1.15.2:
+# - Colors: use ANSI-C quoting ($'...') so status symbols and colors render in terminal; added BOLD for IMPORTANT lines.
+#
+# Changes in v1.15.1:
+# - Deployment summary: removed redundant "=== deployment complete! ===" line; removed build step from summary (script only pulls images, no build).
+# - Option 3: confirm before deploy/redeploy ("Start deployment now? [y/N]") to avoid accidental start.
+# - Guided setup message: "deploy and start" instead of "build and start".
+# - Uninstall (option 5): single confirmation only (double confirmation removed in uninstall-evi.sh).
 #
 # Changes in v1.15.0:
 # - Step 6 (EVI version): "which evi version do you want to deploy?" — 1) latest (use template), 2) manually set container versions (list tags from registry via evi-registry-tags.sh, then choose per evi-fe/evi-be/evi-db). Reconfigure: 0) keep current.
@@ -194,13 +203,14 @@ MIN_PASSWORD_LENGTH=12
 # pgAdmin web-console login username (hardcoded; override via EVI_PGADMIN_EMAIL in evi.env)
 EVI_PGADMIN_EMAIL_DEFAULT="evidba@pgadmin.app"
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-CYAN='\033[0;36m'
-GRAY='\033[0;90m'
-NC='\033[0m' # No Color
+# Colors (ANSI-C quoting so escapes render in terminal)
+RED=$'\033[0;31m'
+GREEN=$'\033[0;32m'
+YELLOW=$'\033[0;33m'
+CYAN=$'\033[0;36m'
+GRAY=$'\033[0;90m'
+NC=$'\033[0m' # No Color
+BOLD=$'\033[1m'
 
 # Status symbols
 SYM_OK="${GREEN}[✓]${NC}"
@@ -732,7 +742,7 @@ install_prerequisites_all() {
   printf "  account: ${GREEN}${EVI_PGADMIN_EMAIL_DEFAULT}${NC}\n"
   printf "  password: ${GREEN}EVI_ADMIN_DB_PASSWORD${NC}\n"
   echo ""
-  printf "${YELLOW}\033[1mIMPORTANT:\033[0m${YELLOW} access to cockpit (9090) and pgadmin (5445) is configured in step 2 of environment configuration (localhost, specific hosts, or subnet).${NC}\n"
+  printf "${YELLOW}${BOLD}IMPORTANT:${NC}${YELLOW} access to cockpit (9090) and pgadmin (5445) is configured in step 2 of environment configuration (localhost, specific hosts, or subnet).${NC}\n"
   echo ""
 
   read -r -p "press enter to continue..."
@@ -1440,7 +1450,7 @@ guided_setup() {
   
   echo ""
   info "guided setup complete!"
-  info "you can now proceed to 'deploy' to build and start the application."
+  info "you can now proceed to 'deploy' to deploy and start the application."
   read -r -p "press enter to continue..."
 }
 
@@ -1702,17 +1712,13 @@ get_container_ports() {
 }
 
 display_deployment_summary() {
-  local build_status="$1"
-  local build_time="$2"
-  local build_skipped="$3"
-  local build_errors="$4"
-  local init_status="$5"
-  local init_time="$6"
-  local init_errors="$7"
-  local up_status="$8"
-  local up_time="$9"
-  local up_errors="${10}"
-  local total_time="${11}"
+  local init_status="$1"
+  local init_time="$2"
+  local init_errors="$3"
+  local up_status="$4"
+  local up_time="$5"
+  local up_errors="$6"
+  local total_time="$7"
   
   # Compute container status first for overall result
   local containers
@@ -1758,15 +1764,6 @@ display_deployment_summary() {
   # 2. Step statistics
   printf "  ${CYAN}step statistics:${NC}\n"
   
-  # Build step
-  if [[ "${build_skipped}" == "true" ]]; then
-    printf "    ${SYM_PENDING} build: skipped\n"
-  elif [[ "${build_status}" == "success" ]]; then
-    printf "    ${SYM_OK} build: ${GREEN}success${NC} (${build_time}s)\n"
-  else
-    printf "    ${SYM_FAIL} build: ${RED}failed${NC} (${build_time}s)\n"
-  fi
-  
   # Init step
   if [[ "${init_status}" == "success" ]]; then
     printf "    ${SYM_OK} init: ${GREEN}success${NC} (${init_time}s)\n"
@@ -1786,11 +1783,6 @@ display_deployment_summary() {
   # 3. Critical errors
   printf "  ${CYAN}critical errors:${NC}\n"
   local has_errors=false
-  
-  if [[ "${build_skipped}" == "false" ]] && [[ -n "${build_errors}" ]]; then
-    has_errors=true
-    printf "    ${SYM_FAIL} ${RED}build${NC}: %s\n" "${build_errors}"
-  fi
   
   if [[ -n "${init_errors}" ]]; then
     has_errors=true
@@ -1912,8 +1904,6 @@ display_final_summary() {
   [[ -z "${domain}" ]] && domain="<server>"
 
   echo ""
-  printf "${GREEN}=== deployment complete! ===${NC}\n"
-  echo ""
   echo "evi application:"
   printf "  ${GREEN}✓${NC} your evi app is ready\n"
   printf "  address:  ${GREEN}https://%s${NC}\n" "${domain}"
@@ -1936,7 +1926,7 @@ display_final_summary() {
   fi
 
   if [[ "${EVI_TLS_MODE:-}" == "manual" ]]; then
-    printf "${YELLOW}\033[1mIMPORTANT:\033[0m${YELLOW} if you used self-signed certificates, the browser will show a security warning — this is expected.${NC}\n"
+    printf "${YELLOW}${BOLD}IMPORTANT:${NC}${YELLOW} if you used self-signed certificates, the browser will show a security warning — this is expected.${NC}\n"
     echo ""
   fi
 
@@ -2375,8 +2365,7 @@ deploy_up() {
   fi
   
   local total_time=$(($(date +%s) - deployment_start))
-  display_deployment_summary "skipped" 0 true "" \
-                            "${init_status}" "${init_time}" "${init_errors}" \
+  display_deployment_summary "${init_status}" "${init_time}" "${init_errors}" \
                             "${up_status}" "${up_time}" "${up_errors}" \
                             "${total_time}"
   display_final_summary
@@ -3004,7 +2993,14 @@ main_menu() {
       0) log "bye!"; exit 0 ;;
       1) install_prerequisites_all ;;
       2) menu_env_config ;;
-      3) if [[ "${CONFIG_EXISTS}" -eq 1 ]]; then do_redeploy; else deploy_up; fi ;;
+      3)
+        read -r -p "Start deployment now? [y/N]: " deploy_confirm
+        if [[ "${deploy_confirm}" == [yY] ]]; then
+          if [[ "${CONFIG_EXISTS}" -eq 1 ]]; then do_redeploy; else deploy_up; fi
+        else
+          log "deployment cancelled."
+        fi
+        ;;
       4) restore_from_backup ;;
       5) uninstall_evi ;;
       *) warn "invalid option" ;;

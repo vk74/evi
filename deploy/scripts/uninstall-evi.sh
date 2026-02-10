@@ -1,10 +1,18 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.0
+# Version: 1.0.2
 # Purpose: Full uninstall of evi: containers, volumes, secrets, images, state, config, quadlets, cockpit panels, UFW rules, sysctl, apt packages.
 # Backend script, called from install.sh (option 5) or evi-reconfigure.sh. Can be run standalone.
-# Logic: Double confirmation, stop services, remove podman resources, remove dirs (state with sudo for pgadmin data), quadlets, systemd reload,
+# Logic: Single confirmation (type 'yes'), stop services, remove podman resources, remove dirs (state with sudo for pgadmin data), quadlets, systemd reload,
 #        then sudo block: cockpit panels, UFW rules by number for ports 80/443/9090/5445, sysctl, apt remove. Prints instruction to run rm -rf ~/evi.
+#
+# Changes in v1.0.2:
+# - Colors/symbols: use ANSI-C quoting ($'...') so green checkmarks and colors render in terminal instead of literal \033.
+# - apt-get remove: add -o APT::Get::Upgrade=false so uninstall does not upgrade other packages.
+# - After apt-get remove, run apt-get autoremove -y to remove unused dependencies without requiring user to do it.
+#
+# Changes in v1.0.1:
+# - Single confirmation only (removed second "type 'yes' again" prompt).
 #
 # Changes in v1.0.0:
 # - Initial version: extracted from install.sh; state dir removed with sudo to fix pgadmin data permission denied; UFW rules removed by numbered delete; cockpit removal without suppressing errors.
@@ -17,13 +25,14 @@ EVI_STATE_DIR_DEFAULT="${HOME}/.local/share/evi"
 EVI_CONFIG_DIR_DEFAULT="${HOME}/.config/evi"
 EVI_QUADLET_DIR_DEFAULT="${HOME}/.config/containers/systemd"
 
-# Colors and symbols
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-CYAN='\033[0;36m'
-GRAY='\033[0;90m'
-NC='\033[0m'
+# Colors and symbols (ANSI-C quoting so escapes render in terminal)
+RED=$'\033[0;31m'
+GREEN=$'\033[0;32m'
+YELLOW=$'\033[0;33m'
+CYAN=$'\033[0;36m'
+GRAY=$'\033[0;90m'
+NC=$'\033[0m'
+BOLD=$'\033[1m'
 SYM_OK="${GREEN}[✓]${NC}"
 SYM_WARN="${YELLOW}[!]${NC}"
 SYM_PENDING="${GRAY}[○]${NC}"
@@ -54,7 +63,7 @@ main() {
   echo ""
   log "=== uninstall evi ==="
   echo ""
-  printf "${RED}\033[1mWARNING: this will permanently remove evi and all its data. This cannot be undone.\033[0m${NC}\n"
+  printf "${RED}${BOLD}WARNING: this will permanently remove evi and all its data. This cannot be undone.${NC}\n"
   echo ""
   echo "the following will be removed:"
   echo "  - all evi containers and data volumes"
@@ -63,12 +72,6 @@ main() {
   echo ""
   read -r -p "type 'yes' (full word) to confirm uninstall: " confirm1
   if [[ "${confirm1}" != "yes" ]]; then
-    log "uninstall cancelled."
-    read -r -p "press enter to continue..."
-    exit 0
-  fi
-  read -r -p "type 'yes' again to proceed: " confirm2
-  if [[ "${confirm2}" != "yes" ]]; then
     log "uninstall cancelled."
     read -r -p "press enter to continue..."
     exit 0
@@ -169,8 +172,12 @@ main() {
     printf "  %s sysctl config removed\n" "${SYM_OK}"
 
     log "removing prerequisites (podman, cockpit, curl, openssl)..."
-    sudo apt-get remove -y cockpit cockpit-podman podman curl openssl 2>/dev/null || true
+    # Only remove; do not upgrade other packages.
+    sudo apt-get remove -y -o APT::Get::Upgrade=false cockpit cockpit-podman podman curl openssl 2>/dev/null || true
     printf "  %s packages removed\n" "${SYM_OK}"
+    log "removing unused dependencies (autoremove)..."
+    sudo apt-get autoremove -y 2>/dev/null || true
+    printf "  %s autoremove done\n" "${SYM_OK}"
   fi
 
   echo ""
