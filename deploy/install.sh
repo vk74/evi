@@ -16,6 +16,7 @@
 # Changes in v1.14.4:
 # - Unified first-run and re-run: single main_menu() for both; CONFIG_EXISTS flag; banner when config exists; option 3 = deploy vs redeploy. Removed evi-reconfigure.sh entry point.
 # - guided_setup(reconfigure): same steps with "0) keep current" and indices 1,2,3 aligned to first-run; menu_env_config calls guided_setup reconfigure when CONFIG_EXISTS.
+# - Uninstall logic moved to deploy/scripts/uninstall-evi.sh; uninstall_evi() only calls that script. uninstall-evi.sh: state dir removed with sudo (pgadmin data); UFW rules by rule number (80/443/9090/5445); cockpit panels without suppressing errors; /usr/local and /usr/share cockpit paths.
 #
 # Changes in v1.14.3:
 # - Deployment summary: new display_final_summary() with two blocks (evi application, admin tools cockpit/pgadmin), styled like prerequisites summary; self-signed cert note when EVI_TLS_MODE=manual
@@ -2828,134 +2829,10 @@ restore_from_backup() {
   execute_restore "${selected_data_archive}" "${restore_password}"
 }
 
-# Full uninstall: containers, volumes, secrets, images, state, config, quadlets, cockpit packages, prerequisites.
-# Requires double confirmation. Prints instruction to run 'rm -rf ~/evi' at the end (script cannot delete itself).
+# Full uninstall: delegates to deploy/scripts/uninstall-evi.sh (containers, volumes, secrets, images, state with sudo, config, quadlets, cockpit panels, UFW by rule number, sysctl, apt packages).
 uninstall_evi() {
-  echo ""
-  log "=== uninstall evi ==="
-  echo ""
-  printf "${RED}\033[1mWARNING: this will permanently remove evi and all its data. This cannot be undone.\033[0m${NC}\n"
-  echo ""
-  echo "the following will be removed:"
-  echo "  - all evi containers and data volumes"
-  echo "  - evi state and config under your home directory"
-  echo "  - cockpit evi panels and prerequisites (podman, cockpit, etc.)"
-  echo ""
-  read -r -p "type 'yes' (full word) to confirm uninstall: " confirm1
-  if [[ "${confirm1}" != "yes" ]]; then
-    log "uninstall cancelled."
-    read -r -p "press enter to continue..."
-    return
-  fi
-  read -r -p "type 'yes' again to proceed: " confirm2
-  if [[ "${confirm2}" != "yes" ]]; then
-    log "uninstall cancelled."
-    read -r -p "press enter to continue..."
-    return
-  fi
-
-  echo ""
-  log "stopping evi services..."
-  systemctl --user stop evi-reverse-proxy evi-fe evi-be evi-db evi-pgadmin 2>/dev/null || true
-  printf "  ${SYM_OK} services stopped\n"
-
-  log "removing containers..."
-  for c in evi-db evi-be evi-fe evi-reverse-proxy evi-pgadmin; do
-    if podman rm -f "${c}" 2>/dev/null; then
-      printf "  ${SYM_OK} removed container %s\n" "${c}"
-    else
-      printf "  ${SYM_PENDING} container %s (not found or already removed)\n" "${c}"
-    fi
-  done
-
-  log "removing podman volumes..."
-  local vol
-  for vol in $(podman volume ls --format "{{.Name}}" 2>/dev/null | grep "^evi-" || true); do
-    if podman volume rm "${vol}" 2>/dev/null; then
-      printf "  ${SYM_OK} removed volume %s\n" "${vol}"
-    else
-      printf "  ${SYM_WARN} could not remove volume %s\n" "${vol}"
-    fi
-  done
-
-  log "removing podman secrets..."
-  if podman secret rm evi_jwt_private_key 2>/dev/null; then
-    printf "  ${SYM_OK} removed secret evi_jwt_private_key\n"
-  else
-    printf "  ${SYM_PENDING} secret evi_jwt_private_key (not found or already removed)\n"
-  fi
-
-  log "removing evi container images..."
-  local img
-  for img in $(podman images --format "{{.Repository}}:{{.Tag}}" 2>/dev/null | grep -E "evi|pgadmin|caddy" || true); do
-    if podman rmi -f "${img}" 2>/dev/null; then
-      printf "  ${SYM_OK} removed image %s\n" "${img}"
-    fi
-  done
-
-  local quadlet_dir="${EVI_QUADLET_DIR_DEFAULT:-${HOME}/.config/containers/systemd}"
-  log "removing quadlet files..."
-  if [[ -d "${quadlet_dir}" ]]; then
-    rm -f "${quadlet_dir}"/evi-*.container "${quadlet_dir}"/evi-*.volume "${quadlet_dir}"/evi-*.network 2>/dev/null || true
-    printf "  ${SYM_OK} quadlet files removed\n"
-  fi
-
-  local state_dir="${EVI_STATE_DIR_DEFAULT:-${HOME}/.local/share/evi}"
-  log "removing state data..."
-  if [[ -d "${state_dir}" ]]; then
-    rm -rf "${state_dir}"
-    printf "  ${SYM_OK} removed %s\n" "${state_dir}"
-  fi
-
-  local config_dir="${EVI_CONFIG_DIR_DEFAULT:-${HOME}/.config/evi}"
-  log "removing config data..."
-  if [[ -d "${config_dir}" ]]; then
-    rm -rf "${config_dir}"
-    printf "  ${SYM_OK} removed %s\n" "${config_dir}"
-  fi
-
-  log "reloading systemd..."
-  systemctl --user daemon-reload 2>/dev/null || true
-  printf "  ${SYM_OK} daemon reloaded\n"
-
-  echo ""
-  log "removing system packages (requires sudo)..."
-  if ! sudo -v 2>/dev/null; then
-    warn "sudo failed; skipping cockpit removal, ufw, sysctl and package removal."
-  else
-    log "removing cockpit evi panels..."
-    sudo rm -rf /usr/local/share/cockpit/evi-pgadmin /usr/local/share/cockpit/evi-admin 2>/dev/null || true
-    printf "  ${SYM_OK} cockpit panels removed\n"
-
-    if command -v ufw >/dev/null 2>&1 && sudo ufw status 2>/dev/null | grep -q "Status: active"; then
-      log "removing ufw rules for evi ports..."
-      sudo ufw delete allow 80/tcp 2>/dev/null || true
-      sudo ufw delete allow 443/tcp 2>/dev/null || true
-      sudo ufw delete allow 9090/tcp 2>/dev/null || true
-      sudo ufw delete allow 5445/tcp 2>/dev/null || true
-      printf "  ${SYM_OK} ufw rules removed\n"
-    fi
-
-    log "removing sysctl config..."
-    sudo rm -f /etc/sysctl.d/99-evi-rootless.conf 2>/dev/null || true
-    sudo sysctl --system >/dev/null 2>&1 || true
-    printf "  ${SYM_OK} sysctl config removed\n"
-
-    log "removing prerequisites (podman, cockpit, curl, openssl)..."
-    sudo apt-get remove -y cockpit cockpit-podman podman curl openssl 2>/dev/null || true
-    printf "  ${SYM_OK} packages removed\n"
-  fi
-
-  echo ""
-  printf "${GREEN}=== uninstall complete ===${NC}\n"
-  echo ""
-  printf "${YELLOW}to finish cleanup, remove the evi project directory:${NC}\n"
-  echo ""
-  printf "  ${CYAN}rm -rf ~/evi${NC}\n"
-  echo ""
-  echo "then press enter to exit."
-  read -r -p ""
-  exit 0
+  ensure_executable
+  "${SCRIPTS_DIR}/uninstall-evi.sh"
 }
 
 # --- Main Menu (first run: no config yet) ---
