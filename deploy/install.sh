@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 #
-# Version: 1.15.2
+# Version: 1.15.3
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
 # - Single entry point: main_menu() always. When evi.env and evi.secrets.env exist (CONFIG_EXISTS=1), main menu shows banner "evi configuration already exists", same options 0-5, option 3 label "redeploy and restart evi containers" (do_redeploy); otherwise option 3 "deploy and start evi containers" (deploy_up).
 # - Guided configuration: guided_setup() supports reconfigure mode (guided_setup reconfigure). In reconfigure, each step has "0) keep current setting" (step 2: "keep current certificate"); step 5 (demo data) skipped — demo data can be deployed only during initial setup.
 # - No podman build; daily operations (status, logs, restart, backup, etc.) via Cockpit (evi admin panel at :9090).
+#
+# Changes in v1.15.3:
+# - Step 6 (manual container versions): list order reversed — 1 = newest, last number = oldest; list limited to 30 versions.
+# - Step 6: prompt "(enter version number or press enter to use X.Y.Z version)"; empty input selects latest (first in list).
 #
 # Changes in v1.15.2:
 # - Colors: use ANSI-C quoting ($'...') so status symbols and colors render in terminal; added BOLD for IMPORTANT lines.
@@ -1283,11 +1287,19 @@ guided_setup() {
     ensure_executable
     if [[ -n "${registry_base}" ]]; then
       for comp in evi-fe evi-be evi-db; do
-        local tags_list
+        local tags_list default_tag=""
         tags_list=$("${SCRIPTS_DIR}/evi-registry-tags.sh" "${registry_base}" "${comp}" 2>/dev/null || true)
         echo ""
         printf "  available tags for %s:\n" "${comp}"
         if [[ -n "${tags_list}" ]]; then
+          # Reverse order so 1 = newest, then limit to 30 versions (portable, no tac)
+          local reversed=""
+          while IFS= read -r tag; do
+            [[ -z "${tag}" ]] && continue
+            if [[ -z "${reversed}" ]]; then reversed="${tag}"; else reversed="${tag}"$'\n'"${reversed}"; fi
+          done <<< "${tags_list}"
+          tags_list=$(echo "${reversed}" | head -n 30)
+          default_tag=$(echo "${tags_list}" | head -1)
           local idx=1
           while IFS= read -r tag; do
             [[ -z "${tag}" ]] && continue
@@ -1300,10 +1312,18 @@ guided_setup() {
         fi
         local chosen_tag=""
         while [[ -z "${chosen_tag}" ]]; do
-          read -r -p "  version for ${comp} (number or tag, e.g. 0.10.1): " chosen_tag
+          if [[ -n "${tags_list}" ]] && [[ -n "${default_tag:-}" ]]; then
+            read -r -p "  version for ${comp} (enter version number or press enter to use ${default_tag} version): " chosen_tag
+          else
+            read -r -p "  version for ${comp} (number or tag, e.g. 0.10.1): " chosen_tag
+          fi
           chosen_tag=$(echo "${chosen_tag}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
           if [[ -z "${chosen_tag}" ]]; then
-            warn "enter a non-empty tag or number"
+            if [[ -n "${default_tag:-}" ]]; then
+              chosen_tag="${default_tag}"
+            else
+              warn "enter a non-empty tag or number"
+            fi
           elif [[ -n "${tags_list}" ]] && [[ "${chosen_tag}" =~ ^[0-9]+$ ]]; then
             local idx=1
             local found=""
