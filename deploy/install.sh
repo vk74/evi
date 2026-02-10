@@ -1,12 +1,20 @@
 #!/usr/bin/env bash
 #
-# Version: 1.12.2
+# Version: 1.13.0
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
 # - First run: prerequisites, guided env setup (no "keep current" options), deploy from pre-built images (init, pull + systemctl start in install.sh).
 # - Subsequent runs: if evi.env and evi.secrets.env exist, run deploy/scripts/evi-reconfigure.sh (info block, menu: 0 exit, 1 guided configuration, 2 edit evi.env, 3 edit evi.secrets.env, 4 redeploy containers). Guided reconfigure has "keep current setting" in evi-reconfigure.sh.
 # - No podman build; use ./evictl for status, logs, restart, update.
+#
+# Changes in v1.13.0:
+# - Main menu: grouped options (deployment / restore), added option 4 "install app data and containers from backup"
+# - New function scan_backup_directory(): pre-validates backup directory, parses README for metadata (version, date, platform, encryption)
+# - New function restore_from_backup(): interactive restore flow with 2 backup location options (parent dir / custom path),
+#   pre-scan display, password prompt for encrypted backups, full restore (decrypt, extract, load images, restore env/TLS/JWT/pgAdmin,
+#   deploy init, start DB, pg_restore, start services, summary)
+# - Restore uses deploy_* functions directly (no evictl dependency), skips JWT key generation to preserve restored key
 #
 # Changes in v1.12.2:
 # - Cockpit evi-admin: backup form UI — estimate JSON parsing with ANSI strip, ~/evi/backup in UI, password visibility toggle, progress bar during backup
@@ -2069,6 +2077,574 @@ deploy_up() {
   read -r -p "press enter to continue..."
 }
 
+# --- Backup Restore ---
+
+# Format bytes to human-readable size string
+format_size_bytes() {
+  local bytes="$1"
+  if [[ ${bytes} -ge 1073741824 ]]; then
+    echo "$(echo "scale=1; ${bytes}/1073741824" | bc 2>/dev/null || echo "?") GB"
+  elif [[ ${bytes} -ge 1048576 ]]; then
+    echo "$(echo "scale=1; ${bytes}/1048576" | bc 2>/dev/null || echo "?") MB"
+  elif [[ ${bytes} -ge 1024 ]]; then
+    echo "$(echo "scale=1; ${bytes}/1024" | bc 2>/dev/null || echo "?") KB"
+  else
+    echo "${bytes} B"
+  fi
+}
+
+# Scan a directory for valid EVI backup files.
+# Sets global variables: SCAN_* for use by caller.
+# Returns 0 if valid backup found, 1 otherwise.
+scan_backup_directory() {
+  local scan_dir="$1"
+
+  # Reset scan results
+  SCAN_VALID=false
+  SCAN_DATA_ARCHIVE=""
+  SCAN_REPO_ARCHIVE=""
+  SCAN_VERSION=""
+  SCAN_ENCRYPTED=false
+  SCAN_CREATED=""
+  SCAN_HOSTNAME=""
+  SCAN_OS=""
+  SCAN_ARCH=""
+  SCAN_PLATFORM=""
+
+  if [[ ! -d "${scan_dir}" ]]; then
+    return 1
+  fi
+
+  # Find data archive (prefer .gpg encrypted, then .gz, then .zst)
+  local data_file=""
+  data_file=$(find "${scan_dir}" -maxdepth 1 -name "evi-data-v*.tar.gz.gpg" -type f 2>/dev/null | head -1)
+  if [[ -z "${data_file}" ]]; then
+    data_file=$(find "${scan_dir}" -maxdepth 1 -name "evi-data-v*.tar.zst.gpg" -type f 2>/dev/null | head -1)
+  fi
+  if [[ -z "${data_file}" ]]; then
+    data_file=$(find "${scan_dir}" -maxdepth 1 -name "evi-data-v*.tar.gz" -type f 2>/dev/null | head -1)
+  fi
+  if [[ -z "${data_file}" ]]; then
+    data_file=$(find "${scan_dir}" -maxdepth 1 -name "evi-data-v*.tar.zst" -type f 2>/dev/null | head -1)
+  fi
+
+  if [[ -z "${data_file}" ]]; then
+    return 1
+  fi
+
+  SCAN_DATA_ARCHIVE="${data_file}"
+
+  # Detect encryption from extension
+  if [[ "${data_file}" == *.gpg ]]; then
+    SCAN_ENCRYPTED=true
+  fi
+
+  # Extract version from filename: evi-data-v{version}.tar.gz[.gpg]
+  local basename_data
+  basename_data=$(basename "${data_file}")
+  SCAN_VERSION=$(echo "${basename_data}" | sed -n 's/^evi-data-v\([^.]*\)\.\(tar\.gz\|tar\.zst\).*/\1/p')
+  if [[ -z "${SCAN_VERSION}" ]]; then
+    SCAN_VERSION=$(echo "${basename_data}" | sed -n 's/^evi-data-v\([^.]*\)\.\(tar\.gz\|tar\.zst\)\.gpg$/\1/p')
+  fi
+
+  # Find repo archive
+  local repo_file=""
+  repo_file=$(find "${scan_dir}" -maxdepth 1 -name "evi-v*.tar.gz" -type f 2>/dev/null | head -1)
+  SCAN_REPO_ARCHIVE="${repo_file}"
+
+  # Parse README for metadata
+  local readme="${scan_dir}/README-RESTORE-STEP-BY-STEP.md"
+  if [[ -f "${readme}" ]]; then
+    SCAN_CREATED=$(grep -m1 '| Created ' "${readme}" 2>/dev/null | sed 's/.*| Created[[:space:]]*|[[:space:]]*//' | sed 's/[[:space:]]*|$//' || echo "")
+    SCAN_HOSTNAME=$(grep -m1 '| Hostname ' "${readme}" 2>/dev/null | sed 's/.*| Hostname[[:space:]]*|[[:space:]]*//' | sed 's/[[:space:]]*|$//' || echo "")
+    SCAN_OS=$(grep -m1 '| OS ' "${readme}" 2>/dev/null | sed 's/.*| OS[[:space:]]*|[[:space:]]*//' | sed 's/[[:space:]]*|$//' || echo "")
+    SCAN_ARCH=$(grep -m1 '| Architecture ' "${readme}" 2>/dev/null | sed 's/.*| Architecture[[:space:]]*|[[:space:]]*//' | sed 's/[[:space:]]*|$//' || echo "")
+    # Extract platform from arch field: "x86_64 (linux/amd64)" -> "linux/amd64"
+    if [[ -n "${SCAN_ARCH}" ]]; then
+      SCAN_PLATFORM=$(echo "${SCAN_ARCH}" | sed -n 's/.*(\([^)]*\)).*/\1/p')
+    fi
+  fi
+
+  # Fallback: get creation date from file modification time
+  if [[ -z "${SCAN_CREATED}" ]]; then
+    SCAN_CREATED=$(stat -c '%y' "${data_file}" 2>/dev/null | cut -d. -f1 || \
+                   stat -f '%Sm' -t '%Y-%m-%d %H:%M:%S' "${data_file}" 2>/dev/null || echo "unknown")
+  fi
+
+  SCAN_VALID=true
+  return 0
+}
+
+# Display scan results for a backup directory
+display_scan_results() {
+  local scan_dir="$1"
+  local data_size=""
+
+  if [[ -n "${SCAN_DATA_ARCHIVE}" ]] && [[ -f "${SCAN_DATA_ARCHIVE}" ]]; then
+    local bytes
+    bytes=$(stat -c%s "${SCAN_DATA_ARCHIVE}" 2>/dev/null || stat -f%z "${SCAN_DATA_ARCHIVE}" 2>/dev/null || echo "0")
+    data_size=$(format_size_bytes "${bytes}")
+  fi
+
+  printf "    ${CYAN}backup found in:${NC} %s\n" "${scan_dir}"
+  [[ -n "${SCAN_VERSION}" ]] && printf "    ${CYAN}version:${NC}    %s\n" "${SCAN_VERSION}"
+  [[ -n "${SCAN_CREATED}" ]] && printf "    ${CYAN}created:${NC}    %s\n" "${SCAN_CREATED}"
+  if [[ "${SCAN_ENCRYPTED}" == "true" ]]; then
+    printf "    ${CYAN}encrypted:${NC}  ${YELLOW}yes (password required)${NC}\n"
+  else
+    printf "    ${CYAN}encrypted:${NC}  no\n"
+  fi
+  [[ -n "${SCAN_PLATFORM}" ]] && printf "    ${CYAN}platform:${NC}   %s\n" "${SCAN_PLATFORM}"
+  [[ -n "${SCAN_ARCH}" ]] && [[ -z "${SCAN_PLATFORM}" ]] && printf "    ${CYAN}arch:${NC}       %s\n" "${SCAN_ARCH}"
+  [[ -n "${SCAN_OS}" ]] && printf "    ${CYAN}os:${NC}         %s\n" "${SCAN_OS}"
+  [[ -n "${SCAN_HOSTNAME}" ]] && printf "    ${CYAN}source:${NC}     %s\n" "${SCAN_HOSTNAME}"
+  printf "    ${CYAN}data file:${NC}  %s" "$(basename "${SCAN_DATA_ARCHIVE}")"
+  [[ -n "${data_size}" ]] && printf " (%s)" "${data_size}"
+  echo ""
+  if [[ -n "${SCAN_REPO_ARCHIVE}" ]]; then
+    local repo_size=""
+    local repo_bytes
+    repo_bytes=$(stat -c%s "${SCAN_REPO_ARCHIVE}" 2>/dev/null || stat -f%z "${SCAN_REPO_ARCHIVE}" 2>/dev/null || echo "0")
+    repo_size=$(format_size_bytes "${repo_bytes}")
+    printf "    ${CYAN}repo file:${NC}  %s (%s)\n" "$(basename "${SCAN_REPO_ARCHIVE}")" "${repo_size}"
+  fi
+}
+
+# Execute the restore from a validated backup
+execute_restore() {
+  local data_archive="$1"
+  local password="$2"
+
+  local encrypted=false
+  [[ "${data_archive}" == *.gpg ]] && encrypted=true
+
+  # Determine compression
+  local compression="gzip"
+  if [[ "${data_archive}" == *.zst* ]]; then
+    compression="zstd"
+    if ! command -v zstd >/dev/null 2>&1; then
+      err "zstd not found (required for this backup archive)"
+      return 1
+    fi
+  fi
+
+  # Create temp directory (cleaned up at end of function)
+  local restore_temp
+  restore_temp=$(mktemp -d)
+
+  # Helper to clean up temp dir
+  restore_cleanup() { [[ -d "${restore_temp}" ]] && rm -rf "${restore_temp}"; }
+
+  local start_time
+  start_time=$(date +%s)
+
+  log "starting restore..."
+  echo ""
+
+  # Step 1: Decrypt if needed
+  local archive_to_extract="${data_archive}"
+  if [[ "${encrypted}" == "true" ]]; then
+    if ! command -v gpg >/dev/null 2>&1; then
+      err "gpg not found (required for encrypted backup)"
+      restore_cleanup; return 1
+    fi
+    log "decrypting archive..."
+    local decrypted_file="${restore_temp}/data.tar.gz"
+    [[ "${compression}" == "zstd" ]] && decrypted_file="${restore_temp}/data.tar.zst"
+
+    if ! gpg --decrypt --batch --passphrase "${password}" \
+         --output "${decrypted_file}" "${data_archive}" 2>/dev/null; then
+      err "decryption failed (wrong password?)"
+      restore_cleanup; return 1
+    fi
+    printf "  ${SYM_OK} decrypted archive\n"
+    archive_to_extract="${decrypted_file}"
+  fi
+
+  # Step 2: Extract archive
+  log "extracting archive..."
+  local extract_dir="${restore_temp}/extracted"
+  mkdir -p "${extract_dir}"
+
+  local decompress_cmd="gzip -d -c"
+  [[ "${compression}" == "zstd" ]] && decompress_cmd="zstd -d -c"
+
+  if ! ${decompress_cmd} "${archive_to_extract}" | tar -xf - -C "${extract_dir}"; then
+    err "extraction failed"
+    restore_cleanup; return 2
+  fi
+  printf "  ${SYM_OK} extracted archive\n"
+
+  local data_dir="${extract_dir}/evi-data"
+  if [[ ! -d "${data_dir}" ]]; then
+    err "invalid archive structure: evi-data directory not found"
+    restore_cleanup; return 2
+  fi
+
+  # Step 3: Read manifest and display info
+  if [[ -f "${data_dir}/manifest.json" ]]; then
+    local m_version m_created m_hostname
+    m_version=$(grep -o '"evi_version"[[:space:]]*:[[:space:]]*"[^"]*"' "${data_dir}/manifest.json" | cut -d'"' -f4 || echo "unknown")
+    m_created=$(grep -o '"created_at"[[:space:]]*:[[:space:]]*"[^"]*"' "${data_dir}/manifest.json" | cut -d'"' -f4 || echo "unknown")
+    m_hostname=$(grep -o '"hostname"[[:space:]]*:[[:space:]]*"[^"]*"' "${data_dir}/manifest.json" | cut -d'"' -f4 || echo "unknown")
+    log "backup: evi ${m_version}, created ${m_created} on ${m_hostname}"
+  fi
+  echo ""
+
+  # Step 4: Load container images (offline, no pull)
+  log "loading container images..."
+  if [[ -d "${data_dir}/images" ]]; then
+    local image_count=0
+    local image_errors=0
+    for image_tar in "${data_dir}/images"/*.tar; do
+      [[ -f "${image_tar}" ]] || continue
+      local img_name
+      img_name=$(basename "${image_tar}" .tar)
+      if podman load -i "${image_tar}" >/dev/null 2>&1; then
+        image_count=$((image_count + 1))
+        printf "  ${SYM_OK} loaded ${img_name}\n"
+      else
+        image_errors=$((image_errors + 1))
+        printf "  ${SYM_FAIL} failed to load ${img_name}\n"
+      fi
+    done
+    if [[ ${image_errors} -gt 0 ]]; then
+      warn "${image_errors} image(s) failed to load"
+    fi
+    log "loaded ${image_count} container image(s)"
+  else
+    warn "no container images in backup"
+  fi
+  echo ""
+
+  # Step 5: Stop current containers if running
+  log "stopping current containers..."
+  systemctl --user stop evi-reverse-proxy evi-fe evi-be evi-db evi-pgadmin 2>/dev/null || true
+  printf "  ${SYM_OK} stopped containers\n"
+
+  # Step 6: Restore environment files
+  log "restoring environment files..."
+  if [[ -d "${data_dir}/env" ]]; then
+    mkdir -p "${ENV_DIR}"
+    cp -f "${data_dir}/env"/*.env "${ENV_DIR}/" 2>/dev/null || true
+    chmod 600 "${ENV_DIR}"/*.env 2>/dev/null || true
+    printf "  ${SYM_OK} restored evi.env and evi.secrets.env\n"
+  else
+    warn "no environment files in backup"
+  fi
+
+  # Step 7: Restore TLS certificates
+  log "restoring tls certificates..."
+  if [[ -d "${data_dir}/tls" ]] && [[ -n "$(ls -A "${data_dir}/tls" 2>/dev/null)" ]]; then
+    mkdir -p "${TLS_DIR}"
+    cp -f "${data_dir}/tls"/* "${TLS_DIR}/" 2>/dev/null || true
+    chmod 600 "${TLS_DIR}"/*.pem 2>/dev/null || true
+    printf "  ${SYM_OK} restored tls certificates\n"
+  else
+    printf "  ${SYM_PENDING} no tls certificates in backup\n"
+  fi
+
+  # Step 8: Restore JWT secrets
+  log "restoring jwt secrets..."
+  local jwt_state_dir="${EVI_STATE_DIR_DEFAULT}/secrets"
+  if [[ -d "${data_dir}/secrets" ]]; then
+    mkdir -p "${jwt_state_dir}"
+    cp -f "${data_dir}/secrets"/* "${jwt_state_dir}/" 2>/dev/null || true
+    chmod 600 "${jwt_state_dir}"/*.pem 2>/dev/null || true
+    printf "  ${SYM_OK} restored jwt secrets\n"
+  else
+    warn "no jwt secrets in backup"
+  fi
+
+  # Step 9: Restore pgAdmin data
+  if [[ -d "${data_dir}/pgadmin" ]]; then
+    log "restoring pgadmin data..."
+    local pgadmin_state_dir="${EVI_STATE_DIR_DEFAULT}/pgadmin"
+    mkdir -p "${pgadmin_state_dir}/data"
+    cp -f "${data_dir}/pgadmin"/* "${pgadmin_state_dir}/" 2>/dev/null || true
+    [[ -f "${data_dir}/pgadmin/pgadmin4.db" ]] && \
+      cp -f "${data_dir}/pgadmin/pgadmin4.db" "${pgadmin_state_dir}/data/" 2>/dev/null || true
+    printf "  ${SYM_OK} restored pgadmin data\n"
+  fi
+  echo ""
+
+  # Step 10: Load restored environment
+  log "initializing deployment from restored configuration..."
+  if [[ ! -f "${TARGET_ENV}" ]] || [[ ! -f "${TARGET_SECRETS}" ]]; then
+    err "restored environment files not found, cannot proceed with deployment"
+    restore_cleanup; return 1
+  fi
+  load_deploy_env
+
+  # Step 11: Register JWT podman secret (use restored key, do NOT generate new)
+  local jwt_key_file="${EVI_STATE_DIR}/secrets/jwt_private_key.pem"
+  if [[ -f "${jwt_key_file}" ]]; then
+    deploy_create_or_update_secret_from_file "${EVI_JWT_SECRET_NAME}" "${jwt_key_file}"
+    printf "  ${SYM_OK} registered jwt podman secret\n"
+  else
+    warn "jwt key not found at ${jwt_key_file}, services may not start correctly"
+  fi
+
+  # Step 12: Set up deployment (dirs, TLS, Caddyfile, Quadlets)
+  deploy_ensure_dirs
+  deploy_prepare_manual_tls_files 2>/dev/null || true
+  deploy_render_caddyfile
+  deploy_render_quadlets
+  printf "  ${SYM_OK} rendered caddyfile and quadlet files\n"
+
+  # Step 13: Reload systemd
+  systemctl --user daemon-reload
+  printf "  ${SYM_OK} systemd daemon reloaded\n"
+  echo ""
+
+  # Step 14: Start evi-db and wait for ready
+  log "starting database..."
+  systemctl --user start evi-network.service evi-db-volume.service 2>/dev/null || true
+  systemctl --user start evi-db 2>/dev/null || true
+
+  local db_name="${EVI_POSTGRES_DB:-maindb}"
+  local max_wait=60
+  local waited=0
+  while ! podman exec evi-db pg_isready -U postgres -d "${db_name}" >/dev/null 2>&1; do
+    sleep 2
+    waited=$((waited + 2))
+    if [[ ${waited} -ge ${max_wait} ]]; then
+      err "database did not become ready within ${max_wait}s"
+      restore_cleanup; return 3
+    fi
+  done
+  printf "  ${SYM_OK} database is ready (waited ${waited}s)\n"
+
+  # Step 15: Restore database
+  log "restoring database..."
+  if [[ -f "${data_dir}/database/maindb.dump" ]]; then
+    podman cp "${data_dir}/database/maindb.dump" "evi-db:/tmp/maindb.dump" || {
+      err "failed to copy database dump to container"
+      restore_cleanup; return 3
+    }
+
+    if ! podman exec evi-db pg_restore -U postgres -d "${db_name}" \
+         --clean --if-exists --no-owner \
+         /tmp/maindb.dump 2>/dev/null; then
+      # pg_restore may return non-zero even on success (warnings about existing objects)
+      warn "pg_restore completed with warnings (this is usually normal)"
+    fi
+
+    podman exec evi-db rm -f /tmp/maindb.dump 2>/dev/null || true
+    printf "  ${SYM_OK} database restored\n"
+  else
+    warn "database dump not found in backup"
+  fi
+  echo ""
+
+  # Step 16: Start remaining services
+  log "starting remaining services..."
+  systemctl --user start evi-be evi-fe evi-reverse-proxy 2>/dev/null || true
+  if [[ "${EVI_PGADMIN_ENABLED:-false}" == "true" ]]; then
+    systemctl --user start evi-pgadmin 2>/dev/null || true
+  fi
+
+  # Wait for containers to register
+  sleep 5
+
+  # Show service status
+  local units="evi-db evi-be evi-fe evi-reverse-proxy"
+  [[ "${EVI_PGADMIN_ENABLED:-false}" == "true" ]] && units="${units} evi-pgadmin"
+  local active_count=0
+  local unit_count=0
+  for u in ${units}; do
+    unit_count=$((unit_count + 1))
+    local state
+    state=$(systemctl --user is-active "${u}" 2>/dev/null || echo "failed")
+    if [[ "${state}" == "active" ]]; then
+      active_count=$((active_count + 1))
+      printf "  ${SYM_OK} ${GREEN}%-20s${NC} active\n" "${u}:"
+    else
+      printf "  ${SYM_FAIL} ${RED}%-20s${NC} %s\n" "${u}:" "${state}"
+    fi
+  done
+  echo ""
+
+  # Step 17: Summary
+  local end_time
+  end_time=$(date +%s)
+  local duration=$((end_time - start_time))
+  local minutes=$((duration / 60))
+  local seconds=$((duration % 60))
+
+  echo "+--------------------------------------------------------------+"
+  printf "|           ${CYAN}restore summary${NC}                              |\n"
+  echo "+--------------------------------------------------------------+"
+  echo ""
+  if [[ ${active_count} -eq ${unit_count} ]]; then
+    printf "  ${SYM_OK} ${GREEN}RESTORE COMPLETED SUCCESSFULLY${NC}\n"
+  else
+    printf "  ${SYM_WARN} ${YELLOW}RESTORE COMPLETED WITH ISSUES${NC}\n"
+  fi
+  printf "  services: %d/%d active\n" "${active_count}" "${unit_count}"
+  printf "  time: %d min %d sec\n" "${minutes}" "${seconds}"
+  echo ""
+
+  local domain="${EVI_DOMAIN:-}"
+  if [[ -n "${domain}" ]]; then
+    printf "  your evi is available at ${GREEN}https://${domain}${NC}\n"
+    printf "  cockpit admin at https://${domain}:9090\n"
+  fi
+  echo ""
+
+  restore_cleanup
+  read -r -p "press enter to continue..."
+}
+
+# Interactive restore from backup (called from main menu option 4)
+restore_from_backup() {
+  echo ""
+  log "=== install app data and containers from backup ==="
+  echo ""
+
+  # Check prerequisites
+  if ! require_cmd podman; then
+    err "podman is not installed."
+    echo ""
+    echo "  prerequisites must be installed before restoring from backup."
+    echo "  please run option 1 (install prerequisites) first."
+    echo "  this requires an internet connection."
+    echo ""
+    read -r -p "press enter to continue..."
+    return
+  fi
+
+  if ! require_cmd systemctl; then
+    err "systemctl is not available."
+    read -r -p "press enter to continue..."
+    return
+  fi
+
+  # Scan two possible locations
+  local parent_dir
+  parent_dir="$(cd "${SCRIPT_DIR}/.." 2>/dev/null && pwd)"
+  local parent_valid=false
+  local custom_valid=false
+
+  # Pre-scan parent directory (sibling of evi/ folder)
+  if scan_backup_directory "${parent_dir}"; then
+    parent_valid=true
+  fi
+
+  # Build menu
+  echo "where are the backup files located?"
+  echo ""
+
+  local option_num=0
+  if [[ "${parent_valid}" == "true" ]]; then
+    option_num=$((option_num + 1))
+    echo "  ${option_num}) use backup found in parent directory:"
+    echo ""
+    display_scan_results "${parent_dir}"
+    echo ""
+    # Save parent scan results
+    local p_data="${SCAN_DATA_ARCHIVE}" p_encrypted="${SCAN_ENCRYPTED}"
+  fi
+
+  option_num=$((option_num + 1))
+  local custom_option_num="${option_num}"
+  echo "  ${custom_option_num}) enter path to backup directory"
+  echo ""
+  echo "  0) back to main menu"
+  echo ""
+
+  local max_option="${option_num}"
+  local choice=""
+  while [[ -z "${choice}" ]]; do
+    read -r -p "select [0-${max_option}]: " choice
+    case "${choice}" in
+      0) return ;;
+      [1-9])
+        if [[ "${choice}" -gt "${max_option}" ]]; then
+          warn "invalid option"
+          choice=""
+        fi
+        ;;
+      *) warn "invalid option"; choice="" ;;
+    esac
+  done
+
+  local selected_data_archive=""
+  local selected_encrypted=false
+
+  if [[ "${parent_valid}" == "true" ]] && [[ "${choice}" == "1" ]]; then
+    # Use parent directory backup
+    selected_data_archive="${p_data}"
+    selected_encrypted="${p_encrypted}"
+  else
+    # Custom path
+    echo ""
+    local custom_path=""
+    while true; do
+      read -r -p "enter path to backup directory: " custom_path
+      if [[ -z "${custom_path}" ]]; then
+        warn "path cannot be empty"
+        continue
+      fi
+      # Expand ~ to home directory
+      custom_path="${custom_path/#\~/$HOME}"
+      if [[ ! -d "${custom_path}" ]]; then
+        warn "directory not found: ${custom_path}"
+        continue
+      fi
+      if scan_backup_directory "${custom_path}"; then
+        echo ""
+        display_scan_results "${custom_path}"
+        echo ""
+        selected_data_archive="${SCAN_DATA_ARCHIVE}"
+        selected_encrypted="${SCAN_ENCRYPTED}"
+        break
+      else
+        err "no valid backup found in ${custom_path}"
+        echo "  expected files: evi-data-v*.tar.gz[.gpg]"
+        if ! confirm "try another path?" "y"; then
+          return
+        fi
+      fi
+    done
+  fi
+
+  if [[ -z "${selected_data_archive}" ]]; then
+    err "no backup archive selected"
+    read -r -p "press enter to continue..."
+    return
+  fi
+
+  # Get password if encrypted
+  local restore_password=""
+  if [[ "${selected_encrypted}" == "true" ]]; then
+    echo ""
+    read -r -s -p "enter backup decryption password: " restore_password
+    echo ""
+    if [[ -z "${restore_password}" ]]; then
+      err "password cannot be empty for encrypted backup"
+      read -r -p "press enter to continue..."
+      return
+    fi
+  fi
+
+  # Confirm
+  echo ""
+  printf "${YELLOW}⚠  WARNING: this will overwrite existing evi data!${NC}\n"
+  echo "   - current database will be replaced"
+  echo "   - current secrets will be replaced"
+  echo "   - container images will be reloaded"
+  echo ""
+  if ! confirm "proceed with restore?"; then
+    log "restore cancelled."
+    read -r -p "press enter to continue..."
+    return
+  fi
+
+  echo ""
+  execute_restore "${selected_data_archive}" "${restore_password}"
+}
+
 # --- Main Menu (first run: no config yet) ---
 main_menu() {
   ensure_executable
@@ -2081,16 +2657,22 @@ main_menu() {
     display_status
     
     echo "  0) exit"
+    echo ""
+    printf "  ${GRAY}--- deployment ---${NC}\n"
     echo "  1) install prerequisites on host server (requires sudo)"
     echo "  2) containers environment configuration (rootless)"
     echo "  3) deploy and start evi containers (rootless)"
     echo ""
-    read -r -p "select [0-3]: " opt
+    printf "  ${GRAY}--- install from backup ---${NC}\n"
+    echo "  4) install app data and containers from backup"
+    echo ""
+    read -r -p "select [0-4]: " opt
     case $opt in
       0) log "bye!"; exit 0 ;;
       1) install_prerequisites_all ;;
       2) menu_env_config ;;
       3) deploy_up ;;
+      4) restore_from_backup ;;
       *) warn "invalid option" ;;
     esac
   done

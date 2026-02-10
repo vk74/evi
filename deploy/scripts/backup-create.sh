@@ -1,17 +1,23 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.5
-# Purpose: Create full EVI backup including container images, database, and configuration.
+# Version: 1.0.6
+# Purpose: Create EVI app data and containers backup including container images, database, and configuration.
 # Deployment file: backup-create.sh
 # Logic:
 # - Creates backup directory with timestamp
 # - Exports container images using podman save
 # - Dumps PostgreSQL database using pg_dump
 # - Copies environment files, TLS certificates, JWT secrets, pgAdmin data
-# - Creates manifest.json with backup metadata
+# - Creates manifest.json with backup metadata (including architecture/platform)
 # - Archives evi repository
 # - Compresses and optionally encrypts the data archive
 # - Generates README-RESTORE-STEP-BY-STEP.md with server info
+#
+# Changes in v1.0.6:
+# - Added architecture and platform fields to manifest.json (uname -m -> amd64/arm64)
+# - Added Architecture row to README Source Server Information table
+# - Updated README restore steps to use install.sh instead of evictl
+# - Updated README notes: internet required for prerequisites, not for data restore
 #
 # Changes in v1.0.5:
 # - Disable ANSI color codes when stdout is not a terminal (fixes garbled output in Cockpit console)
@@ -57,7 +63,7 @@ else
 fi
 
 # Script version (printed at start of backup output)
-BACKUP_SCRIPT_VERSION="1.0.5"
+BACKUP_SCRIPT_VERSION="1.0.6"
 
 # Spinner characters
 SPINNER_CHARS="⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
@@ -275,6 +281,18 @@ create_manifest() {
   local created_at
   created_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   
+  # Detect architecture and translate to container platform format
+  local arch
+  arch=$(uname -m 2>/dev/null || echo "unknown")
+  local platform="linux/unknown"
+  case "${arch}" in
+    x86_64)   platform="linux/amd64" ;;
+    aarch64)  platform="linux/arm64" ;;
+    arm64)    platform="linux/arm64" ;;
+    armv7l)   platform="linux/arm/v7" ;;
+    *)        platform="linux/${arch}" ;;
+  esac
+  
   local pg_version="17"
   if podman container inspect evi-db --format '{{.State.Running}}' 2>/dev/null | grep -q "true"; then
     pg_version=$(podman exec evi-db psql -U postgres -t -c "SHOW server_version;" 2>/dev/null | tr -d ' ' | cut -d. -f1 || echo "17")
@@ -298,8 +316,10 @@ create_manifest() {
   "backup_format_version": "1.0",
   "evi_version": "${evi_version}",
   "created_at": "${created_at}",
-  "created_by": "evictl backup",
+  "created_by": "evi backup",
   "hostname": "${hostname}",
+  "architecture": "${arch}",
+  "platform": "${platform}",
   "compression": "${compression}",
   "encrypted": ${encrypted},
   "components": {
@@ -398,11 +418,24 @@ create_readme() {
   local domain="${EVI_DOMAIN:-unknown}"
   local tls_mode="${EVI_TLS_MODE:-unknown}"
   
+  # Detect architecture
+  local arch
+  arch=$(uname -m 2>/dev/null || echo "unknown")
+  local platform="unknown"
+  case "${arch}" in
+    x86_64)   platform="linux/amd64" ;;
+    aarch64)  platform="linux/arm64" ;;
+    arm64)    platform="linux/arm64" ;;
+    armv7l)   platform="linux/arm/v7" ;;
+    *)        platform="linux/${arch}" ;;
+  esac
+  
   cat > "${readme_file}" <<EOF
 # EVI Backup Restore Instructions
 
-This backup contains everything needed to fully restore EVI application.
-No external downloads or repository cloning required.
+This is an app data and containers backup. It contains EVI container images,
+database dump, environment configuration, TLS certificates, JWT secrets,
+and installation scripts.
 
 ## Backup Information
 
@@ -419,6 +452,7 @@ No external downloads or repository cloning required.
 | Hostname | ${hostname} |
 | IP Address(es) | ${server_ips} |
 | OS | ${os_version} |
+| Architecture | ${arch} (${platform}) |
 | Domain | ${domain} |
 | TLS Mode | ${tls_mode} |
 | Certificate Type | ${cert_type} |
@@ -427,11 +461,20 @@ No external downloads or repository cloning required.
 
 When restoring to a new server, consider the following:
 
+- **Prerequisites required**: The target server must have podman, cockpit, curl, and openssl
+  installed before restoring. Run \`./install.sh\` and select option 1 (install prerequisites).
+  This step requires internet access. After prerequisites are installed, the data restore
+  itself does NOT require internet.
+
+- **OS compatibility**: This backup was created on ${os_version} (${arch}).
+  For best results, restore to the same OS distribution and architecture.
+  Container images in this backup are built for ${platform}.
+
 $(if [[ "${domain}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
 cat <<IPNOTE
 - **IP-based certificate**: The original server used IP address \`${domain}\` for TLS.
-  If the new server has a different IP, you will need to regenerate certificates:
-  \`./evictl cert regen\`
+  If the new server has a different IP, you will need to regenerate certificates
+  using the guided configuration in install.sh.
 IPNOTE
 elif [[ "${tls_mode}" == "letsencrypt" ]]; then
 cat <<LENOTE
@@ -443,9 +486,8 @@ LENOTE
 elif [[ "${domain}" =~ \.(local|internal|lan|intranet|corp|home)$ ]]; then
 cat <<INTRANOTE
 - **Intranet domain**: The original server used intranet domain \`${domain}\`.
-  If restoring to a different network, update:
-  - \`env/evi.env\`: Set \`EVI_DOMAIN\` to new server's hostname/IP
-  - Regenerate certificates: \`./evictl cert regen\`
+  If restoring to a different network, update \`env/evi.env\` (set \`EVI_DOMAIN\`
+  to new server's hostname/IP) and regenerate certificates using guided configuration.
 INTRANOTE
 else
 cat <<MANUALNOTE
@@ -468,39 +510,51 @@ tar -xzf evi-v${evi_version}.tar.gz
 cd evi
 \`\`\`
 
-### Step 2: Restore data
+### Step 2: Install prerequisites (requires internet)
 
 \`\`\`bash
-./evictl restore ../evi-data-v${evi_version}.tar.gz$([ "${encrypted}" = "true" ] && echo ".gpg")
+./install.sh
+# select option 1: install prerequisites on host server
+\`\`\`
+
+### Step 3: Install app data and containers from backup
+
+\`\`\`bash
+./install.sh
+# select option 4: install app data and containers from backup
+# the script will auto-detect backup files in the parent directory
 \`\`\`
 
 $([ "${encrypted}" = "true" ] && echo "You will be prompted for the encryption password.")
 
-### Step 3: Start EVI
-
-\`\`\`bash
-./evictl up
-\`\`\`
-
 ### Step 4: Verify
 
-\`\`\`bash
-./evictl health
-\`\`\`
+After restore completes, the script will start all EVI services automatically.
+Check the restore summary for container status. You can also verify via cockpit
+at https://<server-ip>:9090.
 
-## Notes
+## What Is Included
 
-- This backup is self-contained. Internet access is NOT required for restore.
-- Container images are included in the data archive.
-- After restore, you can upgrade to a newer EVI version using \`./evictl upgrade\` (when available).
+- Container images: evi-fe, evi-be, evi-db, caddy$([ "${EVI_PGADMIN_ENABLED}" = "true" ] && echo ", pgadmin")
+- PostgreSQL database dump (${EVI_POSTGRES_DB})
+- Environment configuration (evi.env, evi.secrets.env)
+- TLS certificates (if configured)
+- JWT signing keys
+$([ "${EVI_PGADMIN_ENABLED}" = "true" ] && echo "- pgAdmin configuration and data")
+
+## What Is NOT Included
+
+- Host OS packages (podman, cockpit, curl, openssl) — install via option 1 in install.sh
+- Operating system configuration
+- Firewall rules — reconfigured during prerequisites installation
 
 ## Support
 
-If you encounter issues, check the logs:
+If you encounter issues, check container logs via cockpit or:
 
 \`\`\`bash
-./evictl logs evi-db
-./evictl logs evi-be
+podman logs evi-db
+podman logs evi-be
 \`\`\`
 EOF
 }
