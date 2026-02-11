@@ -1,8 +1,12 @@
 /**
- * Version: 1.1.0
+ * Version: 1.2.0
  * Description: Type definitions for about module components
  * Purpose: Defines interfaces and types for about module functionality
  * Type: Frontend file - types.about.ts
+ *
+ * Changes in v1.2.0:
+ * - Added ComponentSection (carrierLabel, carrierVersion, items) for section headers with version
+ * - Replaced flat arrays in ComponentsData with ComponentSection; removed adminTools; added pgAdmin
  *
  * Changes in v1.1.0:
  * - Added ComponentItem interface for components with source URL
@@ -13,6 +17,13 @@
 export interface ComponentItem {
   name: string;
   url: string;
+}
+
+// Section with carrier name, optional version, and list of components (for About components block)
+export interface ComponentSection {
+  carrierLabel: string;
+  carrierVersion: string;
+  items: ComponentItem[];
 }
 
 // Session data interface for ModuleSessionData component
@@ -53,12 +64,12 @@ export interface DeveloperInfoData {
 // Components info interface for ModuleComponents component
 export interface ComponentsData {
   title: string;
-  frontend: ComponentItem[];
-  backend: ComponentItem[];
-  database: ComponentItem[];
-  hostOs: ComponentItem[];
-  reverseProxy: ComponentItem[];
-  adminTools: ComponentItem[];
+  frontend: ComponentSection;
+  backend: ComponentSection;
+  database: ComponentSection;
+  hostOs: ComponentSection;
+  reverseProxy: ComponentSection;
+  pgAdmin: ComponentSection;
 }
 
 // About module state interface

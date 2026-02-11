@@ -63,8 +63,7 @@
       "backend": "backend",
       "database": "database",
       "hostOs": "host os",
-      "reverseProxy": "reverse proxy",
-      "adminTools": "admin tools"
+      "reverseProxy": "reverse proxy"
     },
     "landing": {
       "title": "about our organization",
