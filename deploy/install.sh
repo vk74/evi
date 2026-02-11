@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.15.4
+# Version: 1.15.5
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
@@ -8,8 +8,12 @@
 # - Guided configuration: guided_setup() supports reconfigure mode (guided_setup reconfigure). In reconfigure, each step has "0) keep current setting" (step 2: "keep current certificate"); step 5 (demo data) skipped — demo data can be deployed only during initial setup.
 # - No podman build; daily operations (status, logs, restart, backup, etc.) via Cockpit (evi admin panel at :9090).
 #
+# Changes in v1.15.5:
+# - Uninstall (option 5): when uninstall-evi.sh exits with code 2 (success), install.sh does cd "$HOME" and exit 0 so user lands in home directory to paste final cleanup command (rm -rf ~/evi).
+#
 # Changes in v1.15.4:
 # - Installation summary: standardized three blocks (evi web-application, cockpit (admin tool), pgadmin (database management)); headers without checkmarks; address/account/password in green; notes line per block; evi default admin credentials (admin / eviLock) and pgAdmin password from EVI_ADMIN_DB_PASSWORD shown explicitly.
+# - Prerequisites installation summary: only installed tools list and IMPORTANT note; cockpit and pgadmin text blocks removed.
 #
 # Changes in v1.15.3:
 # - Step 6 (manual container versions): list order reversed — 1 = newest, last number = oldest; list limited to 30 versions.
@@ -741,15 +745,6 @@ install_prerequisites_all() {
   printf "  ${GREEN}✓${NC} cockpit\n"
   printf "  ${GREEN}✓${NC} pgadmin\n"
   echo ""
-  echo "cockpit:"
-  printf "  to manage your container environment visit cockpit from any computer at ${GREEN}https://<server>:9090${NC} (use your server's ip address or dns name).\n"
-  echo "  login using your host OS user account and password."
-  echo ""
-  echo "pgadmin:"
-  printf "  to manage your evi database use pgadmin from any computer at ${GREEN}http://<server>:5445${NC} (use your server's ip address or dns name).\n"
-  printf "  account: ${GREEN}${EVI_PGADMIN_EMAIL_DEFAULT}${NC}\n"
-  printf "  password: ${GREEN}EVI_ADMIN_DB_PASSWORD${NC}\n"
-  echo ""
   printf "${YELLOW}${BOLD}IMPORTANT:${NC}${YELLOW} access to cockpit (9090) and pgadmin (5445) is configured in step 2 of environment configuration (localhost, specific hosts, or subnet).${NC}\n"
   echo ""
 
@@ -1074,7 +1069,7 @@ guided_setup() {
   
   # Step 3: Firewall — from where may admins connect to cockpit (ports 9090, 5445)
   echo ""
-  printf "${GREEN}step 3:${NC} from which computers may admins connect to evi cockpit?\n"
+  printf "${GREEN}step 3:${NC} from which ip addresses or subnets may admins connect to evi cockpit?\n"
   echo ""
   echo "cockpit is the web interface for administration of evi host server and containers. you should connect to cockpit only from trusted locations. choose from where it can be opened in a browser."
   echo ""
@@ -1264,8 +1259,8 @@ guided_setup() {
   if [[ "${reconfigure_mode}" -eq 1 ]] && [[ -n "${current_fe_image:-}" ]]; then
     echo "  0) keep current setting (current container images)"
   fi
-  echo "  1) latest (use versions from template — recommended)"
-  echo "  2) manually set container versions (choose from registry or enter tag)"
+  echo "  1) latest (recommended)"
+  echo "  2) manually set version (choose from versions available in registry and set for each container)"
   echo ""
   while [[ -z "${version_choice}" ]]; do
     if [[ "${reconfigure_mode}" -eq 1 ]] && [[ -n "${current_fe_image:-}" ]]; then
@@ -1483,7 +1478,7 @@ guided_setup() {
   
   echo ""
   info "guided setup complete!"
-  info "you can now proceed to 'deploy' to deploy and start the application."
+  info "you can now proceed to 'deploy' to pull containers and start the application."
   read -r -p "press enter to continue..."
 }
 
@@ -1949,7 +1944,7 @@ display_final_summary() {
   printf "  connections allowed from:  ${GREEN}%s${NC}\n" "${cockpit_allowed}"
   printf "  account:  ${GREEN}your host OS user account${NC}\n"
   printf "  password:  ${GREEN}password of your host OS user account${NC}\n"
-  echo "  notes: used to monitor your host performance, manage evi containers operations, create backups etc."
+  echo "  notes: used to manage your host and containers, monitor performance, create backups etc."
   echo ""
 
   if [[ "${EVI_PGADMIN_ENABLED:-false}" == "true" ]]; then
@@ -2987,9 +2982,15 @@ restore_from_backup() {
 }
 
 # Full uninstall: delegates to deploy/scripts/uninstall-evi.sh (containers, volumes, secrets, images, state with sudo, config, quadlets, cockpit panels, UFW by rule number, sysctl, apt packages).
+# On success (exit code 2 from uninstall-evi.sh), cd to HOME and exit so user can paste rm -rf ~/evi.
 uninstall_evi() {
   ensure_executable
-  "${SCRIPTS_DIR}/uninstall-evi.sh"
+  local uninstall_ret=0
+  "${SCRIPTS_DIR}/uninstall-evi.sh" || uninstall_ret=$?
+  if [[ "${uninstall_ret}" -eq 2 ]]; then
+    cd "${HOME}"
+    exit 0
+  fi
 }
 
 # --- Main Menu (first run: no config yet) ---
@@ -3022,7 +3023,7 @@ main_menu() {
     echo "  4) install containers and restore app data from backup"
     echo ""
     printf "  ${GRAY}--- uninstall ---${NC}\n"
-    echo "  5) uninstall evi (remove everything)"
+    echo "  5) uninstall evi (remove all evi containers, data volume and components)"
     echo ""
     read -r -p "select [0-5]: " opt
     case $opt in
