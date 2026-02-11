@@ -43,7 +43,7 @@ INSERT INTO app.instance (
 )
 VALUES (
     current_setting('server_version'),
-    '0.10.1', '0.10.1', '0.10.1', '0.10.1',
+    '0.10.2', '0.10.3', '0.10.3', '0.10.2',
     NULL,
     NOW(),
     NOW(),
