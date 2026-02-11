@@ -1,6 +1,6 @@
 <!--
   File: ModuleComponents.vue
-  Version: 1.2.0
+  Version: 1.3.0
   Description: Component for displaying system components information
   Purpose: Shows information about technologies used in evi software
   Features:
@@ -8,6 +8,11 @@
   - Lists all major libraries and frameworks with source links per section
   - Host OS includes Cockpit; pgAdmin has its own section; admin tools block removed
   Type: Frontend file - ModuleComponents.vue
+
+  Changes in v1.3.0:
+  - Container versions (VERSION_FE, VERSION_BE, VERSION_DB, VERSION_PROXY, VERSION_PGADMIN) now automatically updated by release script
+  - Release script extracts Caddy and pgAdmin versions from env template during version sync
+  - No manual version updates needed during release process
 
   Changes in v1.2.0:
   - Section titles: carrier label + " v." + version (e.g. frontend container evi-fe v.0.10.2)

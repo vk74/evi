@@ -1,14 +1,20 @@
 #!/usr/bin/env bash
 #
-# version: 1.7.0
+# version: 1.8.0
 # purpose: developer release automation script for evi application.
 # deployment file: release.sh
 # logic:
-# - Version sync: root package.json (eviDbVersion, eviFeVersion, eviBeVersion), dev-ops and deploy env templates, db/init/02_schema.sql (evi-db version only).
+# - Version sync: root package.json (eviDbVersion, eviFeVersion, eviBeVersion), dev-ops and deploy env templates, db/init/02_schema.sql (evi-db version only), front/src/modules/about/ModuleComponents.vue (all container versions).
 # - Builds multi-arch container images (linux/amd64, linux/arm64) for GHCR; publishes manifest lists; creates Git tags per component.
 # - Step-by-step (menu) and CLI commands only; end-user deploy tree is installed into directory evi in home directory (~/evi).
 # - Independent from install.sh and evictl (developer workflow only).
 # - Deploy directory contents (db migrations, demo-data) are produced by release scripts only; do not edit deploy manually.
+#
+# Changes in v1.8.0:
+# - Automatic update of container versions in front/src/modules/about/ModuleComponents.vue during version sync (option 1).
+# - Added extract_version_from_proxy_image() to parse Caddy and pgAdmin versions from env template image tags.
+# - Added update_vue_component_versions() to update VERSION_FE, VERSION_BE, VERSION_DB, VERSION_PROXY, VERSION_PGADMIN constants.
+# - Caddy and pgAdmin versions extracted from EVI_PROXY_IMAGE and EVI_PGADMIN_IMAGE in evi.template.env.
 #
 # Changes in v1.7.0:
 # - Menu option 5: build all images (evi-fe, evi-be, evi-db) in one step; options 6-8 push fe/be/db; option 9 push all images to GHCR; option 10 create git tags.
@@ -414,6 +420,18 @@ extract_version_from_image_tag() {
   # Match pattern: EVI_(FE|BE|DB)_IMAGE=ghcr.io/NAMESPACE/evi-(fe|be|db):VERSION (namespace: evi-app, vk74, etc.)
   if [[ "${line}" =~ ^EVI_(FE|BE|DB)_IMAGE=ghcr\.io/[^/]+/evi-(fe|be|db):(.+)$ ]]; then
     echo "${BASH_REMATCH[3]}"
+  else
+    echo ""
+  fi
+}
+
+# Extract version from proxy/pgadmin image tags (caddy:2.8-alpine → 2.8, pgadmin4:8 → 8)
+extract_version_from_proxy_image() {
+  local image_tag="$1"
+  # Extract text after last ':' and before optional '-' suffix
+  # Examples: docker.io/caddy:2.8-alpine → 2.8, docker.io/dpage/pgadmin4:8 → 8
+  if [[ "${image_tag}" =~ :([0-9]+(\.[0-9]+)*)(-|$) ]]; then
+    echo "${BASH_REMATCH[1]}"
   else
     echo ""
   fi
@@ -924,6 +942,114 @@ check_and_cleanup_existing_images() {
   fi
 }
 
+# Update container versions in front/src/modules/about/ModuleComponents.vue
+update_vue_component_versions() {
+  local version_fe="$1"
+  local version_be="$2"
+  local version_db="$3"
+  local vue_file="${PROJECT_ROOT}/front/src/modules/about/ModuleComponents.vue"
+  
+  if [[ ! -f "${vue_file}" ]]; then
+    warn "Vue component not found: ${vue_file}, skipping"
+    return 0
+  fi
+  
+  log "Updating container versions in ModuleComponents.vue..."
+  
+  # Extract Caddy and pgAdmin versions from env template
+  local caddy_version=""
+  local pgadmin_version=""
+  
+  if [[ -f "${TEMPLATE_ENV}" ]]; then
+    local proxy_line
+    local pgadmin_line
+    proxy_line=$(grep -E "^EVI_PROXY_IMAGE=" "${TEMPLATE_ENV}" 2>/dev/null || true)
+    pgadmin_line=$(grep -E "^EVI_PGADMIN_IMAGE=" "${TEMPLATE_ENV}" 2>/dev/null || true)
+    
+    if [[ -n "${proxy_line}" ]]; then
+      caddy_version=$(extract_version_from_proxy_image "${proxy_line}")
+    fi
+    if [[ -n "${pgadmin_line}" ]]; then
+      pgadmin_version=$(extract_version_from_proxy_image "${pgadmin_line}")
+    fi
+  fi
+  
+  if [[ -z "${caddy_version}" ]]; then
+    warn "Could not extract Caddy version from env template, skipping Caddy update"
+  fi
+  if [[ -z "${pgadmin_version}" ]]; then
+    warn "Could not extract pgAdmin version from env template, skipping pgAdmin update"
+  fi
+  
+  # Create backup
+  local backup_file="${vue_file}.backup.$(date +%Y%m%d_%H%M%S)"
+  cp "${vue_file}" "${backup_file}"
+  
+  # Update VERSION_* constants using sed
+  local temp_file
+  temp_file=$(mktemp)
+  local changes=0
+  
+  # Read current versions for logging
+  local old_fe old_be old_db old_proxy old_pgadmin
+  old_fe=$(grep -E "^const VERSION_FE = " "${vue_file}" | sed "s/.*'\([^']*\)'.*/\1/" || echo "")
+  old_be=$(grep -E "^const VERSION_BE = " "${vue_file}" | sed "s/.*'\([^']*\)'.*/\1/" || echo "")
+  old_db=$(grep -E "^const VERSION_DB = " "${vue_file}" | sed "s/.*'\([^']*\)'.*/\1/" || echo "")
+  old_proxy=$(grep -E "^const VERSION_PROXY = " "${vue_file}" | sed "s/.*'\([^']*\)'.*/\1/" || echo "")
+  old_pgadmin=$(grep -E "^const VERSION_PGADMIN = " "${vue_file}" | sed "s/.*'\([^']*\)'.*/\1/" || echo "")
+  
+  # Update versions
+  sed -e "s/^const VERSION_FE = '[^']*'/const VERSION_FE = '${version_fe}'/" \
+      -e "s/^const VERSION_BE = '[^']*'/const VERSION_BE = '${version_be}'/" \
+      -e "s/^const VERSION_DB = '[^']*'/const VERSION_DB = '${version_db}'/" \
+      "${vue_file}" > "${temp_file}"
+  
+  if [[ -n "${caddy_version}" ]]; then
+    sed -i.tmp "s/^const VERSION_PROXY = '[^']*'/const VERSION_PROXY = '${caddy_version}'/" "${temp_file}"
+    rm -f "${temp_file}.tmp"
+  fi
+  
+  if [[ -n "${pgadmin_version}" ]]; then
+    sed -i.tmp "s/^const VERSION_PGADMIN = '[^']*'/const VERSION_PGADMIN = '${pgadmin_version}'/" "${temp_file}"
+    rm -f "${temp_file}.tmp"
+  fi
+  
+  # Move updated file
+  mv "${temp_file}" "${vue_file}"
+  
+  # Log changes
+  if [[ "${old_fe}" != "${version_fe}" ]]; then
+    info "Updated VERSION_FE: ${old_fe} → ${version_fe}"
+    changes=$((changes + 1))
+  fi
+  if [[ "${old_be}" != "${version_be}" ]]; then
+    info "Updated VERSION_BE: ${old_be} → ${version_be}"
+    changes=$((changes + 1))
+  fi
+  if [[ "${old_db}" != "${version_db}" ]]; then
+    info "Updated VERSION_DB: ${old_db} → ${version_db}"
+    changes=$((changes + 1))
+  fi
+  if [[ -n "${caddy_version}" ]] && [[ "${old_proxy}" != "${caddy_version}" ]]; then
+    info "Updated VERSION_PROXY: ${old_proxy} → ${caddy_version}"
+    changes=$((changes + 1))
+  fi
+  if [[ -n "${pgadmin_version}" ]] && [[ "${old_pgadmin}" != "${pgadmin_version}" ]]; then
+    info "Updated VERSION_PGADMIN: ${old_pgadmin} → ${pgadmin_version}"
+    changes=$((changes + 1))
+  fi
+  
+  if [[ ${changes} -gt 0 ]]; then
+    info "Updated ${changes} version(s) in ModuleComponents.vue"
+    info "Backup saved: ${backup_file}"
+  else
+    info "All versions already up to date in ModuleComponents.vue"
+    rm -f "${backup_file}"
+  fi
+  
+  return 0
+}
+
 
 # --- Main Functions ---
 
@@ -1016,6 +1142,9 @@ sync_versions() {
   else
     warn "Schema file not found: ${SCHEMA_SQL}, skipping"
   fi
+
+  # Update front/src/modules/about/ModuleComponents.vue (all container versions)
+  update_vue_component_versions "${version_fe}" "${version_be}" "${version_db}"
 
   log "version synchronization completed"
   info "evi-db: ${version_db}, evi-fe: ${version_fe}, evi-be: ${version_be}"
