@@ -9,7 +9,7 @@
 # - No podman build; daily operations (status, logs, restart, backup, etc.) via Cockpit (evi admin panel at :9090).
 #
 # Changes in v1.15.5:
-# - Uninstall (option 5): when uninstall-evi.sh exits with code 2 (success), install.sh does cd "$HOME" and exit 0 so user lands in home directory to paste final cleanup command (rm -rf ~/evi).
+# - Uninstall (option 5): when uninstall-evi.sh exits with code 2 (success), install.sh exits so control returns to shell; uninstall-evi.sh shows two commands (cd ~ and rm -rf ~/evi) for final cleanup.
 #
 # Changes in v1.15.4:
 # - Installation summary: standardized three blocks (evi web-application, cockpit (admin tool), pgadmin (database management)); headers without checkmarks; address/account/password in green; notes line per block; evi default admin credentials (admin / eviLock) and pgAdmin password from EVI_ADMIN_DB_PASSWORD shown explicitly.
@@ -1952,7 +1952,7 @@ display_final_summary() {
     printf "  address:  ${GREEN}http://%s:5445${NC}\n" "${domain}"
     printf "  account:  ${GREEN}%s${NC}\n" "${EVI_PGADMIN_EMAIL:-${EVI_PGADMIN_EMAIL_DEFAULT}}"
     printf "  password:  ${GREEN}%s${NC}\n" "${EVI_ADMIN_DB_PASSWORD:-}"
-    echo "  notes: used for postgres DB administration tasks"
+    echo "  notes: used for postgres DB administration"
     echo ""
   fi
 
@@ -2982,13 +2982,12 @@ restore_from_backup() {
 }
 
 # Full uninstall: delegates to deploy/scripts/uninstall-evi.sh (containers, volumes, secrets, images, state with sudo, config, quadlets, cockpit panels, UFW by rule number, sysctl, apt packages).
-# On success (exit code 2 from uninstall-evi.sh), cd to HOME and exit so user can paste rm -rf ~/evi.
+# On success (exit code 2 from uninstall-evi.sh), exit install.sh so user can paste the two final commands (cd ~ and rm -rf ~/evi) from the hint.
 uninstall_evi() {
   ensure_executable
   local uninstall_ret=0
   "${SCRIPTS_DIR}/uninstall-evi.sh" || uninstall_ret=$?
   if [[ "${uninstall_ret}" -eq 2 ]]; then
-    cd "${HOME}"
     exit 0
   fi
 }

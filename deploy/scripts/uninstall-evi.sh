@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.3
+# Version: 1.0.4
 # Purpose: Full uninstall of evi: containers, volumes, secrets, images, state, config, quadlets, cockpit panels, UFW rules, sysctl, apt packages.
 # Backend script, called from install.sh (option 5) or evi-reconfigure.sh. Can be run standalone.
 # Logic: Single confirmation (type 'yes'), stop services, remove podman resources, remove dirs (state with sudo for pgadmin data), quadlets, systemd reload,
@@ -8,6 +8,9 @@
 #
 # Changes in v1.0.3:
 # - On success: no "press enter to exit"; exit with code 2 so install.sh can cd to HOME and exit (user lands in ~ to paste rm -rf ~/evi). On cancel still exit 0.
+#
+# Changes in v1.0.4:
+# - Final hint shows two commands (cd ~ and rm -rf ~/evi) so user can paste both when shell stays in evi dir.
 #
 # Changes in v1.0.2:
 # - Colors/symbols: use ANSI-C quoting ($'...') so green checkmarks and colors render in terminal instead of literal \033.
@@ -186,8 +189,9 @@ main() {
   echo ""
   printf "${GREEN}=== uninstall complete ===${NC}\n"
   echo ""
-  printf "${YELLOW}to finish cleanup, remove the evi application directory with this command:${NC}\n"
+  printf "${YELLOW}to finish cleanup, go to home and remove the evi application directory:${NC}\n"
   echo ""
+  printf "  ${CYAN}cd ~${NC}\n"
   printf "  ${CYAN}rm -rf ~/evi${NC}\n"
   echo ""
   exit 2
