@@ -4,7 +4,7 @@
 # purpose: developer release automation script for evi application.
 # deployment file: release.sh
 # logic:
-# - Version sync: root package.json (eviDbVersion, eviFeVersion, eviBeVersion), dev-ops and deploy env templates, db/init/02_schema.sql (evi-db version only), front/src/modules/about/ModuleComponents.vue (all container versions).
+# - Version sync: root package.json (eviDbVersion, eviFeVersion, eviBeVersion), dev-ops and deploy env templates, db/init/02_schema.sql (app.instance: schema_version, evi_fe, evi_be, evi_db), front/src/modules/about/ModuleComponents.vue (all container versions).
 # - Builds multi-arch container images (linux/amd64, linux/arm64) for GHCR; publishes manifest lists; creates Git tags per component.
 # - Step-by-step (menu) and CLI commands only; end-user deploy tree is installed into directory evi in home directory (~/evi).
 # - Independent from install.sh and evictl (developer workflow only).
@@ -22,7 +22,7 @@
 #
 # Changes in v1.6.0:
 # - Multi-version support: evi-db, evi-fe, evi-be can have different versions. Root package.json holds eviDbVersion, eviFeVersion, eviBeVersion.
-# - Sync (option 1): prompts for three versions separately, shows current version per container; updates package.json and env templates; 02_schema.sql uses evi-db version only.
+# - Sync (option 1): prompts for three versions separately, shows current version per container; updates package.json and env templates; 02_schema.sql gets schema_version, evi_fe, evi_be, evi_db.
 # - Build/push/tag use read_component_version(component). Git tags: evi-db/vX.Y.Z, evi-fe/vX.Y.Z, evi-be/vX.Y.Z (three separate tags).
 # - Menu and help text updated for evi-db, evi-fe, evi-be.
 #
@@ -86,7 +86,7 @@
 #
 # Changes in v1.2.0 (beta version testing 2): 
 # - Version format: allow stable X.Y.Z and intermediate X.Y.Z-alpha, X.Y.Z-beta, X.Y.Z-rcN (no leading v).
-# - sync_versions: update db/init/02_schema.sql (single version in both columns), deploy/env/evi.template.env.
+# - sync_versions: update db/init/02_schema.sql (app.instance version literals), deploy/env/evi.template.env.
 # - do_full_release: version sync, build, publish, create tag (4 steps).
 #
 # Changes in v1.1.2:
@@ -571,23 +571,27 @@ update_root_package_json_component_versions() {
   return 0
 }
 
-# Update version in db/init/02_schema.sql INSERT (version, schema_version) — single version, no v prefix
+# Update version literals in db/init/02_schema.sql INSERT into app.instance (schema_version, evi_fe, evi_be, evi_db)
 update_schema_sql_version() {
   local file_path="$1"
-  local new_version="$2"
+  local version_db="$2"
+  local version_fe="$3"
+  local version_be="$4"
   if [[ ! -f "${file_path}" ]]; then
     err "File not found: ${file_path}"
     return 1
   fi
-  if ! grep -q "INSERT INTO app.app_version" "${file_path}"; then
-    err "INSERT INTO app.app_version not found in ${file_path}"
+  if ! grep -q "INSERT INTO app.instance" "${file_path}"; then
+    err "INSERT INTO app.instance not found in ${file_path}"
     return 1
   fi
-  # Replace VALUES ('...', '...') on the VALUES line only (portable: write to temp then mv)
+  local rpl="'${version_db}', '${version_fe}', '${version_be}', '${version_db}',"
+  local rpl_esc
+  rpl_esc=$(printf '%s' "${rpl}" | sed 's/[&\\]/\\&/g')
   local tmpf
   tmpf=$(mktemp)
-  if sed "/^[[:space:]]*VALUES/s/('[^']*', '[^']*')/('${new_version}', '${new_version}')/" "${file_path}" > "${tmpf}" && mv "${tmpf}" "${file_path}"; then
-    info "Updated ${file_path}: version and schema_version set to ${new_version}"
+  if sed "s#'[^']*', '[^']*', '[^']*', '[^']*',#${rpl_esc}#" "${file_path}" > "${tmpf}" && mv "${tmpf}" "${file_path}"; then
+    info "Updated ${file_path}: schema_version, evi_fe, evi_be, evi_db set to ${version_db}, ${version_fe}, ${version_be}, ${version_db}"
     return 0
   fi
   rm -f "${tmpf}"
@@ -1135,10 +1139,10 @@ sync_versions() {
     warn "deploy/env/evi.template.env not found, skipping"
   fi
 
-  # Update db/init/02_schema.sql (evi-db version only)
+  # Update db/init/02_schema.sql (schema_version, evi_fe, evi_be, evi_db)
   if [[ -f "${SCHEMA_SQL}" ]]; then
     log "Updating db/init/02_schema.sql..."
-    update_schema_sql_version "${SCHEMA_SQL}" "${version_db}"
+    update_schema_sql_version "${SCHEMA_SQL}" "${version_db}" "${version_fe}" "${version_be}"
   else
     warn "Schema file not found: ${SCHEMA_SQL}, skipping"
   fi
