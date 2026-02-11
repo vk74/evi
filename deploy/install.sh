@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 #
-# Version: 1.15.3
+# Version: 1.15.4
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
 # - Single entry point: main_menu() always. When evi.env and evi.secrets.env exist (CONFIG_EXISTS=1), main menu shows banner "evi configuration already exists", same options 0-5, option 3 label "redeploy and restart evi containers" (do_redeploy); otherwise option 3 "deploy and start evi containers" (deploy_up).
 # - Guided configuration: guided_setup() supports reconfigure mode (guided_setup reconfigure). In reconfigure, each step has "0) keep current setting" (step 2: "keep current certificate"); step 5 (demo data) skipped — demo data can be deployed only during initial setup.
 # - No podman build; daily operations (status, logs, restart, backup, etc.) via Cockpit (evi admin panel at :9090).
+#
+# Changes in v1.15.4:
+# - Installation summary: standardized three blocks (evi web-application, cockpit (admin tool), pgadmin (database management)); headers without checkmarks; address/account/password in green; notes line per block; evi default admin credentials (admin / eviLock) and pgAdmin password from EVI_ADMIN_DB_PASSWORD shown explicitly.
 #
 # Changes in v1.15.3:
 # - Step 6 (manual container versions): list order reversed — 1 = newest, last number = oldest; list limited to 30 versions.
@@ -1927,6 +1930,7 @@ display_deployment_summary() {
 }
 
 # Print final deployment summary: evi app and admin tools (cockpit, pgadmin). Uses EVI_* from load_deploy_env.
+# Three blocks with unified format: header, address/account/password in green, notes.
 display_final_summary() {
   local cockpit_allowed
   cockpit_allowed=$(get_cockpit_allowed_summary)
@@ -1934,24 +1938,26 @@ display_final_summary() {
   [[ -z "${domain}" ]] && domain="<server>"
 
   echo ""
-  echo "evi application:"
-  printf "  ${GREEN}✓${NC} your evi app is ready\n"
+  echo "evi web-application:"
   printf "  address:  ${GREEN}https://%s${NC}\n" "${domain}"
-  echo "  open this address in a browser from any computer that can reach the server."
-  echo "  to login, use the default admin credentials and don't forget to change password."
+  printf "  account:  ${GREEN}admin${NC}\n"
+  printf "  password:  ${GREEN}eviLock${NC}\n"
+  echo "  notes: don't forget to change password."
   echo ""
-  echo "admin tools (cockpit):"
-  printf "  ${GREEN}✓${NC} cockpit server management\n"
+  echo "cockpit (admin tool):"
   printf "  address:  ${GREEN}https://%s:9090${NC}\n" "${domain}"
-  printf "  allowed from:  %s\n" "${cockpit_allowed}"
-  echo "  login using your host OS user account and password."
+  printf "  connections allowed from:  ${GREEN}%s${NC}\n" "${cockpit_allowed}"
+  printf "  account:  ${GREEN}your host OS user account${NC}\n"
+  printf "  password:  ${GREEN}password of your host OS user account${NC}\n"
+  echo "  notes: used to monitor your host performance, manage evi containers operations, create backups etc."
   echo ""
 
   if [[ "${EVI_PGADMIN_ENABLED:-false}" == "true" ]]; then
-    printf "  ${GREEN}✓${NC} pgadmin database management\n"
+    echo "pgadmin (database management):"
     printf "  address:  ${GREEN}http://%s:5445${NC}\n" "${domain}"
     printf "  account:  ${GREEN}%s${NC}\n" "${EVI_PGADMIN_EMAIL:-${EVI_PGADMIN_EMAIL_DEFAULT}}"
-    echo "  password: (find it in cockpit -> podman containers -> evi-db -> integration tab -> EVI_ADMIN_DB_PASSWORD or in evi.secrets.env file)"
+    printf "  password:  ${GREEN}%s${NC}\n" "${EVI_ADMIN_DB_PASSWORD:-}"
+    echo "  notes: used for postgres DB administration tasks"
     echo ""
   fi
 
