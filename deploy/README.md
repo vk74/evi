@@ -1,43 +1,32 @@
+# EVI README Version 0.10.12
+
 # About
 
-**EVI**  is a web application for building and managing products catalog. Users can browse products, configure them by selecting options and quantities, and generate cost estimations for their configurations. Administrators manage catalog sections, regional pricing, organizations, and application settings.
+**EVI**  is a web application for building and managing products catalog. Users can browse products, configure them by selecting options and quantities, and generate cost estimations for their configurations. Administrators manage catalog, regional pricing, organizations, and application settings. More business scenarios planned for the future.
 
-This directory holds the deploy tree of the evi repository: scripts, documentation and other files for evi installation, upgrades and admin operations. You place this content in a directory named **evi** on your server (for example, in your home directory). Release notes are in this directory (RELEASE_NOTES.md) and are used by install.sh when deploying a given version.
-
-Current contaiber versions:
-evi-db: 0.9.12
-evi-be: 0.9.13
-evi-fe: 0.9.13
 
 ## Disclaimer
 
 The software is provided "as is", without any warranties. Use at your own risk.
 
-License and list of components will be available soon in the application menu: **About → Components**.
+License will be available soon in the application menu: **About → License**.
 
 
-## About the app and host server requirements
+## Host server requirements for evi deployment
 
-The app runs as a set of containers, or technically speaking **Rootless Podman Quadlets** (systemd services):
-*   `evi-reverse-proxy`: Caddy (Reverse Proxy & TLS termination)
-*   `evi-fe`: Frontend Nginx container
-*   `evi-be`: Backend Node.js container
-*   `evi-db`: PostgreSQL database container
-*   `evi-pgadmin`: Optional pgadmin container, could be installed when user deploys prerequisites on host server
-
-To run evi, your server or virtual machine needs the following specs:
-- **RAM:** 4 GB
-- **CPU:** 2 cores
-- **Network:** 1 NIC, Ports **80** (HTTP) and **443** (HTTPS) open on the host
-- **HDD** 600 - 900  Mb for all containers (depending on setup options) + extra space to store your app data
-- **OS:** Compatible with Debian-based distributions: Ubuntu, Debian, Linux Mint, Pop!_OS, and other distros that use `apt-get`. **evi has been tested only on Ubuntu** (e.g. Ubuntu 24.04 LTS); other listed distros are expected to work but formally were not tested.
+To run evi, your physical server or virtual machine needs the following minimal specs:
+- **RAM:** 3 GB
+- **CPU:** 1 core (arm or amd64 processors)
+- **Network:** 1 NIC
+- **HDD** ~ 1.5 Gb SSD for containers environment
+- **OS:** Compatible with Debian-based distributions: Ubuntu, Debian, Linux Mint, Pop!_OS, and other distros that use `apt-get`. **evi has been tested only on Ubuntu 24.04**. other listed distros are expected to work but formally were not tested.
 
 
 ## Installation instructions
 
-## 1. Clone the deploy tree into directory evi
+## 1. Clone the deploy scripts and files into evi directory 
 
-Install git if it is not present on the host server, then clone **deploy** folder from the evi repository into a directory named **evi** (located in your home directory):
+Open terminal in your home directory, copy and paste the whole block of commands below (excluding ```bash ```) and hit enter
 
 ```bash
 command -v git >/dev/null 2>&1 || { sudo apt-get update && sudo apt-get install -y git; }
@@ -48,6 +37,11 @@ mkdir backup
 rmdir deploy
 ```
 
+
+- evi directory is automatically created and populated with deployment files
+- If your host server does not already have git, it will be installed (requires sudo) before cloning 
+
+
 ## 2. Start the installer
 
 ```bash
@@ -56,23 +50,28 @@ rmdir deploy
 
 The installer will guide you through 3 installation steps: 
 - install prerequisites on host server (requires sudo)
-- guided configuration of container environment (domain/TLS, **firewall for cockpit access**, passwords, demo data; does not require sudo for config, but applying firewall rules uses sudo)
-- containers deployment (does not require sudo)
+- guided configuration of container environment (does not require sudo)
+- containers pool and deployment (does not require sudo)
 
-During environment configuration, **Step 2** asks from which computers administrators may connect to Cockpit (the web UI for server and container management). The choice is applied to the host firewall (UFW) and restricts access to Cockpit (port 9090) and pgAdmin (port 5445) accordingly. Options: specific IP(s), network range (CIDR), this server only, any (not recommended), or skip (configure manually later).
+The installer will deploy the following list of containers on your host server:
+*   `evi-reverse-proxy`: Caddy (Reverse Proxy & TLS termination)
+*   `evi-fe`: Frontend Nginx container
+*   `evi-be`: Backend Node.js container
+*   `evi-db`: PostgreSQL database container
+*   `evi-pgadmin`: pgAdmin container for postgres DB administration
+
+evi web application runs as a set of containers, or technically speaking **Rootless Podman Quadlets** (systemd services)/
+
+**Installation complete**
 
 
-
-## Admin operations after installation
-
-When installation completes, use **Cockpit** for regular admin operations: status, restart, logs, backups, etc. Cockpit can be installed by install.sh in the prerequisites step. Open Cockpit at `https://<server>:9090` and use the **evi admin** panel for backup and (in future) certificate and password management. For container status and logs use Cockpit’s Podman Containers tab.
-
+------------------------------------------------
 
 
 ## General information and recommendations for preparing your server virtualization and containerization technology
 
 ## What is Containerization?
-Containerization on Linux is an OS-level virtualization method that packages an application and its dependencies into isolated, portable containers. Unlike VMs, containers share the host OS kernel and provide process-level isolation. Each container has its own process tree, network stack, and filesystem.
+Containerization on Linux is an OS-level virtualization method that packages an application and its dependencies into isolated, portable containers. Unlike virtual machines, containers share the host OS kernel and provide process-level isolation. Each container has its own process tree, network stack, and filesystem.
 
 ## Linux Kernel Container Features:
 * Namespaces — isolate processes, network, filesystem, users, IPC, and hostname
