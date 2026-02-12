@@ -9,7 +9,7 @@
 --
 -- Changes in v1.3.1:
 -- - postgres_version: use split_part(..., ' ', 1) so value fits VARCHAR(20).
--- - Version literals: separate placeholders __SCHEMA_VER__, __FE_VER__, __BE_VER__, __DB_VER__ so release.sh replaces each column independently (avoids one-column merge).
+-- - Version literals: separate placeholders 0.10.3, 0.10.3, 0.10.3, 0.10.3 so release.sh replaces each column independently (avoids one-column merge).
 
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";

@@ -1,7 +1,7 @@
 {
   "name": "evi",
   "version": "0.9.12",
-  "eviDbVersion": "0.10.2",
+  "eviDbVersion": "0.10.3",
   "eviFeVersion": "0.10.3",
   "eviBeVersion": "0.10.3",
   "description": "evi application",

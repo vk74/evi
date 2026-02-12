@@ -1,0 +1,26 @@
+-- Version: 1.0
+-- Description: Future migrations placeholder
+-- Backend file: future_migrations
+-- 
+-- ВНИМАНИЕ: Этот файл предназначен для будущих миграций схемы БД.
+-- 
+-- При разработке новой функциональности, требующей изменений в схеме БД:
+-- 1. Создайте новый файл миграции с номером больше текущего
+-- 2. Добавьте описание изменений в комментарии
+-- 3. Убедитесь, что миграция может быть применена к существующей БД
+-- 4. Протестируйте миграцию на копии данных
+-- 
+-- Пример структуры миграции:
+-- -- Version: 2.0
+-- -- Description: Add new table for feature X
+-- -- Backend file: add_feature_x_table
+-- 
+-- CREATE TABLE IF NOT EXISTS app.new_table (
+--     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+--     name VARCHAR(100) NOT NULL,
+--     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- );
+-- 
+-- -- Добавьте запись о примененной миграции
+-- INSERT INTO app.schema_migrations (version, description, checksum) 
+-- VALUES ('002', 'Add new table for feature X', 'checksum_here');
