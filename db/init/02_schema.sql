@@ -1,11 +1,15 @@
--- Version: 1.3
+-- Version: 1.3.1
 -- Description: Enables extensions and creates migration tracking tables. Defines app.instance for installation version tracking.
 -- Backend file: 02_schema.sql
 --
 -- Changes in v1.3:
 -- - Replaced app.app_version with app.instance table
 -- - Columns: postgres_version, schema_version, evi_fe, evi_be, evi_db, instance_id, deployed_at, last_updated_at, deployed_by
--- - INSERT/ON CONFLICT updated for new structure; version literals kept in sync by release.sh
+-- - INSERT/ON CONFLICT updated for new structure; version literals kept in sync by release.sh (trailing comma on version line required for sed)
+--
+-- Changes in v1.3.1:
+-- - postgres_version: use split_part(..., ' ', 1) so value fits VARCHAR(20).
+-- - Version literals: separate placeholders __SCHEMA_VER__, __FE_VER__, __BE_VER__, __DB_VER__ so release.sh replaces each column independently (avoids one-column merge).
 
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";
@@ -42,7 +46,7 @@ INSERT INTO app.instance (
     deployed_at, last_updated_at, deployed_by
 )
 VALUES (
-    current_setting('server_version'),
+    split_part(current_setting('server_version'), ' ', 1),
     '0.10.2', '0.10.3', '0.10.3', '0.10.2',
     NULL,
     NOW(),
@@ -50,7 +54,7 @@ VALUES (
     CURRENT_USER
 )
 ON CONFLICT (id) DO UPDATE SET
-    postgres_version = current_setting('server_version'),
+    postgres_version = split_part(current_setting('server_version'), ' ', 1),
     schema_version = EXCLUDED.schema_version,
     evi_fe = EXCLUDED.evi_fe,
     evi_be = EXCLUDED.evi_be,

@@ -571,7 +571,7 @@ update_root_package_json_component_versions() {
   return 0
 }
 
-# Update version literals in db/init/02_schema.sql INSERT into app.instance (schema_version, evi_fe, evi_be, evi_db)
+# Update version placeholders in db/init/02_schema.sql (one replacement per column: schema_version, evi_fe, evi_be, evi_db)
 update_schema_sql_version() {
   local file_path="$1"
   local version_db="$2"
@@ -585,12 +585,21 @@ update_schema_sql_version() {
     err "INSERT INTO app.instance not found in ${file_path}"
     return 1
   fi
-  local rpl="'${version_db}', '${version_fe}', '${version_be}', '${version_db}',"
-  local rpl_esc
-  rpl_esc=$(printf '%s' "${rpl}" | sed 's/[&\\]/\\&/g')
+  if ! grep -q "__SCHEMA_VER__\|__FE_VER__\|__BE_VER__\|__DB_VER__" "${file_path}"; then
+    err "Version placeholders (__SCHEMA_VER__ etc.) not found in ${file_path}"
+    return 1
+  fi
   local tmpf
   tmpf=$(mktemp)
-  if sed "s#'[^']*', '[^']*', '[^']*', '[^']*',#${rpl_esc}#" "${file_path}" > "${tmpf}" && mv "${tmpf}" "${file_path}"; then
+  local v_db_esc v_fe_esc v_be_esc
+  v_db_esc=$(printf '%s' "${version_db}" | sed 's/[&\\]/\\&/g')
+  v_fe_esc=$(printf '%s' "${version_fe}" | sed 's/[&\\]/\\&/g')
+  v_be_esc=$(printf '%s' "${version_be}" | sed 's/[&\\]/\\&/g')
+  if sed -e "s/__SCHEMA_VER__/${v_db_esc}/g" \
+         -e "s/__FE_VER__/${v_fe_esc}/g" \
+         -e "s/__BE_VER__/${v_be_esc}/g" \
+         -e "s/__DB_VER__/${v_db_esc}/g" \
+         "${file_path}" > "${tmpf}" && mv "${tmpf}" "${file_path}"; then
     info "Updated ${file_path}: schema_version, evi_fe, evi_be, evi_db set to ${version_db}, ${version_fe}, ${version_be}, ${version_db}"
     return 0
   fi
