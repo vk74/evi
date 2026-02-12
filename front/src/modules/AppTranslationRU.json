@@ -57,7 +57,7 @@
       "frontend": "фронтэнд",
       "backend": "бэкэнд",
       "database": "база данных",
-      "hostOs": "хостовая ОС",
+      "hostServerComponents": "компоненты хост-сервера",
       "reverseProxy": "обратный прокси"
     },
     "landing": {

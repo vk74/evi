@@ -1944,12 +1944,13 @@ display_final_summary() {
   printf "  connections allowed from:  ${GREEN}%s${NC}\n" "${cockpit_allowed}"
   printf "  account:  ${GREEN}your host OS user account${NC}\n"
   printf "  password:  ${GREEN}password of your host OS user account${NC}\n"
-  echo "  notes: used to manage your host and containers, monitor performance, create backups etc."
+  echo "  notes: used for management of host OS and containers, monitor performance, create backups etc."
   echo ""
 
   if [[ "${EVI_PGADMIN_ENABLED:-false}" == "true" ]]; then
     echo "pgadmin (database management):"
     printf "  address:  ${GREEN}http://%s:5445${NC}\n" "${domain}"
+    printf "  connections allowed from:  ${GREEN}%s${NC}\n" "${cockpit_allowed}"
     printf "  account:  ${GREEN}%s${NC}\n" "${EVI_PGADMIN_EMAIL:-${EVI_PGADMIN_EMAIL_DEFAULT}}"
     printf "  password:  ${GREEN}%s${NC}\n" "${EVI_ADMIN_DB_PASSWORD:-}"
     echo "  notes: used for postgres DB administration"

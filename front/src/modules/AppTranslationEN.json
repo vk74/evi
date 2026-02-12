@@ -62,7 +62,7 @@
       "frontend": "frontend",
       "backend": "backend",
       "database": "database",
-      "hostOs": "host os",
+      "hostServerComponents": "host server components",
       "reverseProxy": "reverse proxy"
     },
     "landing": {

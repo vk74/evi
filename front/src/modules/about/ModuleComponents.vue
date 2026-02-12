@@ -1,13 +1,18 @@
 <!--
   File: ModuleComponents.vue
-  Version: 1.3.0
+  Version: 1.4.0
   Description: Component for displaying system components information
   Purpose: Shows information about technologies used in evi software
   Features:
   - Sections titled by carrier name + version (e.g. frontend container evi-fe v.0.10.2)
   - Lists all major libraries and frameworks with source links per section
-  - Host OS includes Cockpit; pgAdmin has its own section; admin tools block removed
+  - Host server components section last; pgAdmin has its own section; admin tools block removed
   Type: Frontend file - ModuleComponents.vue
+
+  Changes in v1.4.0:
+  - Host OS block moved to last position and renamed to "host server components"
+  - Section title uses i18n: about.components.hostServerComponents (EN/RU)
+  - Dependency names remain in English in all sections
 
   Changes in v1.3.0:
   - Container versions (VERSION_FE, VERSION_BE, VERSION_DB, VERSION_PROXY, VERSION_PGADMIN) now automatically updated by release script
@@ -97,16 +102,6 @@ const componentsData = computed<ComponentsData>(() => ({
       { name: 'PostgreSQL Contrib - additional extensions', url: 'https://www.postgresql.org/docs/current/contrib.html' }
     ]
   },
-  hostOs: {
-    carrierLabel: 'host os',
-    carrierVersion: '',
-    items: [
-      { name: 'Podman - container runtime', url: 'https://podman.io' },
-      { name: 'curl - HTTP client for scripts', url: 'https://curl.se' },
-      { name: 'OpenSSL - TLS/crypto utilities', url: 'https://www.openssl.org' },
-      { name: 'Cockpit + cockpit-podman - container monitoring (optional)', url: 'https://cockpit-project.org' }
-    ]
-  },
   reverseProxy: {
     carrierLabel: 'reverse proxy container evi-reverse-proxy (Caddy)',
     carrierVersion: VERSION_PROXY,
@@ -119,6 +114,16 @@ const componentsData = computed<ComponentsData>(() => ({
     carrierVersion: VERSION_PGADMIN,
     items: [
       { name: 'pgAdmin 4.8 - database admin GUI', url: 'https://www.pgadmin.org' }
+    ]
+  },
+  hostOs: {
+    carrierLabel: t('about.components.hostServerComponents'),
+    carrierVersion: '',
+    items: [
+      { name: 'Podman - container runtime', url: 'https://podman.io' },
+      { name: 'curl - HTTP client for scripts', url: 'https://curl.se' },
+      { name: 'OpenSSL - TLS/crypto utilities', url: 'https://www.openssl.org' },
+      { name: 'Cockpit + cockpit-podman - container monitoring (optional)', url: 'https://cockpit-project.org' }
     ]
   }
 }))
@@ -173,20 +178,6 @@ const componentsData = computed<ComponentsData>(() => ({
         </div>
       </div>
 
-      <!-- Host OS Section -->
-      <div class="component-section">
-        <h3 class="section-title">{{ sectionTitle(componentsData.hostOs.carrierLabel, componentsData.hostOs.carrierVersion) }}</h3>
-        <div class="component-list">
-          <div
-            v-for="(item, index) in componentsData.hostOs.items"
-            :key="`hostOs-${index}`"
-            class="component-item"
-          >
-            <a :href="item.url" target="_blank" rel="noopener" class="component-link">{{ item.name }}</a>
-          </div>
-        </div>
-      </div>
-
       <!-- Reverse Proxy Section -->
       <div class="component-section">
         <h3 class="section-title">{{ sectionTitle(componentsData.reverseProxy.carrierLabel, componentsData.reverseProxy.carrierVersion) }}</h3>
@@ -208,6 +199,20 @@ const componentsData = computed<ComponentsData>(() => ({
           <div
             v-for="(item, index) in componentsData.pgAdmin.items"
             :key="`pgAdmin-${index}`"
+            class="component-item"
+          >
+            <a :href="item.url" target="_blank" rel="noopener" class="component-link">{{ item.name }}</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Host server components Section -->
+      <div class="component-section">
+        <h3 class="section-title">{{ sectionTitle(componentsData.hostOs.carrierLabel, componentsData.hostOs.carrierVersion) }}</h3>
+        <div class="component-list">
+          <div
+            v-for="(item, index) in componentsData.hostOs.items"
+            :key="`hostOs-${index}`"
             class="component-item"
           >
             <a :href="item.url" target="_blank" rel="noopener" class="component-link">{{ item.name }}</a>
