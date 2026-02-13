@@ -1,14 +1,20 @@
 #!/usr/bin/env bash
 #
-# version: 1.8.0
+# version: 1.9.0
 # purpose: developer release automation script for evi application.
 # deployment file: release.sh
 # logic:
-# - Version sync: root package.json (eviDbVersion, eviFeVersion, eviBeVersion), dev-ops and deploy env templates, db/init/02_schema.sql (app.instance: schema_version, evi_fe, evi_be, evi_db), front/src/modules/about/ModuleComponents.vue (all container versions).
-# - Builds multi-arch container images (linux/amd64, linux/arm64) for GHCR; publishes manifest lists; creates Git tags per component.
+# - Version sync: root package.json (eviDbVersion, eviFeVersion, eviBeVersion, version for product release), dev-ops and deploy env templates, db/init/02_schema.sql (app.instance: schema_version, evi_fe, evi_be, evi_db), front/src/modules/about/ModuleComponents.vue (all container versions).
+# - Builds multi-arch container images (linux/amd64, linux/arm64) for GHCR; publishes manifest lists.
+# - Single product release: step 10 creates GitHub Release (and tag vX.Y.Z on GitHub) via scripts/create-github-release.sh.
 # - Step-by-step (menu) and CLI commands only; end-user deploy tree is installed into directory evi in home directory (~/evi).
 # - Independent from install.sh and evictl (developer workflow only).
 # - Deploy directory contents (db migrations, demo-data) are produced by release scripts only; do not edit deploy manually.
+#
+# Changes in v1.9.0:
+# - Step 1 (set versions): added product release version prompt; sync updates package.json "version" via update_package_json_version.
+# - Removed creation of local git tags (evi-db, evi-fe, evi-be). Step 10 is now "create GitHub Release"; calls scripts/create-github-release.sh.
+# - CLI: removed command "tag"; added "release-record" to create GitHub Release. Versioning Guidelines mention product release version.
 #
 # Changes in v1.8.0:
 # - Automatic update of container versions in front/src/modules/about/ModuleComponents.vue during version sync (option 1).
@@ -1077,15 +1083,17 @@ sync_versions() {
   echo ""
   echo "Versioning Guidelines:"
   echo "  - Stable: X.Y.Z (e.g. 1.2.0). Intermediate: X.Y.Z-suffix (e.g. 1.3.0-rc1)."
-  echo "  - Do NOT include a leading 'v'; Git tags will add it (e.g. evi-fe/v1.2.0)."
+  echo "  - Do NOT include a leading 'v'; the release tag will add it (e.g. v1.2.0)."
+  echo "  - Product release version (package.json \"version\") is used for the single GitHub Release."
   echo ""
 
-  local current_db current_fe current_be
+  local current_db current_fe current_be current_release
   current_db=$(read_component_version "db")
   current_fe=$(read_component_version "fe")
   current_be=$(read_component_version "be")
+  current_release=$(read_version_from_package_json 2>/dev/null || echo "")
 
-  local version_db version_fe version_be
+  local version_db version_fe version_be version_release
 
   # Prompt for evi-db version
   while true; do
@@ -1126,11 +1134,28 @@ sync_versions() {
     err "Invalid version format. Please use X.Y.Z or X.Y.Z-suffix."
   done
 
-  info "target versions: evi-db ${version_db}, evi-fe ${version_fe}, evi-be ${version_be}"
+  # Prompt for product release version (package.json "version")
+  while true; do
+    read -r -p "Current product release version: ${current_release}. Enter new version (or press Enter to keep ${current_release}): " version_release
+    if [[ -z "${version_release}" ]]; then
+      version_release="${current_release}"
+      break
+    fi
+    if validate_version_format "${version_release}"; then
+      break
+    fi
+    err "Invalid version format. Please use X.Y.Z or X.Y.Z-suffix."
+  done
+  if [[ -z "${version_release}" ]]; then
+    die "Product release version is required. Set package.json \"version\" or enter a version."
+  fi
 
-  # Update root package.json (source of truth for container versions)
-  log "Updating root package.json (eviDbVersion, eviFeVersion, eviBeVersion)..."
+  info "target versions: evi-db ${version_db}, evi-fe ${version_fe}, evi-be ${version_be}, product release ${version_release}"
+
+  # Update root package.json (source of truth for container versions and product release version)
+  log "Updating root package.json (eviDbVersion, eviFeVersion, eviBeVersion, version)..."
   update_root_package_json_component_versions "${version_db}" "${version_fe}" "${version_be}"
+  update_package_json_version "${ROOT_PACKAGE_JSON}" "${version_release}"
 
   # Update dev-ops/common/env/evi.template.env
   log "Updating dev-ops/common/env/evi.template.env..."
@@ -1160,7 +1185,7 @@ sync_versions() {
   update_vue_component_versions "${version_fe}" "${version_be}" "${version_db}"
 
   log "version synchronization completed"
-  info "evi-db: ${version_db}, evi-fe: ${version_fe}, evi-be: ${version_be}"
+  info "evi-db: ${version_db}, evi-fe: ${version_fe}, evi-be: ${version_be}, product release: ${version_release}"
 }
 
 # run prepare-deploy.sh (copy db/migrations and db/demo-data to deploy/db/)
@@ -1488,52 +1513,6 @@ publish_image_all() {
   log "all images pushed to GHCR"
 }
 
-# Create one Git tag for a component (evi-db/vX.Y.Z, evi-fe/vX.Y.Z, evi-be/vX.Y.Z).
-create_one_git_tag() {
-  local component="$1"
-  local version="$2"
-  local tag="${component}/v${version}"
-  if git tag -l "${tag}" | grep -q "^${tag}$"; then
-    warn "Git tag ${tag} already exists"
-    if ! confirm "Recreate tag ${tag}?" "n"; then
-      info "Skipping tag ${tag}"
-      return 0
-    fi
-    git tag -d "${tag}" 2>/dev/null || true
-    if git ls-remote --tags origin "${tag}" 2>/dev/null | grep -q "${tag}"; then
-      warn "Tag ${tag} exists on remote. You may need to delete it manually."
-    fi
-  fi
-  if git tag "${tag}"; then
-    info "Created Git tag: ${tag}"
-    git show "${tag}" --no-patch --format="  Tag: %D%n  Commit: %H%n  Author: %an <%ae>%n  Date: %ad" 2>/dev/null || true
-  else
-    err "Failed to create Git tag: ${tag}"
-    return 1
-  fi
-  return 0
-}
-
-# Create Git tags for evi-db, evi-fe, evi-be (evi-db/vX.Y.Z, evi-fe/vX.Y.Z, evi-be/vX.Y.Z).
-create_git_tag() {
-  log "creating git tags for evi-db, evi-fe, evi-be..."
-  require_cmd git
-  local version_db version_fe version_be
-  version_db=$(read_component_version "db")
-  version_fe=$(read_component_version "fe")
-  version_be=$(read_component_version "be")
-  for v in "${version_db}" "${version_fe}" "${version_be}"; do
-    if ! validate_version "${v}"; then
-      die "Invalid version in package.json (eviDbVersion, eviFeVersion, eviBeVersion)"
-    fi
-  done
-  info "Tags to create: evi-db/v${version_db}, evi-fe/v${version_fe}, evi-be/v${version_be}"
-  create_one_git_tag "evi-db" "${version_db}"
-  create_one_git_tag "evi-fe" "${version_fe}"
-  create_one_git_tag "evi-be" "${version_be}"
-  log "git tag creation completed"
-}
-
 # --- Menu Interface ---
 
 show_menu() {
@@ -1551,7 +1530,7 @@ show_menu() {
   echo "  7) push evi-be to GHCR"
   echo "  8) push evi-db to GHCR"
   echo "  9) push all images to GHCR"
-  echo " 10) create git version tags (evi-db, evi-fe, evi-be)"
+  echo " 10) create GitHub Release (product tag vX.Y.Z from package.json version)"
   echo "  0) exit"
   echo ""
 }
@@ -1607,7 +1586,7 @@ main_menu() {
         read -r -p "press enter to continue..."
         ;;
       10)
-        create_git_tag
+        "${SCRIPT_DIR}/scripts/create-github-release.sh" || true
         echo ""
         read -r -p "press enter to continue..."
         ;;
@@ -1642,7 +1621,7 @@ commands:
   push-be         push evi-be to GHCR
   push-db         push evi-db to GHCR
   push-all        push all images (evi-fe, evi-be, evi-db) to GHCR in one step
-  tag             create git tags for evi-db, evi-fe, evi-be (from package.json)
+  release-record  create GitHub Release (product tag vX.Y.Z from package.json version)
   help            show this help message
 
 examples:
@@ -1652,6 +1631,7 @@ examples:
   ./release.sh build-all     # build all images
   ./release.sh push-fe       # push frontend image to GHCR
   ./release.sh push-all      # push all images to GHCR
+  ./release.sh release-record  # create GitHub Release
 
 For full cleanup of unused images (including base images pulled during build), run manually:
   podman image prune -a -f
@@ -1702,8 +1682,8 @@ main() {
     push-all)
       publish_image_all
       ;;
-    tag)
-      create_git_tag
+    release-record)
+      "${SCRIPT_DIR}/scripts/create-github-release.sh"
       ;;
     help|--help|-h)
       show_help
