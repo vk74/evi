@@ -1521,7 +1521,7 @@ show_menu() {
   echo "|           evi release manager, main menu                     |"
   echo "+--------------------------------------------------------------+"
   echo ""
-  echo "  1) set versions (evi-db, evi-fe, evi-be) and prepare deploy files"
+  echo "  1) set versions (evi-db, evi-fe, evi-be, product release) and prepare deploy files"
   echo "  2) build evi-fe image"
   echo "  3) build evi-be image"
   echo "  4) build evi-db image"
@@ -1530,7 +1530,7 @@ show_menu() {
   echo "  7) push evi-be to GHCR"
   echo "  8) push evi-db to GHCR"
   echo "  9) push all images to GHCR"
-  echo " 10) create GitHub Release (product tag vX.Y.Z from package.json version)"
+  echo " 10) create GitHub Release (tag vX.Y.Z)"
   echo "  0) exit"
   echo ""
 }
@@ -1612,7 +1612,7 @@ usage:
 
 commands:
   menu            show interactive menu (default)
-  prepare         set versions (evi-db, evi-fe, evi-be) and prepare deploy files (sync + copy db to deploy)
+  prepare         set versions (evi-db, evi-fe, evi-be, product release) and prepare deploy files (sync + copy db to deploy)
   build-fe        build evi-fe container image only
   build-be        build evi-be container image only
   build-db        build evi-db container image only
@@ -1621,7 +1621,7 @@ commands:
   push-be         push evi-be to GHCR
   push-db         push evi-db to GHCR
   push-all        push all images (evi-fe, evi-be, evi-db) to GHCR in one step
-  release-record  create GitHub Release (product tag vX.Y.Z from package.json version)
+  release-record  create GitHub Release (tag vX.Y.Z)
   help            show this help message
 
 examples:
