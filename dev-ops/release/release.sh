@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
 #
-# version: 1.9.0
+# version: 1.10.0
 # purpose: developer release automation script for evi application.
 # deployment file: release.sh
 # logic:
 # - Version sync: root package.json (eviDbVersion, eviFeVersion, eviBeVersion, version for product release), dev-ops and deploy env templates, db/init/02_schema.sql (app.instance: schema_version, evi_fe, evi_be, evi_db), front/src/modules/about/ModuleComponents.vue (all container versions).
 # - Builds multi-arch container images (linux/amd64, linux/arm64) for GHCR; publishes manifest lists.
-# - Single product release: step 10 creates GitHub Release (and tag vX.Y.Z on GitHub) via scripts/create-github-release.sh.
+# - Single product release: step 10 creates GitHub Release (tag vX.Y.Z) via create-github-release.sh and writes release record to dev-ops/RELEASE_NOTES.md via update-release-notes.sh.
 # - Step-by-step (menu) and CLI commands only; end-user deploy tree is installed into directory evi in home directory (~/evi).
 # - Independent from install.sh and evictl (developer workflow only).
 # - Deploy directory contents (db migrations, demo-data) are produced by release scripts only; do not edit deploy manually.
+#
+# Changes in v1.10.0:
+# - Step 10: after create-github-release.sh, calls update-release-notes.sh to append release record to dev-ops/RELEASE_NOTES.md.
+# - Menu: "create GitHub Release and write release record"; release-record CLI does both.
+# - RELEASE_NOTES moved to dev-ops; release diary format with components, scope, notes, contributors.
 #
 # Changes in v1.9.0:
 # - Step 1 (set versions): added product release version prompt; sync updates package.json "version" via update_package_json_version.
@@ -49,7 +54,7 @@
 # - sub-scripts in dev-ops/release/scripts: sync-version.sh, prepare-deploy.sh, update-release-notes.sh.
 # - update release notes: version, images, deploy files list (automatic find deploy).
 # - removed automatic full release (menu and command "release"); step-by-step only.
-# - single release notes file: deploy/RELEASE_NOTES.md (used by install.sh); updated in step "update release notes".
+# - release notes: dev-ops/RELEASE_NOTES.md (release diary); updated in step 10 via update-release-notes.sh.
 # - prepare-deploy: do not overwrite existing files in deploy; copy only new; warn (red) when source differs; rollback = manual removal in deploy.
 # - removed all evi-install mentions; deploy tree installed into directory evi in home (~/evi).
 # - deploy directory produced by release scripts only; do not edit deploy manually.
@@ -1530,7 +1535,7 @@ show_menu() {
   echo "  7) push evi-be to GHCR"
   echo "  8) push evi-db to GHCR"
   echo "  9) push all images to GHCR"
-  echo " 10) create GitHub Release (tag vX.Y.Z)"
+  echo " 10) create GitHub Release and write release record (tag vX.Y.Z)"
   echo "  0) exit"
   echo ""
 }
@@ -1586,7 +1591,9 @@ main_menu() {
         read -r -p "press enter to continue..."
         ;;
       10)
-        "${SCRIPT_DIR}/scripts/create-github-release.sh" || true
+        if "${SCRIPT_DIR}/scripts/create-github-release.sh"; then
+          "${SCRIPT_DIR}/scripts/update-release-notes.sh"
+        fi
         echo ""
         read -r -p "press enter to continue..."
         ;;
@@ -1621,7 +1628,7 @@ commands:
   push-be         push evi-be to GHCR
   push-db         push evi-db to GHCR
   push-all        push all images (evi-fe, evi-be, evi-db) to GHCR in one step
-  release-record  create GitHub Release (tag vX.Y.Z)
+  release-record  create GitHub Release and write release record (tag vX.Y.Z)
   help            show this help message
 
 examples:
@@ -1631,7 +1638,7 @@ examples:
   ./release.sh build-all     # build all images
   ./release.sh push-fe       # push frontend image to GHCR
   ./release.sh push-all      # push all images to GHCR
-  ./release.sh release-record  # create GitHub Release
+  ./release.sh release-record  # create GitHub Release and write release record
 
 For full cleanup of unused images (including base images pulled during build), run manually:
   podman image prune -a -f
@@ -1683,7 +1690,9 @@ main() {
       publish_image_all
       ;;
     release-record)
-      "${SCRIPT_DIR}/scripts/create-github-release.sh"
+      if "${SCRIPT_DIR}/scripts/create-github-release.sh"; then
+        "${SCRIPT_DIR}/scripts/update-release-notes.sh"
+      fi
       ;;
     help|--help|-h)
       show_help
