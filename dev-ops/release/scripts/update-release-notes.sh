@@ -1,16 +1,20 @@
 #!/usr/bin/env bash
 #
-# version: 2.0.0
+# version: 1.3.0
 # purpose: append release record to dev-ops/RELEASE_NOTES.md (release diary format).
 # file: update-release-notes.sh (dev-ops/release/scripts)
 # logic: called from release.sh step 10 after create-github-release.sh. Reads version from package.json,
 #        scope from --scope or interactive prompt. Extracts component versions, git log notes, contributors.
 #        Inserts new record at beginning of RELEASE_NOTES.md.
 #
-# changes in v2.0.0:
+# changes in v1.2.0:
 # - complete rewrite: release diary format with components, scope, notes, contributors
 # - version from package.json "version"; scope for partial releases
 # - git log and git shortlog from previous GitHub tag; key deps from package.json
+#
+# changes in v1.3.0:
+# - Notes: each commit line now includes author (format: "- subject — Author Name")
+# - Contributors: replaced name list with total count ("N authors")
 
 set -euo pipefail
 
@@ -79,10 +83,10 @@ get_git_notes() {
   else
     range="HEAD"
   fi
-  git log "${range}" --pretty=format:"- %s" 2>/dev/null | sed 's/^- - /- /' || echo ""
+  git log "${range}" --pretty=format:"- %s — %an" 2>/dev/null | sed 's/^- - /- /' || echo ""
 }
 
-get_contributors() {
+get_contributor_count() {
   local prev_tag="$1"
   local range
   if [[ -n "${prev_tag}" ]]; then
@@ -90,7 +94,7 @@ get_contributors() {
   else
     range="HEAD"
   fi
-  git shortlog -sn "${range}" 2>/dev/null | awk '{name=$2; for(i=3;i<=NF;i++) name=name" "$i; printf "%s%s", sep, name; sep=", "} END{print ""}' || echo ""
+  git shortlog -sn "${range}" 2>/dev/null | wc -l | tr -d ' '
 }
 
 extract_schema_version() {
@@ -236,8 +240,8 @@ main() {
   prev_tag=$(get_prev_tag)
   local notes
   notes=$(get_git_notes "${prev_tag}")
-  local contributors
-  contributors=$(get_contributors "${prev_tag}")
+  local contributor_count
+  contributor_count=$(get_contributor_count "${prev_tag}")
   local key_deps
   key_deps=$(get_key_deps)
 
@@ -256,10 +260,8 @@ main() {
     notes_block="${notes_block}- (no commits in range)"$'\n\n'
   fi
 
-  local contributors_block=""
-  if [[ -n "${contributors}" ]]; then
-    contributors_block="**Contributors:** ${contributors} (auto from git shortlog)"$'\n\n'
-  fi
+  contributor_count=${contributor_count:-0}
+  local contributors_block="**Contributors:** ${contributor_count} authors"$'\n\n'
 
   local record="## ${release_date} | ${version}"$'\n\n'
   record="${record}**Scope:** ${scope}"$'\n\n'
