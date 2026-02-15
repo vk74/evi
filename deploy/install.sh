@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 #
-# Version: 1.17.0
+# Version: 1.18.0
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
 # - Single entry point: main_menu() always. When evi.env and evi.secrets.env exist (CONFIG_EXISTS=1), main menu shows context-aware labels: section "manage deployment", option 1 "check & repair prerequisites", option 2 "reconfigure containers environment", option 3 "apply configuration and restart containers". Otherwise first-run labels: section "new deployment", option 1 "install prerequisites", option 2 "containers environment configuration", option 3 "deploy and start evi containers".
+#
+# Changes in v1.18.0:
+# - apply_firewall_admin_tools: remove all existing rules for 9090/5445 by rule number (ufw status numbered, delete in reverse order) before adding new rules so reconfiguration does not leave duplicate rules.
+# - apply_firewall_admin_tools: add separate UFW rules per port (9090 and 5445) for allowed_ips and allowed_cidr so each port gets its own IPv4/IPv6 rules, consistent with localhost and any.
 #
 # Changes in v1.17.0:
 # - Re-run UX: main menu section header "new deployment" → "manage deployment" when CONFIG_EXISTS.
@@ -817,11 +821,12 @@ apply_firewall_admin_tools() {
   fi
 
   log "applying firewall rules for cockpit (ports 9090, 5445)..."
-  # Remove any existing rules for 9090 and 5445 (global allow or from 127.0.0.1 from prerequisites)
-  sudo ufw delete allow 9090/tcp 2>/dev/null || true
-  sudo ufw delete allow 5445/tcp 2>/dev/null || true
-  sudo ufw delete allow from 127.0.0.1 to any port 9090 2>/dev/null || true
-  sudo ufw delete allow from 127.0.0.1 to any port 5445 2>/dev/null || true
+  # Remove all existing rules for 9090 and 5445 by rule number (covers combined rules like "from X to port 9090,5445" and per-port rules)
+  local nums n
+  nums=$(sudo ufw status numbered 2>/dev/null | grep -E '(9090|5445)/' | sed -n 's/.*\[ *\([0-9]*\)\].*/\1/p' | sort -rn | tr '\n' ' ')
+  for n in ${nums}; do
+    sudo ufw --force delete "${n}" 2>/dev/null || true
+  done
 
   case "${access}" in
     localhost)
@@ -838,7 +843,8 @@ apply_firewall_admin_tools() {
         ip=$(echo "${ip}" | tr -d ' ')
         [[ -z "${ip}" ]] && continue
         if validate_ip "${ip}"; then
-          sudo ufw allow from "${ip}" to any port 9090,5445 proto tcp 2>/dev/null || true
+          sudo ufw allow from "${ip}" to any port 9090 proto tcp 2>/dev/null || true
+          sudo ufw allow from "${ip}" to any port 5445 proto tcp 2>/dev/null || true
         fi
       done <<< "${allowed}"
       info "firewall: cockpit allowed from ${allowed}."
@@ -849,7 +855,8 @@ apply_firewall_admin_tools() {
         return 0
       fi
       if validate_cidr "${allowed}"; then
-        sudo ufw allow from "${allowed}" to any port 9090,5445 proto tcp 2>/dev/null || true
+        sudo ufw allow from "${allowed}" to any port 9090 proto tcp 2>/dev/null || true
+        sudo ufw allow from "${allowed}" to any port 5445 proto tcp 2>/dev/null || true
         info "firewall: cockpit allowed from ${allowed}."
       else
         warn "firewall: invalid CIDR ${allowed}; skipping."
