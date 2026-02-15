@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
 #
-# Version: 1.16.0
+# Version: 1.17.0
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
-# - Single entry point: main_menu() always. When evi.env and evi.secrets.env exist (CONFIG_EXISTS=1), main menu shows banner "evi configuration already exists", same options 0-5, option 3 label "redeploy and restart evi containers" (do_redeploy); otherwise option 3 "deploy and start evi containers" (deploy_up).
+# - Single entry point: main_menu() always. When evi.env and evi.secrets.env exist (CONFIG_EXISTS=1), main menu shows context-aware labels: section "manage deployment", option 1 "check & repair prerequisites", option 2 "reconfigure containers environment", option 3 "apply configuration and restart containers". Otherwise first-run labels: section "new deployment", option 1 "install prerequisites", option 2 "containers environment configuration", option 3 "deploy and start evi containers".
+#
+# Changes in v1.17.0:
+# - Re-run UX: main menu section header "new deployment" → "manage deployment" when CONFIG_EXISTS.
+# - Option 1 re-run: "check & repair prerequisites" — dispatches to deploy/scripts/check-prerequisites.sh (diagnose → report → repair → verify) instead of blind reinstall.
+# - Option 2 re-run label: "reconfigure containers environment"; post-reconfigure reminder to run option 3.
+# - Option 3 re-run label: "apply configuration and restart containers" (was "redeploy and restart"); function renamed do_redeploy → do_apply_restart.
 #
 # Changes in v1.16.0:
 # - Deploy kit / runtime config split: introduced CONFIG_DIR (~/evi/config) for all runtime data.
@@ -102,7 +108,7 @@
 # - Reconfigure flow moved to evi-reconfigure.sh: guided_reconfigure() with same step order and "keep current" as option 1; empty-password guard when keeping passwords.
 #
 # Changes in v1.9.3:
-# - Subsequent run: delegate to evi-reconfigure.sh; removed menu_subsequent and reconfigure_edit_existing. New menu: exit, guided config, edit evi.env, edit evi.secrets.env, redeploy. Redeploy uses do_redeploy (init + restart only; no image pull — uses existing images; evi-db volume preserved). Upgrading to new image versions is separate (e.g. evictl update). Guided setup: "keep current setting" as first option in every step.
+# - Subsequent run: delegate to evi-reconfigure.sh; removed menu_subsequent and reconfigure_edit_existing. New menu: exit, guided config, edit evi.env, edit evi.secrets.env, redeploy. Redeploy uses do_apply_restart (init + restart only; no image pull — uses existing images; evi-db volume preserved). Upgrading to new image versions is separate (e.g. evictl update). Guided setup: "keep current setting" as first option in every step.
 #
 # Changes in v1.9.2:
 # - Prerequisites: UFW only opens application ports 80, 443. Admin ports 9090/5445 are configured only in Step 2 (environment configuration).
@@ -1495,7 +1501,11 @@ guided_setup() {
   
   echo ""
   info "guided setup complete!"
-  info "you can now proceed to 'deploy' to pull containers and start the application."
+  if [[ "${reconfigure_mode}" -eq 1 ]]; then
+    info "configuration updated. run option 3 to apply changes and restart containers."
+  else
+    info "you can now proceed to 'deploy' to pull containers and start the application."
+  fi
   read -r -p "press enter to continue..."
 }
 
@@ -2245,10 +2255,10 @@ deploy_pull_images() {
   return 0
 }
 
-# Redeploy: init and restart services using existing images (no pull). Applies new env/secrets to current containers.
-# Does not remove evi-db volume. For upgrading to new image versions use Cockpit or re-run install/redeploy with updated images.
-do_redeploy() {
-  log "starting redeploy (using existing images, no pull)..."
+# Apply configuration and restart: init and restart services using existing images (no pull). Applies new env/secrets to current containers.
+# Does not remove evi-db volume. For upgrading to new image versions use Cockpit or re-run install with updated images.
+do_apply_restart() {
+  log "applying configuration and restarting containers..."
   ensure_executable
   if [[ ! -f "${TARGET_ENV}" || ! -f "${TARGET_SECRETS}" ]]; then
     err "configuration files missing."
@@ -2298,7 +2308,7 @@ do_redeploy() {
     fi
   done
   echo ""
-  info "redeploy complete! for upgrades and daily operations use Cockpit (evi admin panel at :9090)."
+  info "configuration applied, containers restarted. for daily operations use Cockpit (evi admin panel at :9090)."
   read -r -p "press enter to continue..."
 }
 
@@ -3030,12 +3040,15 @@ main_menu() {
     fi
     echo "  0) exit"
     echo ""
-    printf "  ${GRAY}--- new deployment ---${NC}\n"
-    echo "  1) install prerequisites on host server (requires sudo)"
-    echo "  2) containers environment configuration (rootless)"
     if [[ "${CONFIG_EXISTS}" -eq 1 ]]; then
-      echo "  3) redeploy and restart evi containers (rootless)"
+      printf "  ${GRAY}--- manage deployment ---${NC}\n"
+      echo "  1) check & repair prerequisites (requires sudo)"
+      echo "  2) reconfigure containers environment (rootless)"
+      echo "  3) apply configuration and restart containers (rootless)"
     else
+      printf "  ${GRAY}--- new deployment ---${NC}\n"
+      echo "  1) install prerequisites on host server (requires sudo)"
+      echo "  2) containers environment configuration (rootless)"
       echo "  3) deploy and start evi containers (rootless)"
     fi
     echo ""
@@ -3048,12 +3061,18 @@ main_menu() {
     read -r -p "select [0-5]: " opt
     case $opt in
       0) log "bye!"; exit 0 ;;
-      1) install_prerequisites_all ;;
+      1)
+        if [[ "${CONFIG_EXISTS}" -eq 1 ]]; then
+          bash "${SCRIPTS_DIR}/check-prerequisites.sh" "${SCRIPT_DIR}"
+        else
+          install_prerequisites_all
+        fi
+        ;;
       2) menu_env_config ;;
       3)
         read -r -p "Start deployment now? [y/N]: " deploy_confirm
         if [[ "${deploy_confirm}" == [yY] ]]; then
-          if [[ "${CONFIG_EXISTS}" -eq 1 ]]; then do_redeploy; else deploy_up; fi
+          if [[ "${CONFIG_EXISTS}" -eq 1 ]]; then do_apply_restart; else deploy_up; fi
         else
           log "deployment cancelled."
         fi
