@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.2.0
+# Version: 1.2.1
 # Purpose: Estimate backup size and compression time for EVI backup.
 # Deployment file: backup-estimate.sh
 # Logic:
@@ -9,6 +9,9 @@
 # - Ratios account for: podman save compression, pg_dump -Fc compression,
 #   tar packaging overhead, and final compressor efficiency
 # - Outputs JSON with all estimates; checks available disk space
+#
+# Changes in v1.2.1:
+# - Switched to CONFIG_DIR layout: env files read from config/, state from config/state/.
 #
 # Changes in v1.2.0:
 # - Removed slow measurement approach (podman save | wc -c, pg_dump | wc -c)
@@ -46,12 +49,12 @@ err() { printf "${RED}ERROR:${NC} %s\n" "$*" >&2; }
 # Get directory of this script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOYMENT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-ENV_DIR="${DEPLOYMENT_DIR}/env"
 
-# Default paths
-EVI_STATE_DIR="${EVI_STATE_DIR:-${HOME}/.local/share/evi}"
-EVI_ENV_FILE="${ENV_DIR}/evi.env"
-EVI_SECRETS_FILE="${ENV_DIR}/evi.secrets.env"
+# Runtime config paths (config/ is preserved across updates)
+CONFIG_DIR="${DEPLOYMENT_DIR}/config"
+EVI_STATE_DIR="${EVI_STATE_DIR:-${CONFIG_DIR}/state}"
+EVI_ENV_FILE="${CONFIG_DIR}/evi.env"
+EVI_SECRETS_FILE="${CONFIG_DIR}/evi.secrets.env"
 
 # Load environment if available
 load_env() {
@@ -236,7 +239,7 @@ main() {
   
   # TLS certificates
   local tls_bytes=0
-  local tls_dir="${ENV_DIR}/tls"
+  local tls_dir="${CONFIG_DIR}/tls"
   if [[ -d "${tls_dir}" ]]; then
     tls_bytes=$(get_size_bytes "${tls_dir}")
   fi

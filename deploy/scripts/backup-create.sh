@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.8
+# Version: 1.0.9
 # Purpose: Create EVI app data and containers backup including container images, database, and configuration.
 # Deployment file: backup-create.sh
 # Logic:
@@ -12,6 +12,11 @@
 # - Archives evi repository
 # - Compresses and optionally encrypts the data archive
 # - Generates README-RESTORE-STEP-BY-STEP.md with server info
+#
+# Changes in v1.0.9:
+# - Switched to CONFIG_DIR layout: env files read from config/, TLS from config/tls/, state from config/state/.
+# - Archive repo exclusions updated: exclude entire config/ dir instead of env/evi.env, env/tls.
+# - TLS check in manifest uses CONFIG_DIR/tls instead of ENV_DIR/tls.
 #
 # Changes in v1.0.8:
 # - Save UFW status snapshot (ufw/ufw-status.txt) for documentation
@@ -72,7 +77,7 @@ else
 fi
 
 # Script version (printed at start of backup output)
-BACKUP_SCRIPT_VERSION="1.0.8"
+BACKUP_SCRIPT_VERSION="1.0.9"
 
 # Spinner characters
 SPINNER_CHARS="⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
@@ -118,12 +123,13 @@ trap cleanup EXIT
 # Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOYMENT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-ENV_DIR="${DEPLOYMENT_DIR}/env"
 
-# Default paths
-EVI_STATE_DIR="${EVI_STATE_DIR:-${HOME}/.local/share/evi}"
-EVI_ENV_FILE="${ENV_DIR}/evi.env"
-EVI_SECRETS_FILE="${ENV_DIR}/evi.secrets.env"
+# Runtime config paths (config/ is preserved across updates)
+CONFIG_DIR="${DEPLOYMENT_DIR}/config"
+TLS_DIR="${CONFIG_DIR}/tls"
+EVI_STATE_DIR="${EVI_STATE_DIR:-${CONFIG_DIR}/state}"
+EVI_ENV_FILE="${CONFIG_DIR}/evi.env"
+EVI_SECRETS_FILE="${CONFIG_DIR}/evi.secrets.env"
 
 # Backup settings (can be overridden by environment)
 BACKUP_DIR="${BACKUP_DIR:-}"
@@ -236,14 +242,13 @@ copy_env_files() {
   chmod 600 "${env_dir}"/*.env 2>/dev/null || true
 }
 
-# Copy TLS certificates
+# Copy TLS certificates (from config/tls)
 copy_tls_files() {
   local tls_dir="$1"
-  local source_dir="${ENV_DIR}/tls"
   
-  if [[ -d "${source_dir}" ]] && [[ -n "$(ls -A "${source_dir}" 2>/dev/null)" ]]; then
+  if [[ -d "${TLS_DIR}" ]] && [[ -n "$(ls -A "${TLS_DIR}" 2>/dev/null)" ]]; then
     mkdir -p "${tls_dir}"
-    cp -r "${source_dir}"/* "${tls_dir}/" 2>/dev/null || true
+    cp -r "${TLS_DIR}"/* "${tls_dir}/" 2>/dev/null || true
     chmod 600 "${tls_dir}"/*.pem 2>/dev/null || true
   fi
 }
@@ -326,7 +331,7 @@ create_manifest() {
   
   # Determine boolean values
   local tls_enabled="false"
-  [[ -d "${ENV_DIR}/tls" ]] && tls_enabled="true"
+  [[ -d "${TLS_DIR}" ]] && tls_enabled="true"
   
   local jwt_enabled="false"
   [[ -f "${EVI_STATE_DIR}/secrets/jwt_private_key.pem" ]] && jwt_enabled="true"
@@ -585,13 +590,11 @@ archive_install_repo() {
   local output_file="$1"
   local evi_version="$2"
   
-  # Create archive excluding .git, env files with real data, and backup plan
+  # Create archive excluding .git, runtime config dir, and backup plan
   tar -czf "${output_file}" \
     -C "$(dirname "${DEPLOYMENT_DIR}")" \
     --exclude='.git' \
-    --exclude='env/evi.env' \
-    --exclude='env/evi.secrets.env' \
-    --exclude='env/tls' \
+    --exclude='config' \
     --exclude='backup-function-plan.md' \
     --transform "s|^$(basename "${DEPLOYMENT_DIR}")|evi|" \
     "$(basename "${DEPLOYMENT_DIR}")" || return 1

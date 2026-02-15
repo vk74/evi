@@ -1,16 +1,21 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.4
+# Version: 1.0.5
 # Purpose: Full uninstall of evi: containers, volumes, secrets, images, state, config, quadlets, cockpit panels, UFW rules, sysctl, apt packages.
 # Backend script, called from install.sh (option 5) or evi-reconfigure.sh. Can be run standalone.
-# Logic: Single confirmation (type 'yes'), stop services, remove podman resources, remove dirs (state with sudo for pgadmin data), quadlets, systemd reload,
+# Logic: Single confirmation (type 'yes'), stop services, remove podman resources, remove dirs (config/ with sudo for pgadmin data), quadlets, systemd reload,
 #        then sudo block: cockpit panels, UFW rules by number for ports 80/443/9090/5445, sysctl, apt remove. Prints instruction to run rm -rf ~/evi.
 #
-# Changes in v1.0.3:
-# - On success: no "press enter to exit"; exit with code 2 so install.sh can cd to HOME and exit (user lands in ~ to paste rm -rf ~/evi). On cancel still exit 0.
+# Changes in v1.0.5:
+# - Switched to CONFIG_DIR layout: remove ~/evi/config (contains state, tls, env files, backup, updates)
+#   instead of separate ~/.local/share/evi and ~/.config/evi.
+# - CONFIG_DIR computed from script location (DEPLOYMENT_DIR/config).
 #
 # Changes in v1.0.4:
 # - Final hint shows two commands (cd ~ and rm -rf ~/evi) so user can paste both when shell stays in evi dir.
+#
+# Changes in v1.0.3:
+# - On success: no "press enter to exit"; exit with code 2 so install.sh can cd to HOME and exit (user lands in ~ to paste rm -rf ~/evi). On cancel still exit 0.
 #
 # Changes in v1.0.2:
 # - Colors/symbols: use ANSI-C quoting ($'...') so green checkmarks and colors render in terminal instead of literal \033.
@@ -27,8 +32,9 @@
 set -euo pipefail
 
 # Paths (same defaults as install.sh)
-EVI_STATE_DIR_DEFAULT="${HOME}/.local/share/evi"
-EVI_CONFIG_DIR_DEFAULT="${HOME}/.config/evi"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEPLOYMENT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+CONFIG_DIR="${DEPLOYMENT_DIR}/config"
 EVI_QUADLET_DIR_DEFAULT="${HOME}/.config/containers/systemd"
 
 # Colors and symbols (ANSI-C quoting so escapes render in terminal)
@@ -129,21 +135,13 @@ main() {
     printf "  %s quadlet files removed\n" "${SYM_OK}"
   fi
 
-  local state_dir="${EVI_STATE_DIR_DEFAULT}"
-  log "removing state data (using sudo for pgadmin data owned by container user)..."
-  if [[ -d "${state_dir}" ]]; then
-    if sudo rm -rf "${state_dir}" 2>/dev/null; then
-      printf "  %s removed %s\n" "${SYM_OK}" "${state_dir}"
+  log "removing config directory (using sudo for pgadmin data owned by container user)..."
+  if [[ -d "${CONFIG_DIR}" ]]; then
+    if sudo rm -rf "${CONFIG_DIR}" 2>/dev/null; then
+      printf "  %s removed %s\n" "${SYM_OK}" "${CONFIG_DIR}"
     else
-      warn "could not remove some files in ${state_dir} (permission denied). try: sudo rm -rf ${state_dir}"
+      warn "could not remove some files in ${CONFIG_DIR} (permission denied). try: sudo rm -rf ${CONFIG_DIR}"
     fi
-  fi
-
-  local config_dir="${EVI_CONFIG_DIR_DEFAULT}"
-  log "removing config data..."
-  if [[ -d "${config_dir}" ]]; then
-    rm -rf "${config_dir}"
-    printf "  %s removed %s\n" "${SYM_OK}" "${config_dir}"
   fi
 
   log "reloading systemd..."

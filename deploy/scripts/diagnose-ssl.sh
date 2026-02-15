@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.0
+# Version: 1.0.1
 # Purpose: Diagnostic script for SSL/TLS issues in evi deployment
 # Deployment file: diagnose-ssl.sh
 # Logic: Checks configuration files, logs, and container status for SSL issues
+#
+# Changes in v1.0.1:
+# - Updated to CONFIG_DIR layout: env files in config/, TLS in config/tls/, state in config/state/.
 #
 
 set -euo pipefail
@@ -11,9 +14,12 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOYMENT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# Try multiple possible locations for env files
+# Runtime config directory (evi.env and evi.secrets.env live here)
+CONFIG_DIR="${DEPLOYMENT_DIR}/config"
+
+# Try config/ first; fall back to env/ for older layouts or find evi.env
 ENV_DIR=""
-for candidate in "${DEPLOYMENT_DIR}/env" "$(cd "${DEPLOYMENT_DIR}/.." && pwd)/env" "./env" "$(pwd)/env"; do
+for candidate in "${CONFIG_DIR}" "${DEPLOYMENT_DIR}/env" "$(cd "${DEPLOYMENT_DIR}/.." && pwd)/env" "./env" "$(pwd)/env"; do
 	if [[ -d "${candidate}" && -f "${candidate}/evi.env" ]]; then
 		ENV_DIR="${candidate}"
 		break
@@ -28,9 +34,9 @@ if [[ -z "${ENV_DIR}" ]]; then
 	fi
 fi
 
-# Final fallback: use deployment/env even if it doesn't exist yet
+# Final fallback: use config/ even if it doesn't exist yet
 if [[ -z "${ENV_DIR}" ]]; then
-	ENV_DIR="${DEPLOYMENT_DIR}/env"
+	ENV_DIR="${CONFIG_DIR}"
 fi
 
 RED='\033[0;31m'
@@ -85,7 +91,7 @@ echo ""
 
 # 2. Check generated Caddyfile
 log "2. Checking generated Caddyfile..."
-STATE_DIR="${HOME}/.local/share/evi"
+STATE_DIR="${CONFIG_DIR}/state"
 if [[ -f "${STATE_DIR}/reverse-proxy/Caddyfile" ]]; then
   info "Found generated Caddyfile at ${STATE_DIR}/reverse-proxy/Caddyfile"
   if grep -q "tls internal" "${STATE_DIR}/reverse-proxy/Caddyfile"; then

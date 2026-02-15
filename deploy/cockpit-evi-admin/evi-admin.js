@@ -1,29 +1,32 @@
-/* Version: 1.3.3
+/* Version: 1.3.4
  * Purpose: Main logic for evi admin tools Cockpit package.
  * Handles navigation between sections, backup form interactions, and command execution
  * via Cockpit API (cockpit.spawn). Each admin function calls scripts through the
  * evi-admin-dispatch.sh dispatcher that resolves paths to deployment scripts.
  * Cockpit package; filename: evi-admin.js
  *
+ * Changes in v1.3.4:
+ * - Default backup path changed from ~/evi/config/backup to ~/evi/config/backup (deploy kit / runtime config split).
+ *
  * Changes in v1.3.3:
  * - Progress bar: smooth tracking during image export via "Writing manifest" sub-steps (50% weight),
  *   remaining steps mapped to 50-100%; total steps detected dynamically from output
  *
  * Changes in v1.3.2:
- * - get-defaults and mkdir: run as current user so DEFAULT_BACKUP_DIR is e.g. /home/user/evi/backup not /root/evi/backup
+ * - get-defaults and mkdir: run as current user so DEFAULT_BACKUP_DIR is e.g. /home/user/evi/config/backup not /root/evi/config/backup
  *
  * Changes in v1.3.1:
  * - Backup spawn: run as current user (no superuser) so rootless podman containers are visible
  *
  * Changes in v1.3.0:
  * - Estimate: strip ANSI codes and extract JSON from mixed stderr+stdout so formatted table always shows
- * - Backup location: keep ~/evi/backup in UI; resolve to absolute path only when calling scripts
+ * - Backup location: keep ~/evi/config/backup in UI; resolve to absolute path only when calling scripts
  * - Password visibility toggle (eye icon) for encryption password field
  * - Progress bar during backup with step count from [✓] lines in script output
  *
  * Changes in v1.2.0:
  * - Estimate Size renders human-readable formatted summary instead of raw JSON output
- * - Pre-filled backup location ~/evi/backup; loadDefaults only overwrites when field is empty
+ * - Pre-filled backup location ~/evi/config/backup; loadDefaults only overwrites when field is empty
  * - Backup directory auto-created if it does not exist (mkdir -p before backup-create)
  *
  * Changes in v1.1.0:
@@ -174,11 +177,11 @@
     }
   }
 
-  /* Resolved backup directory for scripts: show ~/evi/backup in UI, pass absolute path to scripts */
+  /* Resolved backup directory for scripts: show ~/evi/config/backup in UI, pass absolute path to scripts */
   function getResolvedBackupDir() {
     var raw = els.dirInput.value.trim();
-    if (!raw || raw === '~/evi/backup') {
-      return state.defaultBackupDir || raw || '~/evi/backup';
+    if (!raw || raw === '~/evi/config/backup') {
+      return state.defaultBackupDir || raw || '~/evi/config/backup';
     }
     return raw;
   }
@@ -379,7 +382,7 @@
     showStatus('running', 'Estimating backup size...');
     setFormEnabled(false);
 
-    var backupDir = getResolvedBackupDir() || '~/evi/backup';
+    var backupDir = getResolvedBackupDir() || '~/evi/config/backup';
     var collected = '';
 
     var proc = cockpit.spawn([DISPATCH_PATH, 'backup-estimate', backupDir], {
@@ -612,7 +615,7 @@
    * ===================================================================== */
 
   function loadDefaults() {
-    // The backup location is pre-filled to ~/evi/backup in the HTML value attribute.
+    // The backup location is pre-filled to ~/evi/config/backup in the HTML value attribute.
     // The dispatcher get-defaults provides the resolved home directory path (must run as current user, not root).
     var proc = cockpit.spawn([DISPATCH_PATH, 'get-defaults'], {
       err: 'out'
@@ -627,14 +630,14 @@
           var val = parts.slice(1).join('=');
           if (key === 'DEFAULT_BACKUP_DIR' && val) {
             state.defaultBackupDir = val;
-            // Keep ~/evi/backup in the UI; resolved path is used only when calling scripts
+            // Keep ~/evi/config/backup in the UI; resolved path is used only when calling scripts
           }
         }
       }
     });
 
     proc.catch(function () {
-      // Dispatcher not installed — keep the pre-filled ~/evi/backup value
+      // Dispatcher not installed — keep the pre-filled ~/evi/config/backup value
     });
   }
 

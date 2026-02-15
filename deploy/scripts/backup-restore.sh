@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.1
+# Version: 1.0.2
 # Purpose: Restore EVI from backup archive (standalone script).
 # Deployment file: backup-restore.sh
 # Logic:
@@ -17,6 +17,10 @@
 #   2 - Extract error
 #   3 - Database restore error
 #   4 - Image load error
+#
+# Changes in v1.0.2:
+# - Switched to CONFIG_DIR layout: env files restored to config/, TLS to config/tls/, state to config/state/.
+# - Removed separate copy of TLS to state dir (unified TLS location: config/tls).
 #
 # Changes in v1.0.1:
 # - After restoring pgAdmin data, set ownership to 5050:5050 recursively so pgadmin container can read pgadmin4.db
@@ -39,10 +43,11 @@ fail() { printf "  ${RED}[✗]${NC} %s\n" "$*"; }
 # Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOYMENT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-ENV_DIR="${DEPLOYMENT_DIR}/env"
 
-# Default paths
-EVI_STATE_DIR="${EVI_STATE_DIR:-${HOME}/.local/share/evi}"
+# Runtime config paths (config/ is preserved across updates)
+CONFIG_DIR="${DEPLOYMENT_DIR}/config"
+TLS_DIR="${CONFIG_DIR}/tls"
+EVI_STATE_DIR="${EVI_STATE_DIR:-${CONFIG_DIR}/state}"
 
 # Cleanup function
 TEMP_DIR=""
@@ -222,27 +227,22 @@ main() {
   stop_spinner
   ok "stopping current containers"
   
-  # Restore environment files
+  # Restore environment files (to config/)
   start_spinner "restoring environment files..."
   if [[ -d "${data_dir}/env" ]]; then
-    mkdir -p "${ENV_DIR}"
-    cp -f "${data_dir}/env"/*.env "${ENV_DIR}/" 2>/dev/null || true
-    chmod 600 "${ENV_DIR}"/*.env 2>/dev/null || true
+    mkdir -p "${CONFIG_DIR}"
+    cp -f "${data_dir}/env"/*.env "${CONFIG_DIR}/" 2>/dev/null || true
+    chmod 600 "${CONFIG_DIR}"/*.env 2>/dev/null || true
   fi
   stop_spinner
   ok "restoring environment files"
   
-  # Restore TLS certificates
+  # Restore TLS certificates (to config/tls — single TLS location)
   start_spinner "restoring tls certificates..."
   if [[ -d "${data_dir}/tls" ]] && [[ -n "$(ls -A "${data_dir}/tls" 2>/dev/null)" ]]; then
-    mkdir -p "${ENV_DIR}/tls"
-    cp -f "${data_dir}/tls"/* "${ENV_DIR}/tls/" 2>/dev/null || true
-    chmod 600 "${ENV_DIR}/tls"/*.pem 2>/dev/null || true
-    
-    # Also copy to state dir for Caddy
-    mkdir -p "${EVI_STATE_DIR}/tls"
-    cp -f "${data_dir}/tls"/*.pem "${EVI_STATE_DIR}/tls/" 2>/dev/null || true
-    chmod 600 "${EVI_STATE_DIR}/tls"/*.pem 2>/dev/null || true
+    mkdir -p "${TLS_DIR}"
+    cp -f "${data_dir}/tls"/* "${TLS_DIR}/" 2>/dev/null || true
+    chmod 600 "${TLS_DIR}"/*.pem 2>/dev/null || true
   fi
   stop_spinner
   ok "restoring tls certificates"

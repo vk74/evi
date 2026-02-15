@@ -1,10 +1,22 @@
 #!/usr/bin/env bash
 #
-# Version: 1.15.5
+# Version: 1.16.0
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
 # - Single entry point: main_menu() always. When evi.env and evi.secrets.env exist (CONFIG_EXISTS=1), main menu shows banner "evi configuration already exists", same options 0-5, option 3 label "redeploy and restart evi containers" (do_redeploy); otherwise option 3 "deploy and start evi containers" (deploy_up).
+#
+# Changes in v1.16.0:
+# - Deploy kit / runtime config split: introduced CONFIG_DIR (~/evi/config) for all runtime data.
+# - evi.env, evi.secrets.env now created and read from config/ instead of env/.
+# - TLS certificates stored in config/tls/ (previously env/tls and state/tls).
+# - EVI_STATE_DIR default changed from ~/.local/share/evi to config/state/ (JWT, pgadmin, Caddyfile).
+# - deploy_ensure_dirs creates config/ and subdirs: tls, state, state/reverse-proxy, state/secrets, state/pgadmin/data, backup, updates.
+# - deploy_prepare_proxy_tls_mounts uses TLS_DIR (config/tls) instead of EVI_STATE_DIR/tls.
+# - deploy_prepare_manual_tls_files imports certs to config/tls.
+# - ensure_config_files creates env files in config/ from templates in env/.
+# - Restore functions write to config/ paths.
+# - Templates (env/*.template.*) remain in deploy kit root; only deploy kit is overwritten on update.
 # - Guided configuration: guided_setup() supports reconfigure mode (guided_setup reconfigure). In reconfigure, each step has "0) keep current setting" (step 2: "keep current certificate"); step 5 (demo data) skipped — demo data can be deployed only during initial setup.
 # - No podman build; daily operations (status, logs, restart, backup, etc.) via Cockpit (evi admin panel at :9090).
 #
@@ -67,7 +79,7 @@
 # - Restore uses deploy_* functions directly (no evictl dependency), skips JWT key generation to preserve restored key
 #
 # Changes in v1.12.2:
-# - Cockpit evi-admin: backup form UI — estimate JSON parsing with ANSI strip, ~/evi/backup in UI, password visibility toggle, progress bar during backup
+# - Cockpit evi-admin: backup form UI — estimate JSON parsing with ANSI strip, ~/evi/config/backup in UI, password visibility toggle, progress bar during backup
 #
 # Changes in v1.12.1:
 # - Cockpit: install cockpit-evi-admin package ("evi admin tools" panel with backup form, nav sidebar)
@@ -191,20 +203,24 @@ set -euo pipefail
 # --- Configuration ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+# Deploy kit paths (overwritten on update)
 ENV_DIR="${SCRIPT_DIR}/env"
 SCRIPTS_DIR="${SCRIPT_DIR}/scripts"
-TLS_DIR="${ENV_DIR}/tls"
 TEMPLATE_ENV="${ENV_DIR}/evi.template.env"
 TEMPLATE_SECRETS="${ENV_DIR}/evi.secrets.template.env"
-TARGET_ENV="${ENV_DIR}/evi.env"
-TARGET_SECRETS="${ENV_DIR}/evi.secrets.env"
-CONFIG_EXISTS=0
-[[ -f "${TARGET_ENV}" ]] && [[ -f "${TARGET_SECRETS}" ]] && CONFIG_EXISTS=1
 TPL_DIR="${SCRIPT_DIR}/quadlet-templates"
 PROXY_DIR="${SCRIPT_DIR}/reverse-proxy"
 
-EVI_STATE_DIR_DEFAULT="${HOME}/.local/share/evi"
-EVI_CONFIG_DIR_DEFAULT="${HOME}/.config/evi"
+# Runtime config paths (preserved across updates)
+CONFIG_DIR="${SCRIPT_DIR}/config"
+TLS_DIR="${CONFIG_DIR}/tls"
+TARGET_ENV="${CONFIG_DIR}/evi.env"
+TARGET_SECRETS="${CONFIG_DIR}/evi.secrets.env"
+CONFIG_EXISTS=0
+[[ -f "${TARGET_ENV}" ]] && [[ -f "${TARGET_SECRETS}" ]] && CONFIG_EXISTS=1
+
+EVI_STATE_DIR_DEFAULT="${CONFIG_DIR}/state"
 EVI_QUADLET_DIR_DEFAULT="${HOME}/.config/containers/systemd"
 
 INSTALL_VERSION=$(sed -n '1,20p' "${SCRIPT_DIR}/$(basename "${BASH_SOURCE[0]:-$0}")" 2>/dev/null | grep -m1 '^# Version: ' | sed 's/^# Version:[[:space:]]*//' || echo "?")
@@ -258,6 +274,7 @@ ensure_executable() {
 }
 
 ensure_config_files() {
+  mkdir -p "${CONFIG_DIR}"
   if [[ ! -f "${TARGET_ENV}" ]]; then
     cp "${TEMPLATE_ENV}" "${TARGET_ENV}"
     info "created ${TARGET_ENV} from template."
@@ -1974,7 +1991,6 @@ load_deploy_env() {
   # shellcheck disable=SC1090
   source "${TARGET_SECRETS}"
   export EVI_STATE_DIR="${EVI_STATE_DIR:-${EVI_STATE_DIR_DEFAULT}}"
-  export EVI_CONFIG_DIR="${EVI_CONFIG_DIR:-${EVI_CONFIG_DIR_DEFAULT}}"
   export EVI_QUADLET_DIR="${EVI_QUADLET_DIR:-${EVI_QUADLET_DIR_DEFAULT}}"
   export EVI_JWT_SECRET_NAME="${EVI_JWT_SECRET_NAME:-evi_jwt_private_key}"
   export EVI_ADMIN_DB_USERNAME="${EVI_ADMIN_DB_USERNAME:-evidba}"
@@ -1986,10 +2002,13 @@ load_deploy_env() {
 }
 
 # Deploy init: ensure dirs, JWT secret, TLS, Caddyfile, Quadlets. All logic in install.sh.
+# Creates config/ directory structure: tls, state (reverse-proxy, secrets, pgadmin), backup, updates.
 deploy_ensure_dirs() {
-  mkdir -p "${EVI_STATE_DIR}/reverse-proxy" "${EVI_STATE_DIR}/tls" "${EVI_STATE_DIR}/secrets"
+  mkdir -p "${CONFIG_DIR}" "${TLS_DIR}"
+  mkdir -p "${CONFIG_DIR}/backup" "${CONFIG_DIR}/updates"
+  mkdir -p "${EVI_STATE_DIR}/reverse-proxy" "${EVI_STATE_DIR}/secrets"
   mkdir -p "${EVI_STATE_DIR}/pgadmin" "${EVI_STATE_DIR}/pgadmin/data"
-  mkdir -p "${EVI_CONFIG_DIR}" "${EVI_QUADLET_DIR}"
+  mkdir -p "${EVI_QUADLET_DIR}"
   if [[ -d "${EVI_STATE_DIR}/pgadmin/data" ]]; then
     podman unshare chown -R 5050:5050 "${EVI_STATE_DIR}/pgadmin/data" 2>/dev/null || true
   fi
@@ -2006,7 +2025,7 @@ deploy_prepare_proxy_tls_mounts() {
   if [[ "${EVI_TLS_MODE}" == "manual" ]]; then
     export EVI_TLS_CERT_IN_CONTAINER="/etc/evi-tls/cert.pem"
     export EVI_TLS_KEY_IN_CONTAINER="/etc/evi-tls/key.pem"
-    export EVI_PROXY_TLS_MOUNTS=$'Volume='"${EVI_STATE_DIR}"$'/tls/cert.pem:'"${EVI_TLS_CERT_IN_CONTAINER}"$':ro,Z\nVolume='"${EVI_STATE_DIR}"$'/tls/key.pem:'"${EVI_TLS_KEY_IN_CONTAINER}"$':ro,Z\n'
+    export EVI_PROXY_TLS_MOUNTS=$'Volume='"${TLS_DIR}"$'/cert.pem:'"${EVI_TLS_CERT_IN_CONTAINER}"$':ro,Z\nVolume='"${TLS_DIR}"$'/key.pem:'"${EVI_TLS_KEY_IN_CONTAINER}"$':ro,Z\n'
   else
     export EVI_PROXY_TLS_MOUNTS=""
   fi
@@ -2106,16 +2125,16 @@ deploy_resolve_tls_path() {
   local path="$1"
   [[ -z "${path}" ]] && { echo ""; return; }
   [[ "${path}" == /* ]] && { echo "${path}"; return; }
-  [[ -f "${ENV_DIR}/${path}" ]] && { echo "${ENV_DIR}/${path}"; return; }
+  [[ -f "${TLS_DIR}/${path}" ]] && { echo "${TLS_DIR}/${path}"; return; }
   [[ -f "${SCRIPT_DIR}/${path}" ]] && { echo "${SCRIPT_DIR}/${path}"; return; }
   echo "${path}"
 }
 
 deploy_prepare_manual_tls_files() {
   [[ "${EVI_TLS_MODE}" != "manual" ]] && return 0
-  local cert_path="${EVI_TLS_CERT_PATH:-}" key_path="${EVI_TLS_KEY_PATH:-}" default_tls_dir="${ENV_DIR}/tls"
-  [[ -z "${cert_path}" ]] && [[ -f "${default_tls_dir}/cert.pem" ]] && cert_path="${default_tls_dir}/cert.pem" && log "Auto-detected certificate: ${cert_path}"
-  [[ -z "${key_path}" ]] && [[ -f "${default_tls_dir}/key.pem" ]] && key_path="${default_tls_dir}/key.pem" && log "Auto-detected private key: ${key_path}"
+  local cert_path="${EVI_TLS_CERT_PATH:-}" key_path="${EVI_TLS_KEY_PATH:-}"
+  [[ -z "${cert_path}" ]] && [[ -f "${TLS_DIR}/cert.pem" ]] && cert_path="${TLS_DIR}/cert.pem" && log "Auto-detected certificate: ${cert_path}"
+  [[ -z "${key_path}" ]] && [[ -f "${TLS_DIR}/key.pem" ]] && key_path="${TLS_DIR}/key.pem" && log "Auto-detected private key: ${key_path}"
   cert_path=$(deploy_resolve_tls_path "${cert_path}")
   key_path=$(deploy_resolve_tls_path "${key_path}")
   if [[ -n "${cert_path}" && -n "${key_path}" ]]; then
@@ -2123,11 +2142,11 @@ deploy_prepare_manual_tls_files() {
     [[ -f "${key_path}" ]] || die "TLS private key not found: ${key_path}"
     log "Importing manual TLS certificates..."
     chmod +x "${SCRIPTS_DIR}/import-tls.sh"
-    "${SCRIPTS_DIR}/import-tls.sh" "${cert_path}" "${key_path}" "${EVI_STATE_DIR}/tls" >/dev/null
-    log "OK: imported manual TLS cert/key to ${EVI_STATE_DIR}/tls"
+    "${SCRIPTS_DIR}/import-tls.sh" "${cert_path}" "${key_path}" "${TLS_DIR}" >/dev/null
+    log "OK: imported manual TLS cert/key to ${TLS_DIR}"
     return 0
   fi
-  die "Manual TLS selected but certificates not found. Set EVI_TLS_CERT_PATH and EVI_TLS_KEY_PATH or place cert.pem and key.pem in ${default_tls_dir}/"
+  die "Manual TLS selected but certificates not found. Set EVI_TLS_CERT_PATH and EVI_TLS_KEY_PATH or place cert.pem and key.pem in ${TLS_DIR}/"
 }
 
 deploy_render_quadlets() {
@@ -2648,12 +2667,12 @@ execute_restore() {
   systemctl --user stop evi-reverse-proxy evi-fe evi-be evi-db evi-pgadmin 2>/dev/null || true
   printf "  ${SYM_OK} stopped containers\n"
 
-  # Step 6: Restore environment files
+  # Step 6: Restore environment files (to config/)
   log "restoring environment files..."
   if [[ -d "${data_dir}/env" ]]; then
-    mkdir -p "${ENV_DIR}"
-    cp -f "${data_dir}/env"/*.env "${ENV_DIR}/" 2>/dev/null || true
-    chmod 600 "${ENV_DIR}"/*.env 2>/dev/null || true
+    mkdir -p "${CONFIG_DIR}"
+    cp -f "${data_dir}/env"/*.env "${CONFIG_DIR}/" 2>/dev/null || true
+    chmod 600 "${CONFIG_DIR}"/*.env 2>/dev/null || true
     printf "  ${SYM_OK} restored evi.env and evi.secrets.env\n"
   else
     warn "no environment files in backup"
@@ -2670,9 +2689,10 @@ execute_restore() {
     printf "  ${SYM_PENDING} no tls certificates in backup\n"
   fi
 
-  # Step 8: Restore JWT secrets
+  # Step 8: Restore JWT secrets (to config/state/secrets)
   log "restoring jwt secrets..."
   local jwt_state_dir="${EVI_STATE_DIR_DEFAULT}/secrets"
+  mkdir -p "${EVI_STATE_DIR_DEFAULT}"
   if [[ -d "${data_dir}/secrets" ]]; then
     mkdir -p "${jwt_state_dir}"
     cp -f "${data_dir}/secrets"/* "${jwt_state_dir}/" 2>/dev/null || true
@@ -2682,7 +2702,7 @@ execute_restore() {
     warn "no jwt secrets in backup"
   fi
 
-  # Step 9: Restore pgAdmin data
+  # Step 9: Restore pgAdmin data (to config/state/pgadmin)
   if [[ -d "${data_dir}/pgadmin" ]]; then
     log "restoring pgadmin data..."
     local pgadmin_state_dir="${EVI_STATE_DIR_DEFAULT}/pgadmin"

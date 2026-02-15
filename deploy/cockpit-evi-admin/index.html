@@ -1,14 +1,16 @@
 <!DOCTYPE html>
-<!-- Version: 1.3.0 -->
+<!-- Version: 1.3.1 -->
 <!-- Cockpit package: EVI administration panel with left navigation and right content area. -->
 <!-- Provides admin tools: full backup, password management (coming soon), certificate management (coming soon). -->
 <!-- Cockpit package; filename: index.html -->
 <!--
+  Changes in v1.3.1:
+  - Default backup path changed to ~/evi/config/backup (deploy kit / runtime config split).
   Changes in v1.3.0:
   - Backup progress bar (animated, step counter) between status and output
   - Encryption password field: input group with show/hide password button (eye icon)
   Changes in v1.2.0:
-  - Pre-filled backup location with ~/evi/backup default
+  - Pre-filled backup location with ~/evi/config/backup default
   - Added note about restore instructions README being created alongside backup
   - Estimate Size now renders human-readable formatted summary instead of raw JSON
   Changes in v1.1.0:
@@ -67,8 +69,8 @@
             <div class="evi-admin-form-group">
               <label for="backup-dir">Backup location</label>
               <input type="text" id="backup-dir" class="evi-admin-input"
-                     value="~/evi/backup"
-                     placeholder="e.g. /home/user/evi/backup">
+                     value="~/evi/config/backup"
+                     placeholder="e.g. /home/user/evi/config/backup">
               <span class="evi-admin-hint">Directory where backup files will be created</span>
             </div>
 
