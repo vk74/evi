@@ -26,7 +26,7 @@ To run evi, your physical server or virtual machine needs the following minimal 
 
 ## 1. Clone the deploy scripts and files into evi directory 
 
-Open terminal in your home directory, copy and paste the whole block of commands below (excluding ```bash ```) and hit enter
+Open terminal in your home directory, copy and paste the whole block of commands below and hit enter:
 
 ```bash
 command -v git >/dev/null 2>&1 || { sudo apt-get update && sudo apt-get install -y git; }
@@ -72,7 +72,7 @@ evi web application runs as a set of containers, or technically speaking **Rootl
 
 ## 🔐 Secrets Management
 
-The application requires several secrets to function securely. These are stored in `/env/evi.secrets.env` which is created from `/env/evi.secrets.template.env` during evi installation.
+The application requires several secrets to function securely. These are stored in `/config/evi.secrets.env` which is created from `/env/evi.secrets.template.env` during evi installation.
 
 *   `EVI_POSTGRES_PASSWORD`: Password for the database superuser (`postgres`).
 *   `EVI_ADMIN_DB_PASSWORD`: Password for the admin user. Default admin account created during app installation is `evidba`. Has full DB access. Recommended for use in pgadmin console for manual admin operations.
@@ -87,7 +87,7 @@ Containerization on Linux is an OS-level virtualization method that packages an 
 * Control Groups (cgroups) — limit and monitor CPU, memory, disk I/O, network resources
 * Union Filesystems — layer-based image storage (overlay, aufs)
 
-## Scenario 1: Containers Stack Running on Physical Host
+## Scenario 1: Run EVI on Physical Host
 Virtualization requirements:
 * No virtualization needed for container runtime (Podman)
 * Containers use Linux kernel features (namespaces, cgroups)
@@ -95,14 +95,14 @@ Virtualization requirements:
 * No hypervisor or VM layer required
 
 CPU requirements:
-* Any modern x86_64 CPU
+* Any modern x86_64 or arm CPU
 * VT-x/AMD-V is NOT required for containers
 * Standard Linux kernel is sufficient
 
 Technology stack:
 * Physical server → Linux OS → Podman containers
 
-## Scenario 2: Containers Stack Running on Virtual Machine
+## Scenario 2: Run EVI on Virtual Machine
 Virtualization requirements:
 * Virtualization needed at host level (L0) to run VM
 * Guest VM (L1) runs Linux OS
@@ -110,7 +110,7 @@ Virtualization requirements:
 * Nested virtualization is not needed for containers
 
 CPU requirements:
-* Host CPU: VT-x (Intel) or AMD-V (AMD) required
+* Host CPU: VT-x (Intel) or AMD-V (AMD) or arm required
 * Guest VM gets virtualized CPU, but containers use guest kernel directly
 * Standard virtualization support sufficient (no nested features needed)
 
@@ -140,4 +140,4 @@ XFS: project quotas (pquota) — full Docker/Podman enforcement supported
 ext4: project quotas (prjquota) — manual quotas only, no quota enforcement
 BTRFS: qgroup quotas — only with Btrfs storage driver (not overlay2)
 
-Note: you can manually deploy evi-db volume on separate disk on host server (this option will be implemented in future versions of installation workflow). This will limit space over-consumption and improve disk iops for the app.
+Note: you can manually deploy evi-db volume on separate disk on host server (this option will be implemented in future versions of installation workflow). This will limit space available for DB and improve disk iops.
