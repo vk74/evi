@@ -16,9 +16,10 @@ License will be available soon in the application menu: **About → License**.
 
 To run evi, your physical server or virtual machine needs the following minimal specs:
 - **RAM:** 3 GB
-- **CPU:** 1 core (arm or amd64 processors)
+- **CPU:** 1 core (any modern x86_64 or arm CPU)
 - **Network:** 1 NIC
-- **HDD** ~ 1.5 Gb SSD for containers environment
+- **SSD** ~ 1.5 Gb of free space for containers environment
+
 - **OS:** Compatible with Debian-based distributions: Ubuntu, Debian, Linux Mint, Pop!_OS, and other distros that use `apt-get`. **evi has been tested only on Ubuntu 24.04**. other listed distros are expected to work but formally were not tested.
 
 
@@ -30,10 +31,9 @@ Open terminal in your home directory, copy and paste the whole block of commands
 
 ```bash
 command -v git >/dev/null 2>&1 || { sudo apt-get update && sudo apt-get install -y git; }
-git clone --filter=blob:none --sparse https://vk74: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@github.com/vk74/evi.git evi && cd evi
+git clone --filter=blob:none --sparse https://github.com/vk74/evi.git evi && cd evi
 git sparse-checkout set deploy
 (cd deploy && for f in * .[!.]* ..?*; do [ -e "$f" ] && mv "$f" ..; done)
-mkdir backup updates
 rmdir deploy
 ```
 
