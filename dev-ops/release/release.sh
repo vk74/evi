@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
 #
-# version: 1.10.0
+# version: 1.11.0
 # purpose: developer release automation script for evi application.
 # deployment file: release.sh
 # logic:
-# - Version sync: root package.json (eviDbVersion, eviFeVersion, eviBeVersion, version for product release), dev-ops and deploy env templates, db/init/02_schema.sql (app.instance: schema_version, evi_fe, evi_be, evi_db), front/src/modules/about/ModuleComponents.vue (all container versions).
+# - Version sync: root package.json (eviDbVersion, eviFeVersion, eviBeVersion, version for product release), README.md (first line), dev-ops and deploy env templates, db/init/02_schema.sql (app.instance: schema_version, evi_fe, evi_be, evi_db), front/src/modules/about/ModuleComponents.vue (all container versions).
 # - Builds multi-arch container images (linux/amd64, linux/arm64) for GHCR; publishes manifest lists.
 # - Single product release: step 10 creates GitHub Release (tag vX.Y.Z) via create-github-release.sh and writes release record to dev-ops/RELEASE_NOTES.md via update-release-notes.sh.
 # - Step-by-step (menu) and CLI commands only; end-user deploy tree is installed into directory evi in home directory (~/evi).
 # - Independent from install.sh and evictl (developer workflow only).
 # - Deploy directory contents (db migrations, demo-data) are produced by release scripts only; do not edit deploy manually.
+#
+# Changes in v1.11.0:
+# - Option 1 (set versions): also updates first line of README.md; README version = product release version.
 #
 # Changes in v1.10.0:
 # - Step 10: after create-github-release.sh, calls update-release-notes.sh to append release record to dev-ops/RELEASE_NOTES.md.
@@ -134,6 +137,7 @@ BACK_PACKAGE_JSON="${PROJECT_ROOT}/back/package.json"
 FRONT_PACKAGE_JSON="${PROJECT_ROOT}/front/package.json"
 TEMPLATE_ENV="${ENV_DIR}/evi.template.env"
 SCHEMA_SQL="${PROJECT_ROOT}/db/init/02_schema.sql"
+README_FILE="${PROJECT_ROOT}/README.md"
 GHCR_CREDENTIALS_FILE="${SCRIPT_DIR}/ghcr.io"
 
 # Multi-arch: platforms to build (comma-separated for podman build --platform)
@@ -1074,6 +1078,38 @@ update_vue_component_versions() {
   return 0
 }
 
+# Update version in first line of README.md (format: # EVI README Version X.Y.Z or X.Y.Z-suffix). Version = product release version.
+update_readme_version() {
+  local file_path="$1"
+  local new_version="$2"
+  if [[ ! -f "${file_path}" ]]; then
+    warn "README not found: ${file_path}, skipping"
+    return 0
+  fi
+  local first_line
+  first_line=$(head -n 1 "${file_path}" 2>/dev/null || echo "")
+  local new_first_line="# EVI README Version ${new_version}"
+  if [[ "${first_line}" != "${new_first_line}" ]]; then
+    local old_version=""
+    if [[ "${first_line}" =~ ^#\ EVI\ README\ Version\ (.+)$ ]]; then
+      old_version="${BASH_REMATCH[1]}"
+    fi
+    local temp_file
+    temp_file=$(mktemp)
+    echo "${new_first_line}" > "${temp_file}"
+    tail -n +2 "${file_path}" >> "${temp_file}"
+    mv "${temp_file}" "${file_path}"
+    if [[ -n "${old_version}" ]]; then
+      info "Updated ${file_path}: ${old_version} → ${new_version}"
+    else
+      info "Updated ${file_path}: first line set to ${new_first_line}"
+    fi
+  else
+    info "README version already up to date: ${new_version}"
+  fi
+  return 0
+}
+
 
 # --- Main Functions ---
 
@@ -1161,6 +1197,9 @@ sync_versions() {
   log "Updating root package.json (eviDbVersion, eviFeVersion, eviBeVersion, version)..."
   update_root_package_json_component_versions "${version_db}" "${version_fe}" "${version_be}"
   update_package_json_version "${ROOT_PACKAGE_JSON}" "${version_release}"
+
+  # Update README.md first line (version = product release version)
+  update_readme_version "${README_FILE}" "${version_release}"
 
   # Update dev-ops/common/env/evi.template.env
   log "Updating dev-ops/common/env/evi.template.env..."
