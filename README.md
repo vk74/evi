@@ -20,38 +20,31 @@ To run evi, your physical server or virtual machine needs the following minimal 
 - **Network:** 1 NIC
 - **SSD** ~ 1.5 Gb of free space for containers environment
 
-- **OS:** Compatible with Debian-based distributions: Ubuntu, Debian, Linux Mint, Pop!_OS, and other distros that use `apt-get`. **evi has been tested only on Ubuntu 24.04**. other listed distros are expected to work but formally were not tested.
+- **OS:**  **evi has been tested only on Ubuntu**. EVI is compatible with Debian-based distributions: Ubuntu variations, Debian, Linux Mint, Pop!_OS, and other distros that use `apt-get`. They are expected to work but were not tested formally.
 
 
 ## 🚀 Installation instructions
 
-## 1. Clone the deploy scripts and files into evi directory 
-
 Open terminal in your home directory, copy and paste the whole block of commands below and hit enter:
 
 ```bash
+cd ~
 command -v git >/dev/null 2>&1 || { sudo apt-get update && sudo apt-get install -y git; }
 git clone --filter=blob:none --sparse https://github.com/vk74/evi.git evi && cd evi
 git sparse-checkout set deploy
 (cd deploy && for f in * .[!.]* ..?*; do [ -e "$f" ] && mv "$f" ..; done)
 rmdir deploy
-```
-
-
-- evi directory is automatically created and populated with deployment files
-- If your host server does not already have git, it will be installed (requires sudo) before cloning 
-
-
-## 2. Start the installer
-
-```bash
 ./install.sh
 ```
 
-The installer will guide you through 3 installation steps: 
-- install prerequisites on host server (requires sudo)
-- guided configuration of container environment (does not require sudo)
-- containers pool and deployment (does not require sudo)
+- If your host server does not already have git, it will be installed (requires sudo) before cloning 
+- evi directory is automatically created and populated with deployment files
+
+The installer will guide you through: 1. installation of prerequisites 2. guided configuration of container environment 3. containers deployment
+
+**Installation complete**
+
+EVI web application runs as a set of containers, or technically speaking **Rootless Podman Quadlets** (systemd services).
 
 The installer will deploy the following list of containers on your host server:
 *   `evi-reverse-proxy`: Caddy (Reverse Proxy & TLS termination)
@@ -59,10 +52,6 @@ The installer will deploy the following list of containers on your host server:
 *   `evi-be`: Backend Node.js container
 *   `evi-db`: PostgreSQL database container
 *   `evi-pgadmin`: pgAdmin container for postgres DB administration
-
-evi web application runs as a set of containers, or technically speaking **Rootless Podman Quadlets** (systemd services)/
-
-**Installation complete**
 
 
 ------------------------------------------------
