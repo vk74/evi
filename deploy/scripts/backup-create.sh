@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.9
+# Version: 1.1.1
 # Purpose: Create EVI app data and containers backup including container images, database, and configuration.
 # Deployment file: backup-create.sh
 # Logic:
@@ -12,6 +12,13 @@
 # - Archives evi repository
 # - Compresses and optionally encrypts the data archive
 # - Generates README-RESTORE-STEP-BY-STEP.md with server info
+# - EVI version for README and manifest: from root package.json (release version), fallback to FE image tag
+#
+# Changes in v1.1.1:
+# - README restore steps: added Step 1 (copy backup to home, start terminal); renumbered steps 2–5; removed Prerequisites required bullet from Preparation notes; added Note in Step 3 (install prerequisites) about podman and other prerequisites.
+#
+# Changes in v1.1.0:
+# - EVI version in README and manifest: use product release version from root package.json; fallback to EVI_FE_IMAGE tag when package.json is missing (e.g. deploy-only kit).
 #
 # Changes in v1.0.9:
 # - Switched to CONFIG_DIR layout: env files read from config/, TLS from config/tls/, state from config/state/.
@@ -77,7 +84,7 @@ else
 fi
 
 # Script version (printed at start of backup output)
-BACKUP_SCRIPT_VERSION="1.0.9"
+BACKUP_SCRIPT_VERSION="1.1.1"
 
 # Spinner characters
 SPINNER_CHARS="⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
@@ -123,6 +130,7 @@ trap cleanup EXIT
 # Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOYMENT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+REPO_ROOT="$(cd "${DEPLOYMENT_DIR}/.." && pwd)"
 
 # Runtime config paths (config/ is preserved across updates)
 CONFIG_DIR="${DEPLOYMENT_DIR}/config"
@@ -159,11 +167,23 @@ load_env() {
   EVI_POSTGRES_DB="${EVI_POSTGRES_DB:-maindb}"
 }
 
-# Get EVI version from image tags
+# Get EVI version from image tag (fallback when package.json is not available)
 get_evi_version() {
   # Extract version from image tag (e.g., ghcr.io/vk74/evi-fe:0.9.11 -> 0.9.11)
   local version
   version=$(echo "${EVI_FE_IMAGE:-unknown}" | sed 's/.*://')
+  echo "${version}"
+}
+
+# Get product release version from root package.json; fallback to FE image tag
+get_release_version() {
+  local version=""
+  if [[ -f "${REPO_ROOT}/package.json" ]]; then
+    version=$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "${REPO_ROOT}/package.json" | head -1 | sed 's/.*"\([^"]*\)"$/\1/')
+  fi
+  if [[ -z "${version}" ]]; then
+    version=$(get_evi_version)
+  fi
   echo "${version}"
 }
 
@@ -488,11 +508,6 @@ Certificate Type: ${cert_type}
 
 When restoring to a new server, consider the following:
 
-- **Prerequisites required**: The target server must have podman, cockpit, curl, and openssl
-  installed before restoring. Run \`./install.sh\` and select option 1 (install prerequisites).
-  This step requires internet access. After prerequisites are installed, the data restore
-  does NOT require internet connection.
-
 - **OS compatibility**: This backup was created on ${os_version} (${arch}).
   For best results, restore to the same OS distribution and architecture.
   Container images in this backup are built for ${platform}.
@@ -530,21 +545,27 @@ fi)
 
 ## Restore Steps
 
-### Step 1: Extract installation scripts
+### Step 1: Copy backup archives
+
+Copy backup archives to your home directory. Start terminal and proceed to Step 2.
+
+### Step 2: Extract installation scripts
 
 \`\`\`bash
 tar -xzf evi-v${evi_version}.tar.gz
 cd evi
 \`\`\`
 
-### Step 2: Install prerequisites (requires internet)
+### Step 3: Install prerequisites (requires internet)
+
+Note: Before data and containers could be restored, the server should have podman and other prerequisites.
 
 \`\`\`bash
 ./install.sh
 # select option 1: install prerequisites on host server
 \`\`\`
 
-### Step 3: Install app data and containers from backup
+### Step 4: Install app data and containers from backup
 
 \`\`\`bash
 ./install.sh
@@ -554,7 +575,7 @@ cd evi
 
 $([ "${encrypted}" = "true" ] && echo "You will be prompted for the encryption password.")
 
-### Step 4: Verify
+### Step 5: Verify
 
 After restore completes, the script will start all EVI services automatically.
 Check the restore summary for container status. You can also verify via cockpit
@@ -681,9 +702,9 @@ main() {
   esac
   
   load_env
-  
+
   local evi_version
-  evi_version=$(get_evi_version)
+  evi_version=$(get_release_version)
   
   # Validate backup directory
   if [[ -z "${BACKUP_DIR}" ]]; then

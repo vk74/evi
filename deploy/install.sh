@@ -1961,7 +1961,7 @@ display_final_summary() {
   printf "  connections allowed from:  ${GREEN}%s${NC}\n" "${cockpit_allowed}"
   printf "  account:  ${GREEN}your host OS user account${NC}\n"
   printf "  password:  ${GREEN}password of your host OS user account${NC}\n"
-  echo "  notes: used for management of host OS and containers, monitor performance, create backups etc."
+  echo "  notes: used for management of host OS and containers, performance monitoring, backups creation etc."
   echo ""
 
   if [[ "${EVI_PGADMIN_ENABLED:-false}" == "true" ]]; then
