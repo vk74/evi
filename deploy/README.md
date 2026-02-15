@@ -22,7 +22,7 @@ To run evi, your physical server or virtual machine needs the following minimal 
 - **OS:** Compatible with Debian-based distributions: Ubuntu, Debian, Linux Mint, Pop!_OS, and other distros that use `apt-get`. **evi has been tested only on Ubuntu 24.04**. other listed distros are expected to work but formally were not tested.
 
 
-## Installation instructions
+## 🚀 Installation instructions
 
 ## 1. Clone the deploy scripts and files into evi directory 
 
@@ -33,7 +33,7 @@ command -v git >/dev/null 2>&1 || { sudo apt-get update && sudo apt-get install 
 git clone --filter=blob:none --sparse https://vk74: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@github.com/vk74/evi.git evi && cd evi
 git sparse-checkout set deploy
 (cd deploy && for f in * .[!.]* ..?*; do [ -e "$f" ] && mv "$f" ..; done)
-mkdir backup
+mkdir backup updates
 rmdir deploy
 ```
 
@@ -69,6 +69,15 @@ evi web application runs as a set of containers, or technically speaking **Rootl
 
 
 ## General information and recommendations for preparing your server virtualization and containerization technology
+
+## 🔐 Secrets Management
+
+The application requires several secrets to function securely. These are stored in `/env/evi.secrets.env` which is created from `/env/evi.secrets.template.env` during evi installation.
+
+*   `EVI_POSTGRES_PASSWORD`: Password for the database superuser (`postgres`).
+*   `EVI_ADMIN_DB_PASSWORD`: Password for the admin user. Default admin account created during app installation is `evidba`. Has full DB access. Recommended for use in pgadmin console for manual admin operations.
+*   `EVI_APP_DB_PASSWORD`: Password for the application user (`app_service`). Has limited access only to "app" DB schema in maindb database. Used in evi-be and evi-db containers for regular application operations like reading and writing values to/from `maindb` database. 
+*   `EVI_JWT_PRIVATE_KEY`: RSA Private key or secure random string for token (jwt) signing.
 
 ## What is Containerization?
 Containerization on Linux is an OS-level virtualization method that packages an application and its dependencies into isolated, portable containers. Unlike virtual machines, containers share the host OS kernel and provide process-level isolation. Each container has its own process tree, network stack, and filesystem.
