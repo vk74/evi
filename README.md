@@ -2,7 +2,7 @@
 
 # About
 
-**EVI**  is containerized web application for building and managing products catalog. Users can browse products, configure them by selecting options and quantities, and generate cost estimations for their configurations. Administrators manage catalog, regional pricing, organizations, and application settings. More business scenarios planned for the future.
+**EVI** is containerized web application for building and managing products catalog. Users can browse products, configure them by selecting options and quantities, and generate cost estimations for their configurations. Administrators manage catalog, regional pricing, organizations, and application settings. More business scenarios planned for the future.
 
 
 ## Disclaimer
@@ -37,10 +37,9 @@ rmdir deploy
 ./install.sh
 ```
 
-- If your host server does not already have git, it will be installed (requires sudo) before cloning 
+- If your host server does not have git, it will be installed (requires sudo) before cloning 
 - evi directory is automatically created and populated with deployment files
-
-The installer will guide you through: 1. installation of prerequisites 2. guided configuration of container environment 3. containers deployment
+- The installer will start automatically and will guide you through: 1. installation of prerequisites 2. guided configuration of container environment 3. containers deployment
 
 **Installation complete**
 
