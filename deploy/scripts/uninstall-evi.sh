@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.5
+# Version: 1.0.6
 # Purpose: Full uninstall of evi: containers, volumes, secrets, images, state, config, quadlets, cockpit panels, UFW rules, sysctl, apt packages.
 # Backend script, called from install.sh (option 5) or evi-reconfigure.sh. Can be run standalone.
 # Logic: Single confirmation (type 'yes'), stop services, remove podman resources, remove dirs (config/ with sudo for pgadmin data), quadlets, systemd reload,
 #        then sudo block: cockpit panels, UFW rules by number for ports 80/443/9090/5445, sysctl, apt remove. Prints instruction to run rm -rf ~/evi.
+#
+# Changes in v1.0.6:
+# - Added evi-update cockpit panel paths to removal loop (/usr/local/share/cockpit/evi-update, /usr/share/cockpit/evi-update).
 #
 # Changes in v1.0.5:
 # - Switched to CONFIG_DIR layout: remove ~/evi/config (contains state, tls, env files, backup, updates)
@@ -154,7 +157,7 @@ main() {
     warn "sudo failed; skipping cockpit removal, ufw, sysctl and package removal."
   else
     log "removing cockpit evi panels..."
-    for cockpit_path in /usr/local/share/cockpit/evi-pgadmin /usr/local/share/cockpit/evi-admin /usr/share/cockpit/evi-pgadmin /usr/share/cockpit/evi-admin; do
+    for cockpit_path in /usr/local/share/cockpit/evi-pgadmin /usr/local/share/cockpit/evi-admin /usr/local/share/cockpit/evi-update /usr/share/cockpit/evi-pgadmin /usr/share/cockpit/evi-admin /usr/share/cockpit/evi-update; do
       if [[ -d "${cockpit_path}" ]] || [[ -e "${cockpit_path}" ]]; then
         if sudo rm -rf "${cockpit_path}"; then
           printf "  %s removed %s\n" "${SYM_OK}" "${cockpit_path}"

@@ -1,0 +1,10 @@
+{
+  "version": 0,
+  "tools": {
+    "evi-update": {
+      "label": "evi update",
+      "path": "index.html",
+      "order": 85
+    }
+  }
+}

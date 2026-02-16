@@ -1,0 +1,413 @@
+/* Version: 1.0.0
+ * Purpose: Styles for the EVI update Cockpit package.
+ * Single-page layout with version info card, action buttons, status, progress, and output area.
+ * Includes dark theme support via .theme-dark class on <html>, synced from Cockpit shell.
+ * Cockpit package; filename: evi-update.css
+ */
+
+/* ===== Dark theme: redefine PatternFly CSS custom properties ===== */
+
+html.theme-dark {
+  --pf-v5-global--Color--100: #e0e0e0;
+  --pf-v5-global--Color--200: #a2a5a8;
+  --pf-v5-global--Color--light-100: #ffffff;
+  --pf-v5-global--BackgroundColor--100: #212427;
+  --pf-v5-global--BackgroundColor--200: #1b1d21;
+  --pf-v5-global--BackgroundColor--dark-100: #0f1114;
+  --pf-v5-global--BorderColor--100: #3c3f42;
+  --pf-v5-global--BorderColor--300: #57585a;
+  --pf-v5-global--primary-color--100: #2b9af3;
+  --pf-v5-global--primary-color--200: #06c;
+}
+
+/* ===== Layout ===== */
+
+.evi-update {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  font-family: var(--pf-v5-global--FontFamily--text, "RedHatText", "Helvetica Neue", Arial, sans-serif);
+  color: var(--pf-v5-global--Color--100, #151515);
+  background: var(--pf-v5-global--BackgroundColor--200, #f0f0f0);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* ===== Header ===== */
+
+.evi-update-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 24px;
+  background: var(--pf-v5-global--BackgroundColor--dark-100, #151515);
+  color: var(--pf-v5-global--Color--light-100, #ffffff);
+  flex-shrink: 0;
+}
+
+.evi-update-header h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+}
+
+/* ===== Content ===== */
+
+.evi-update-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 32px;
+  max-width: 720px;
+}
+
+/* ===== Version info card ===== */
+
+.evi-update-card {
+  background: var(--pf-v5-global--BackgroundColor--100, #ffffff);
+  border: 1px solid var(--pf-v5-global--BorderColor--100, #d2d2d2);
+  border-radius: 4px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+
+.evi-update-version-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 32px;
+}
+
+.evi-update-version-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.evi-update-version-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--pf-v5-global--Color--200, #6a6e73);
+}
+
+.evi-update-version-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--pf-v5-global--Color--100, #151515);
+}
+
+.evi-update-version-secondary {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--pf-v5-global--Color--200, #6a6e73);
+}
+
+/* ===== Status badge ===== */
+
+.evi-update-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  width: fit-content;
+}
+
+.evi-update-badge-neutral {
+  background: var(--pf-v5-global--BackgroundColor--200, #f0f0f0);
+  color: var(--pf-v5-global--Color--200, #6a6e73);
+}
+
+.evi-update-badge-success {
+  background: #e9f5e9;
+  color: #1e4f18;
+}
+
+.evi-update-badge-warning {
+  background: #fdf7e7;
+  color: #795600;
+}
+
+.evi-update-badge-info {
+  background: #e7f1fa;
+  color: #002952;
+}
+
+.evi-update-badge-active {
+  background: #fce8e8;
+  color: #7d1007;
+}
+
+html.theme-dark .evi-update-badge-success {
+  background: #1a3a1a;
+  color: #a3d9a0;
+}
+
+html.theme-dark .evi-update-badge-warning {
+  background: #3d3000;
+  color: #f5d680;
+}
+
+html.theme-dark .evi-update-badge-info {
+  background: #0a2a4d;
+  color: #b8daff;
+}
+
+html.theme-dark .evi-update-badge-active {
+  background: #3b1010;
+  color: #f5b5b5;
+}
+
+/* ===== Visibility helpers ===== */
+
+.hidden {
+  display: none;
+}
+
+/* ===== Action buttons ===== */
+
+.evi-update-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.evi-update-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background-color 0.15s, opacity 0.15s;
+  user-select: none;
+}
+
+.evi-update-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.evi-update-btn-primary {
+  color: #ffffff;
+  background: var(--pf-v5-global--primary-color--100, #0066cc);
+}
+
+.evi-update-btn-primary:hover:not(:disabled) {
+  background: var(--pf-v5-global--primary-color--200, #004080);
+}
+
+.evi-update-btn-secondary {
+  color: var(--pf-v5-global--Color--100, #151515);
+  background: var(--pf-v5-global--BackgroundColor--100, #ffffff);
+  border: 1px solid var(--pf-v5-global--BorderColor--300, #8a8d90);
+}
+
+.evi-update-btn-secondary:hover:not(:disabled) {
+  background: var(--pf-v5-global--BackgroundColor--200, #f0f0f0);
+}
+
+.evi-update-btn-danger {
+  color: #ffffff;
+  background: #c9190b;
+}
+
+.evi-update-btn-danger:hover:not(:disabled) {
+  background: #a30000;
+}
+
+.evi-update-btn-small {
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--pf-v5-global--Color--200, #6a6e73);
+  background: transparent;
+  border: 1px solid var(--pf-v5-global--BorderColor--100, #d2d2d2);
+}
+
+.evi-update-btn-small:hover:not(:disabled) {
+  background: var(--pf-v5-global--BackgroundColor--200, #f0f0f0);
+}
+
+/* ===== Status indicator ===== */
+
+.evi-update-status {
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border-radius: 3px;
+  font-size: 14px;
+}
+
+.evi-update-status.status-running {
+  background: #e7f1fa;
+  border-left: 4px solid #2b9af3;
+  color: #002952;
+}
+
+.evi-update-status.status-success {
+  background: #e9f5e9;
+  border-left: 4px solid #3e8635;
+  color: #1e4f18;
+}
+
+.evi-update-status.status-error {
+  background: #fce8e8;
+  border-left: 4px solid #c9190b;
+  color: #7d1007;
+}
+
+html.theme-dark .evi-update-status.status-running {
+  background: #0a2a4d;
+  color: #b8daff;
+}
+
+html.theme-dark .evi-update-status.status-success {
+  background: #1a3a1a;
+  color: #a3d9a0;
+}
+
+html.theme-dark .evi-update-status.status-error {
+  background: #3b1010;
+  color: #f5b5b5;
+}
+
+/* ===== Progress bar ===== */
+
+.evi-update-progress-wrapper {
+  margin-bottom: 16px;
+}
+
+.evi-update-progress-bar {
+  height: 8px;
+  background: var(--pf-v5-global--BackgroundColor--200, #f0f0f0);
+  border: 1px solid var(--pf-v5-global--BorderColor--100, #d2d2d2);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.evi-update-progress-fill {
+  height: 100%;
+  min-width: 4px;
+  background: var(--pf-v5-global--primary-color--100, #0066cc);
+  border-radius: 3px;
+  transition: width 0.25s ease-out;
+}
+
+.evi-update-progress-indeterminate {
+  width: 40% !important;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--pf-v5-global--primary-color--100, #0066cc) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: evi-update-progress-stripe 1.2s linear infinite;
+}
+
+@keyframes evi-update-progress-stripe {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.evi-update-progress-text {
+  font-size: 13px;
+  color: var(--pf-v5-global--Color--200, #6a6e73);
+}
+
+html.theme-dark .evi-update-progress-bar {
+  background: var(--pf-v5-global--BackgroundColor--dark-100, #0f1114);
+  border-color: var(--pf-v5-global--BorderColor--100, #3c3f42);
+}
+
+html.theme-dark .evi-update-progress-text {
+  color: var(--pf-v5-global--Color--200, #a2a5a8);
+}
+
+/* ===== Output area ===== */
+
+.evi-update-output-wrapper {
+  margin-top: 24px;
+}
+
+.evi-update-output-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.evi-update-output-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.evi-update-output {
+  width: 100%;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 12px 16px;
+  margin: 0;
+  font-family: var(--pf-v5-global--FontFamily--monospace, "RedHatMono", "Liberation Mono", monospace);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--pf-v5-global--Color--100, #151515);
+  background: var(--pf-v5-global--BackgroundColor--100, #ffffff);
+  border: 1px solid var(--pf-v5-global--BorderColor--100, #d2d2d2);
+  border-radius: 3px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  box-sizing: border-box;
+}
+
+/* ===== Release notes ===== */
+
+.evi-update-release-notes {
+  margin-top: 24px;
+}
+
+.evi-update-release-notes h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.evi-update-release-notes-content {
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 12px 16px;
+  margin: 0;
+  font-family: var(--pf-v5-global--FontFamily--text, "RedHatText", "Helvetica Neue", Arial, sans-serif);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--pf-v5-global--Color--200, #6a6e73);
+  background: var(--pf-v5-global--BackgroundColor--100, #ffffff);
+  border: 1px solid var(--pf-v5-global--BorderColor--100, #d2d2d2);
+  border-radius: 3px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  box-sizing: border-box;
+}
+
+/* ===== Responsive: narrow viewports ===== */
+
+@media (max-width: 640px) {
+  .evi-update-content {
+    padding: 16px;
+  }
+  .evi-update-version-grid {
+    grid-template-columns: 1fr;
+  }
+  .evi-update-actions {
+    flex-direction: column;
+  }
+  .evi-update-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

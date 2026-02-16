@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 #
-# Version: 1.18.4
+# Version: 1.18.5
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
 # - Single entry point: main_menu() always. When evi.env and evi.secrets.env exist (CONFIG_EXISTS=1), main menu shows context-aware labels: section "manage deployment", option 1 "check & repair prerequisites", option 2 "reconfigure containers environment", option 3 "apply configuration and restart containers". Otherwise first-run labels: section "new deployment", option 1 "install prerequisites", option 2 "containers environment configuration", option 3 "deploy and start evi containers".
+#
+# Changes in v1.18.5:
+# - Prerequisites installation: deploy cockpit-evi-update panel (check, download, install updates via Cockpit sidebar).
 #
 # Changes in v1.18.4:
 # - Guided reconfiguration: skip Step 6 (version selection) and default to "keep current version" to prevent accidental upgrades during reconfiguration.
@@ -755,6 +758,25 @@ install_prerequisites_all() {
     info "cockpit sidebar: 'evi admin tools' panel added (backup, admin functions)."
   else
     warn "cockpit-evi-admin package not found; skipping admin tools panel."
+  fi
+
+  # --- Cockpit EVI Update panel ---
+  if [[ -d "${SCRIPT_DIR}/cockpit-evi-update" ]] && [[ -f "${SCRIPT_DIR}/cockpit-evi-update/manifest.json" ]]; then
+    log "adding evi update panel to cockpit sidebar..."
+    sudo mkdir -p /usr/local/share/cockpit/evi-update
+    sudo cp "${SCRIPT_DIR}/cockpit-evi-update/manifest.json" \
+            "${SCRIPT_DIR}/cockpit-evi-update/index.html" \
+            "${SCRIPT_DIR}/cockpit-evi-update/evi-update.js" \
+            "${SCRIPT_DIR}/cockpit-evi-update/evi-update.css" \
+            /usr/local/share/cockpit/evi-update/
+    # Generate dispatcher script with actual deployment directory path
+    sed "s|{{DEPLOYMENT_DIR}}|${SCRIPT_DIR}|g" \
+      "${SCRIPT_DIR}/cockpit-evi-update/evi-update-dispatch.sh.tpl" | \
+      sudo tee /usr/local/share/cockpit/evi-update/evi-update-dispatch.sh > /dev/null
+    sudo chmod 755 /usr/local/share/cockpit/evi-update/evi-update-dispatch.sh
+    info "cockpit sidebar: 'evi update' panel added (check, download, install updates)."
+  else
+    warn "cockpit-evi-update package not found; skipping update panel."
   fi
 
   # --- Configure pgAdmin ---

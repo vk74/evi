@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<!-- Version: 1.0.0 -->
+<!-- Cockpit package: EVI update panel for checking, downloading, and installing updates. -->
+<!-- Single-page layout with version info, action buttons, status indicator, and output area. -->
+<!-- Cockpit package; filename: index.html -->
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>evi update</title>
+  <link rel="stylesheet" href="evi-update.css" type="text/css">
+</head>
+<body>
+  <div class="evi-update">
+    <!-- Header -->
+    <header class="evi-update-header">
+      <h1>evi update</h1>
+    </header>
+
+    <main class="evi-update-content">
+      <!-- Version info card -->
+      <div class="evi-update-card">
+        <div class="evi-update-version-grid">
+          <div class="evi-update-version-item">
+            <span class="evi-update-version-label">Installed version</span>
+            <span id="current-version" class="evi-update-version-value">—</span>
+          </div>
+          <div class="evi-update-version-item">
+            <span class="evi-update-version-label">Latest available</span>
+            <span id="latest-version" class="evi-update-version-value">—</span>
+          </div>
+          <div class="evi-update-version-item">
+            <span class="evi-update-version-label">Last checked</span>
+            <span id="last-check" class="evi-update-version-value evi-update-version-secondary">—</span>
+          </div>
+          <div class="evi-update-version-item">
+            <span class="evi-update-version-label">Status</span>
+            <span id="update-status-badge" class="evi-update-badge evi-update-badge-neutral">unknown</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="evi-update-actions">
+        <button type="button" id="btn-check" class="evi-update-btn evi-update-btn-secondary">
+          Check for updates
+        </button>
+        <button type="button" id="btn-download" class="evi-update-btn evi-update-btn-primary" disabled>
+          Download update
+        </button>
+        <button type="button" id="btn-install" class="evi-update-btn evi-update-btn-danger" disabled>
+          Install update
+        </button>
+      </div>
+
+      <!-- Status indicator -->
+      <div id="operation-status" class="evi-update-status hidden"></div>
+
+      <!-- Progress bar -->
+      <div id="progress-wrapper" class="evi-update-progress-wrapper hidden">
+        <div class="evi-update-progress-bar">
+          <div id="progress-fill" class="evi-update-progress-fill evi-update-progress-indeterminate"></div>
+        </div>
+        <div id="progress-text" class="evi-update-progress-text">Working...</div>
+      </div>
+
+      <!-- Output area -->
+      <div id="output-wrapper" class="evi-update-output-wrapper hidden">
+        <div class="evi-update-output-header">
+          <h3>Output</h3>
+          <button type="button" id="btn-clear" class="evi-update-btn evi-update-btn-small">Clear</button>
+        </div>
+        <pre id="output" class="evi-update-output"></pre>
+      </div>
+
+      <!-- Release notes (shown when update available) -->
+      <div id="release-notes-wrapper" class="evi-update-release-notes hidden">
+        <h3>Release notes</h3>
+        <pre id="release-notes" class="evi-update-release-notes-content"></pre>
+      </div>
+    </main>
+  </div>
+
+  <script src="../base1/cockpit.js"></script>
+  <script src="evi-update.js"></script>
+</body>
+</html>
