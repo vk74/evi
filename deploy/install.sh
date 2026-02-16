@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 #
-в# Version: 1.18.3
+# Version: 1.18.4
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
 # - Single entry point: main_menu() always. When evi.env and evi.secrets.env exist (CONFIG_EXISTS=1), main menu shows context-aware labels: section "manage deployment", option 1 "check & repair prerequisites", option 2 "reconfigure containers environment", option 3 "apply configuration and restart containers". Otherwise first-run labels: section "new deployment", option 1 "install prerequisites", option 2 "containers environment configuration", option 3 "deploy and start evi containers".
+#
+# Changes in v1.18.4:
+# - Guided reconfiguration: skip Step 6 (version selection) and default to "keep current version" to prevent accidental upgrades during reconfiguration.
 #
 # Changes in v1.18.3:
 # - UFW workflow: single path for first run and reconfigure. apply_firewall_admin_tools() always runs ufw-delete-rules.sh (remove existing 9090/5445, print each removal) then ufw-add-rules.sh (add from evi.env). Renamed ufw-configure.sh → ufw-add-rules.sh, ufw-reconfigure.sh → ufw-delete-rules.sh.
@@ -1226,34 +1229,24 @@ guided_setup() {
     fi
   fi
   
-  echo ""
-  printf "${GREEN}step 6:${NC} which evi version do you want to deploy?\n"
-  echo ""
-  if [[ "${reconfigure_mode}" -eq 1 ]] && [[ -n "${current_fe_image:-}" ]]; then
-    echo "  0) keep current setting (current container images)"
-  fi
-  echo "  1) latest (recommended)"
-  echo "  2) manually set version (choose from versions available in registry and set for each container)"
-  echo ""
-  while [[ -z "${version_choice}" ]]; do
-    if [[ "${reconfigure_mode}" -eq 1 ]] && [[ -n "${current_fe_image:-}" ]]; then
-      read -r -p "select [0-2]: " step6_c
-    else
+  if [[ "${reconfigure_mode}" -eq 1 ]]; then
+    version_choice="keep"
+  else
+    echo ""
+    printf "${GREEN}step 6:${NC} which evi version do you want to deploy?\n"
+    echo ""
+    echo "  1) latest (recommended)"
+    echo "  2) manually set version (choose from versions available in registry and set for each container)"
+    echo ""
+    while [[ -z "${version_choice}" ]]; do
       read -r -p "select [1-2]: " step6_c
-    fi
-    case "${step6_c}" in
-      0)
-        if [[ "${reconfigure_mode}" -eq 1 ]] && [[ -n "${current_fe_image:-}" ]]; then
-          version_choice="keep"
-        else
-          warn "please select 1 or 2"
-        fi
-        ;;
-      1) version_choice="latest" ;;
-      2) version_choice="manual" ;;
-      *) warn "please select $([[ "${reconfigure_mode}" -eq 1 ]] && [[ -n "${current_fe_image:-}" ]] && echo "0, " )1 or 2" ;;
-    esac
-  done
+      case "${step6_c}" in
+        1) version_choice="latest" ;;
+        2) version_choice="manual" ;;
+        *) warn "please select 1 or 2" ;;
+      esac
+    done
+  fi
   
   if [[ "${version_choice}" == "manual" ]]; then
     ensure_executable

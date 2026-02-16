@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.0
+# Version: 1.0.1
 # Purpose: Remove all existing UFW rules for cockpit (9090) and pgadmin (5445). Does not add any rules.
 # Backend script, called from install.sh before ufw-add-rules.sh (guided setup or restore). Same workflow for first run and reconfigure.
 # Logic: Repeatedly find highest rule number for 9090/5445, delete it (print each removal), re-query until none left. Parse with line-start sed pattern.
+#
+# Changes in v1.0.1:
+# - Fixed pipeline: wrap "grep ... || true" in subshell so output is piped to sed; rules are now correctly found and removed on reconfigure.
 #
 
 set -euo pipefail
@@ -27,7 +30,7 @@ delete_evi_admin_rules() {
   log "removing existing UFW rules for cockpit (9090) and pgadmin (5445)..."
   local max_n iter=0
   while [[ "${iter}" -lt 20 ]]; do
-    max_n=$(sudo ufw status numbered 2>/dev/null | grep -E '(9090|5445)/' || true | sed -n 's/^[[:space:]]*\[[[:space:]]*\([0-9][0-9]*\)\].*/\1/p' | sort -rn | head -1)
+    max_n=$(sudo ufw status numbered 2>/dev/null | (grep -E '(9090|5445)/' || true) | sed -n 's/^[[:space:]]*\[[[:space:]]*\([0-9][0-9]*\)\].*/\1/p' | sort -rn | head -1)
     [[ -z "${max_n}" ]] || [[ ! "${max_n}" =~ ^[0-9]+$ ]] && break
     info "removing rule ${max_n}"
     sudo ufw --force delete "${max_n}" 2>/dev/null || true
