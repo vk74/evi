@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.0
+# Version: 1.0.1
 # Purpose: Download the latest EVI update from GitHub as a tarball.
 # Extracts only the deploy/ directory into ~/evi/config/updates/<version>/.
 # Does NOT replace any files — that is handled by apply-update.sh from the new kit.
@@ -11,6 +11,9 @@
 # - Extracts deploy/ directory to config/updates/<version>/deploy/
 # - Updates updates.json with downloaded=true and downloadPath
 # - Validates that the extracted kit contains install.sh and scripts/apply-update.sh
+#
+# Changes in v1.0.1:
+# - Extract package.json from tarball root to staging dir (version source of truth for apply-update)
 #
 
 set -euo pipefail
@@ -164,14 +167,16 @@ main() {
     exit 1
   fi
 
-  # Extract deploy/ subdirectory, stripping the top-level prefix + deploy/ (2 levels)
+  # Extract deploy/ subdirectory, stripping the top-level prefix
   tar -xzf "$tmp_tarball" -C "$download_dir" --strip-components=1 "${top_dir}/deploy" 2>/dev/null || {
-    # If deploy/ doesn't exist at top level, the structure may be flat
     err "could not extract deploy/ directory from tarball"
     err "expected structure: ${top_dir}/deploy/"
     rm -f "$tmp_tarball"
     exit 1
   }
+
+  # Extract package.json from tarball root (version source of truth for check-updates)
+  tar -xzf "$tmp_tarball" -C "$download_dir" --strip-components=1 "${top_dir}/package.json" 2>/dev/null || true
 
   rm -f "$tmp_tarball"
   printf " ${SYM_OK} tarball extracted to %s\n" "$download_dir"

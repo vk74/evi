@@ -1,18 +1,23 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.0
+# Version: 1.1.0
 # Purpose: Check for available EVI updates by querying the GitHub Releases API.
-# Reads current version from install.sh header, compares with latest GitHub release,
+# Reads current version from package.json "version" (product release), compares with latest GitHub release,
 # and writes result to ~/evi/config/updates/updates.json.
 # Deployment script: check-updates.sh
 # Logic:
 # - Receives deployment directory as $1
-# - Extracts current version from install.sh "Version:" header line
+# - Extracts current version from DEPLOYMENT_DIR/package.json field "version"
 # - Queries GitHub API for latest release (or all releases for comparison)
 # - Compares semantic versions
 # - Writes/updates updates.json with current/latest version, availability flag, release notes
 # - Preserves existing "downloaded" and "downloadPath" fields if present
 # - Outputs human-readable summary to stdout (streamed to Cockpit UI)
+#
+# Changes in v1.1.0:
+# - Read current version from package.json "version" (product release) instead of install.sh header
+# - Remove noisy "current version" log line; 404 (no releases) treated as warning, exit 0, write updates.json
+# - Always write updates.json before exit (errors and success) so LAST CHECKED updates in UI
 #
 
 set -euo pipefail
@@ -22,7 +27,7 @@ DEPLOYMENT_DIR="${1:?usage: check-updates.sh <deployment-dir>}"
 CONFIG_DIR="${DEPLOYMENT_DIR}/config"
 UPDATES_DIR="${CONFIG_DIR}/updates"
 UPDATES_JSON="${UPDATES_DIR}/updates.json"
-INSTALL_SH="${DEPLOYMENT_DIR}/install.sh"
+PACKAGE_JSON="${DEPLOYMENT_DIR}/package.json"
 
 # --- GitHub repository ---
 GITHUB_OWNER="vk74"
@@ -83,14 +88,14 @@ compare_versions() {
   return 0
 }
 
-# --- Read current version from install.sh ---
+# --- Read current version from package.json (product release version) ---
 get_current_version() {
-  if [[ ! -f "$INSTALL_SH" ]]; then
+  if [[ ! -f "$PACKAGE_JSON" ]]; then
     echo "unknown"
     return
   fi
   local ver
-  ver=$(sed -n '1,20p' "$INSTALL_SH" 2>/dev/null | grep -m1 '^# Version: ' | sed 's/^# Version:[[:space:]]*//' || echo "")
+  ver=$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$PACKAGE_JSON" 2>/dev/null | head -1 | sed 's/.*"version"[[:space:]]*:[[:space:]]*"//' | sed 's/"$//' || echo "")
   if [[ -z "$ver" ]]; then
     echo "unknown"
   else
@@ -161,13 +166,12 @@ EOF
 main() {
   log "checking for evi updates..."
 
-  # Read current version
+  # Read current version from package.json
   local current_version
   current_version=$(get_current_version)
-  log "current version: ${current_version}"
 
   if [[ "$current_version" == "unknown" ]]; then
-    warn "could not determine current version from install.sh"
+    warn "could not determine current version from package.json"
   fi
 
   # Query GitHub API
@@ -185,6 +189,9 @@ main() {
     "$GITHUB_API" 2>&1) || {
     err "failed to query GitHub API"
     rm -f "$tmp_file"
+    local prev_latest
+    prev_latest=$(read_existing_json_field "latestVersion")
+    write_updates_json "$current_version" "${prev_latest:-unknown}" "false" ""
     exit 1
   }
 
@@ -192,14 +199,20 @@ main() {
   rm -f "$tmp_file"
 
   if [[ "$http_code" != "200" ]]; then
-    # Check for rate limiting
+    if [[ "$http_code" == "404" ]]; then
+      warn "no releases found for ${GITHUB_OWNER}/${GITHUB_REPO} (no GitHub Release published yet)"
+      write_updates_json "$current_version" "none" "false" ""
+      info "update status written to ${UPDATES_JSON}"
+      exit 0
+    fi
     if [[ "$http_code" == "403" ]]; then
       err "GitHub API rate limit exceeded. Try again later."
-    elif [[ "$http_code" == "404" ]]; then
-      err "no releases found for ${GITHUB_OWNER}/${GITHUB_REPO}"
     else
       err "GitHub API returned HTTP ${http_code}"
     fi
+    local prev_latest
+    prev_latest=$(read_existing_json_field "latestVersion")
+    write_updates_json "$current_version" "${prev_latest:-unknown}" "false" ""
     exit 1
   fi
 
@@ -209,6 +222,9 @@ main() {
 
   if [[ -z "$latest_tag" ]]; then
     err "could not parse latest release tag from GitHub API response"
+    local prev_latest
+    prev_latest=$(read_existing_json_field "latestVersion")
+    write_updates_json "$current_version" "${prev_latest:-unknown}" "false" ""
     exit 1
   fi
 

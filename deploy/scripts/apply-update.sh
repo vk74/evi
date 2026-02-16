@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.0
+# Version: 1.0.1
 # Purpose: Apply a downloaded EVI update by replacing the deploy kit and running post-update steps.
 # IMPORTANT: This script is called from the NEWLY DOWNLOADED kit, not from ~/evi/.
 # It is located at ~/evi/config/updates/<version>/deploy/scripts/apply-update.sh
@@ -15,6 +15,9 @@
 # - Pulls updated container images
 # - Restarts systemd user services
 # - Writes update log and journal entry
+#
+# Changes in v1.0.1:
+# - Copy package.json from update staging to EVI_HOME (version source of truth)
 #
 
 set -euo pipefail
@@ -119,6 +122,12 @@ replace_deploy_kit() {
   for item in "${NEW_DEPLOY_DIR}"/.[!.]* "${NEW_DEPLOY_DIR}"/..?*; do
     [[ -e "$item" ]] && cp -a "$item" "${EVI_HOME}/" 2>/dev/null || true
   done
+
+  # Copy package.json from update staging (version source of truth; lives at repo root, not inside deploy/)
+  if [[ -f "${UPDATE_VERSION_DIR}/package.json" ]]; then
+    cp -a "${UPDATE_VERSION_DIR}/package.json" "${EVI_HOME}/package.json"
+    log_tee " ${SYM_OK} package.json updated"
+  fi
 
   # Ensure scripts are executable
   chmod +x "${EVI_HOME}/install.sh" 2>/dev/null || true

@@ -1,9 +1,13 @@
-/* Version: 1.0.0
+/* Version: 1.0.1
  * Purpose: Main logic for evi update Cockpit package.
  * Handles the three-step update flow: check for updates, download update, install update.
  * Communicates with host scripts via evi-update-dispatch.sh dispatcher using cockpit.spawn().
  * Reads update status from updates.json and reflects it in the UI (version info, badges, buttons).
  * Cockpit package; filename: evi-update.js
+ *
+ * Changes in v1.0.1:
+ * - Strip ANSI escape codes in appendOutput() so raw codes do not appear in <pre>
+ * - Call loadStatus() in runOperation catch handler so LAST CHECKED updates after failed operations
  */
 
 (function () {
@@ -229,6 +233,7 @@
       }
       showStatus('error', msg);
       refreshUI();
+      loadStatus();
     });
   }
 
@@ -287,8 +292,13 @@
     els.outputWrapper.classList.remove('hidden');
   }
 
+  /* Strip ANSI escape sequences so raw codes do not appear in <pre> */
+  function stripAnsi(str) {
+    return str.replace(/\x1b\[[0-9;]*m/g, '');
+  }
+
   function appendOutput(text) {
-    els.output.textContent += text;
+    els.output.textContent += stripAnsi(text);
     els.output.scrollTop = els.output.scrollHeight;
   }
 
