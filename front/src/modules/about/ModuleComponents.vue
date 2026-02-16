@@ -1,6 +1,6 @@
 <!--
   File: ModuleComponents.vue
-  Version: 1.4.2
+  Version: 1.4.3
   Description: Component for displaying system components information
   Purpose: Shows information about technologies used in evi software
   Features:
@@ -8,6 +8,9 @@
   - Lists all major libraries and frameworks with source links per section
   - Host server components section last; pgAdmin has its own section; admin tools block removed
   Type: Frontend file - ModuleComponents.vue
+
+  Changes in v1.4.3:
+  - Updated backend library versions: cors 2.8.6, ajv 8.18.0, zod 4.3.6, dotenv 17.3.1
 
   Changes in v1.4.2:
   - Updated frontend library versions: Vue 3.5.28, Vuetify 3.11.8, Pinia 3.0.4, vue-i18n 11.2.8,
@@ -93,12 +96,12 @@ const componentsData = computed<ComponentsData>(() => ({
       { name: 'pg 8.18.0 - PostgreSQL driver', url: 'https://github.com/brianc/node-postgres' },
       { name: 'jsonwebtoken 9.0.3 - authentication', url: 'https://github.com/auth0/node-jsonwebtoken' },
       { name: 'bcrypt 6.0.0 - password hashing', url: 'https://github.com/kelektiv/node.bcrypt.js' },
-      { name: 'cors 2.8.5 - cross-origin resource sharing', url: 'https://github.com/expressjs/cors' },
+      { name: 'cors 2.8.6 - cross-origin resource sharing', url: 'https://github.com/expressjs/cors' },
       { name: 'cookie-parser 1.4.7 - cookie handling', url: 'https://github.com/expressjs/cookie-parser' },
       { name: 'uuid 9.0.1 - unique identifier generation', url: 'https://github.com/uuidjs/uuid' },
-      { name: 'ajv 8.17.1 - JSON schema validator', url: 'https://github.com/ajv-validator/ajv' },
-      { name: 'zod 4.1.5 - schema validation', url: 'https://zod.dev' },
-      { name: 'dotenv 17.2.3 - environment config', url: 'https://github.com/motdotla/dotenv' }
+      { name: 'ajv 8.18.0 - JSON schema validator', url: 'https://github.com/ajv-validator/ajv' },
+      { name: 'zod 4.3.6 - schema validation', url: 'https://zod.dev' },
+      { name: 'dotenv 17.3.1 - environment config', url: 'https://github.com/motdotla/dotenv' }
     ]
   },
   database: {
