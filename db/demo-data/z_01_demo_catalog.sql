@@ -1,6 +1,9 @@
--- Version: 1.0.16
+-- Version: 1.0.17
 -- Description: Seeds the database with demo catalog data for evi (regions, products, options, price lists, catalog sections).
 -- Backend file: z_01_demo_catalog.sql
+--
+-- Changes in v1.0.17:
+-- - Replaced invalid demo user UUIDs with valid UUID v4: tech.sup.guy, sales.rep, med.spec (backend validation requires valid UUID format)
 --
 -- Changes in v1.0.16:
 -- - Unpaired TOOL-05-33333 (Wrench set) from AUTO-01-12345 (Sedan); DELETE + removed from product_options INSERT
@@ -109,11 +112,11 @@ INSERT INTO app.users (user_id, username, hashed_password, email, is_staff, acco
 -- Test user t2 (active) - for testing purposes
 ('c2cbae6f-89b9-4fa8-be9b-a8391526ead7', 't2', '$2b$10$USKBfWFGWHx8oIG3O2GxWej0cFtgDY4DGKzBn4vH7VGNxqQZhDBGy', 't2@evi.team', false, 'active', 'Test', 'User Two', NOW(), NULL, NULL, false),
 -- Demo user: tech-support member
-('d1111111-1111-1111-1111-111111111111', 'tech.sup.guy', '$2b$10$USKBfWFGWHx8oIG3O2GxWej0cFtgDY4DGKzBn4vH7VGNxqQZhDBGy', 'tech.sup.guy@evi.team', false, 'active', 'Tech', 'Support Guy', NOW(), NULL, NULL, false),
+('d1a2b3c4-e5f6-4a7b-8c9d-0e1f2a3b4c5d', 'tech.sup.guy', '$2b$10$USKBfWFGWHx8oIG3O2GxWej0cFtgDY4DGKzBn4vH7VGNxqQZhDBGy', 'tech.sup.guy@evi.team', false, 'active', 'Tech', 'Support Guy', NOW(), NULL, NULL, false),
 -- Demo user: sales member
-('d2222222-2222-2222-2222-222222222222', 'sales.rep', '$2b$10$USKBfWFGWHx8oIG3O2GxWej0cFtgDY4DGKzBn4vH7VGNxqQZhDBGy', 'sales.rep@evi.team', false, 'active', 'Sales', 'Rep', NOW(), NULL, NULL, false),
+('d2b3c4d5-e6f7-4b8c-9d0e-1f2a3b4c5d6e', 'sales.rep', '$2b$10$USKBfWFGWHx8oIG3O2GxWej0cFtgDY4DGKzBn4vH7VGNxqQZhDBGy', 'sales.rep@evi.team', false, 'active', 'Sales', 'Rep', NOW(), NULL, NULL, false),
 -- Demo user: medical-specialists member
-('d3333333-3333-3333-3333-333333333333', 'med.spec', '$2b$10$USKBfWFGWHx8oIG3O2GxWej0cFtgDY4DGKzBn4vH7VGNxqQZhDBGy', 'med.spec@evi.team', false, 'active', 'Med', 'Spec', NOW(), NULL, NULL, false)
+('d3c4d5e6-f7a8-4c9d-0e1f-2a3b4c5d6e7f', 'med.spec', '$2b$10$USKBfWFGWHx8oIG3O2GxWej0cFtgDY4DGKzBn4vH7VGNxqQZhDBGy', 'med.spec@evi.team', false, 'active', 'Med', 'Spec', NOW(), NULL, NULL, false)
 ON CONFLICT (user_id) DO UPDATE SET
     username = EXCLUDED.username,
     email = EXCLUDED.email,
@@ -156,9 +159,9 @@ INSERT INTO app.group_members (group_id, user_id, added_by) VALUES
 ('e5f6a7b8-c9d0-4123-e4f5-a6b7c8d9e0f1', '7ef9dce8-c832-40fe-a6ef-85afff37c474', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
 ('f6a7b8c9-d0e1-4234-f5a6-b7c8d9e0f1a2', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7', 'c2cbae6f-89b9-4fa8-be9b-a8391526ead7'),
 -- Demo users in user groups
-('b2c3d4e5-f6a7-4890-b1c2-d3e4f5a6b7c8', 'd1111111-1111-1111-1111-111111111111', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('a1b2c3d4-e5f6-4789-a0b1-c2d3e4f5a6b7', 'd2222222-2222-2222-2222-222222222222', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
-('c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'd3333333-3333-3333-3333-333333333333', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
+('b2c3d4e5-f6a7-4890-b1c2-d3e4f5a6b7c8', 'd1a2b3c4-e5f6-4a7b-8c9d-0e1f2a3b4c5d', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('a1b2c3d4-e5f6-4789-a0b1-c2d3e4f5a6b7', 'd2b3c4d5-e6f7-4b8c-9d0e-1f2a3b4c5d6e', '7ef9dce8-c832-40fe-a6ef-85afff37c474'),
+('c3d4e5f6-a7b8-4901-c2d3-e4f5a6b7c8d9', 'd3c4d5e6-f7a8-4c9d-0e1f-2a3b4c5d6e7f', '7ef9dce8-c832-40fe-a6ef-85afff37c474')
 ON CONFLICT (group_id, user_id, is_active) DO NOTHING;
 
 -- Add test user t1 to sysadmins group
