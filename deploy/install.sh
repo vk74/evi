@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 #
-# Version: 1.18.0
+# Version: 1.18.1
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
 # - Single entry point: main_menu() always. When evi.env and evi.secrets.env exist (CONFIG_EXISTS=1), main menu shows context-aware labels: section "manage deployment", option 1 "check & repair prerequisites", option 2 "reconfigure containers environment", option 3 "apply configuration and restart containers". Otherwise first-run labels: section "new deployment", option 1 "install prerequisites", option 2 "containers environment configuration", option 3 "deploy and start evi containers".
+#
+# Changes in v1.18.1:
+# - apply_firewall_admin_tools: use "grep -E '(9090|5445)/' || true" in pipeline so that when no rules exist (first config) the pipeline does not fail under set -o pipefail; script no longer exits at firewall step.
 #
 # Changes in v1.18.0:
 # - apply_firewall_admin_tools: remove all existing rules for 9090/5445 by rule number (ufw status numbered, delete in reverse order) before adding new rules so reconfiguration does not leave duplicate rules.
@@ -822,19 +825,9 @@ apply_firewall_admin_tools() {
 
   log "applying firewall rules for cockpit (ports 9090, 5445)..."
   # Remove all existing rules for 9090 and 5445 by rule number (covers combined rules like "from X to port 9090,5445" and per-port rules)
+  # With set -o pipefail, grep exits 1 when no rules match; use grep ... || true so the pipeline does not fail on first config
   local nums n
-  # #region agent log
-  _debug_log() {
-    local msg="$1" loc="${2:-install.sh:apply_firewall_admin_tools}" hyp="${3:-A}" extra="${4:-}"
-    echo "{\"timestamp\":$(($(date +%s) * 1000)),\"location\":\"${loc}\",\"message\":\"${msg}\",\"data\":{\"access\":\"${access}\"${extra}},\"hypothesisId\":\"${hyp}\"}" >> "/Users/vk/Library/Mobile Documents/com~apple~CloudDocs/code/evi/.cursor/debug.log"
-  }
-  _debug_log "apply_firewall_entry" "install.sh:apply_firewall_admin_tools" "A" ",\"allowed\":\"${allowed}\""
-  _debug_log "before_ufw_nums_pipeline" "install.sh:apply_firewall_admin_tools" "A" ""
-  # #endregion agent log
-  nums=$(sudo ufw status numbered 2>/dev/null | grep -E '(9090|5445)/' | sed -n 's/.*\[ *\([0-9]*\)\].*/\1/p' | sort -rn | tr '\n' ' ')
-  # #region agent log
-  _debug_log "after_ufw_nums_pipeline" "install.sh:apply_firewall_admin_tools" "A" ",\"nums_count\":\"${nums}\""
-  # #endregion agent log
+  nums=$(sudo ufw status numbered 2>/dev/null | grep -E '(9090|5445)/' || true | sed -n 's/.*\[ *\([0-9]*\)\].*/\1/p' | sort -rn | tr '\n' ' ')
   for n in ${nums}; do
     sudo ufw --force delete "${n}" 2>/dev/null || true
   done
