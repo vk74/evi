@@ -1,4 +1,4 @@
-# EVI README Version 0.10.5
+# EVI README Version 0.10.6
 
 # About
 
