@@ -823,7 +823,18 @@ apply_firewall_admin_tools() {
   log "applying firewall rules for cockpit (ports 9090, 5445)..."
   # Remove all existing rules for 9090 and 5445 by rule number (covers combined rules like "from X to port 9090,5445" and per-port rules)
   local nums n
+  # #region agent log
+  _debug_log() {
+    local msg="$1" loc="${2:-install.sh:apply_firewall_admin_tools}" hyp="${3:-A}" extra="${4:-}"
+    echo "{\"timestamp\":$(($(date +%s) * 1000)),\"location\":\"${loc}\",\"message\":\"${msg}\",\"data\":{\"access\":\"${access}\"${extra}},\"hypothesisId\":\"${hyp}\"}" >> "/Users/vk/Library/Mobile Documents/com~apple~CloudDocs/code/evi/.cursor/debug.log"
+  }
+  _debug_log "apply_firewall_entry" "install.sh:apply_firewall_admin_tools" "A" ",\"allowed\":\"${allowed}\""
+  _debug_log "before_ufw_nums_pipeline" "install.sh:apply_firewall_admin_tools" "A" ""
+  # #endregion agent log
   nums=$(sudo ufw status numbered 2>/dev/null | grep -E '(9090|5445)/' | sed -n 's/.*\[ *\([0-9]*\)\].*/\1/p' | sort -rn | tr '\n' ' ')
+  # #region agent log
+  _debug_log "after_ufw_nums_pipeline" "install.sh:apply_firewall_admin_tools" "A" ",\"nums_count\":\"${nums}\""
+  # #endregion agent log
   for n in ${nums}; do
     sudo ufw --force delete "${n}" 2>/dev/null || true
   done
