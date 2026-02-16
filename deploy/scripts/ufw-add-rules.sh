@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
 # Version: 1.0.0
-# Purpose: Apply UFW rules for cockpit (9090) and pgadmin (5445) on initial evi configuration (no existing evi rules to remove).
-# Backend script, called from install.sh during first-time guided setup after saving env.
+# Purpose: Add UFW allow rules for cockpit (9090) and pgadmin (5445) from evi.env. Does not remove any rules.
+# Backend script, called from install.sh after ufw-delete-rules.sh (guided setup or restore).
 # Logic: Read EVI_FIREWALL_ADMIN_ACCESS and EVI_FIREWALL_ADMIN_ALLOWED from evi.env; if skip or ufw missing/inactive, exit; otherwise add allow rules only.
 #
 
@@ -34,7 +34,7 @@ validate_cidr() {
   [[ "${mask}" -ge 0 && "${mask}" -le 32 ]]
 }
 
-apply_rules() {
+add_rules() {
   [[ -f "${TARGET_ENV}" ]] || return 0
   local access allowed
   access=$(grep "^EVI_FIREWALL_ADMIN_ACCESS=" "${TARGET_ENV}" 2>/dev/null | cut -d'=' -f2- | tr -d '"' | tr -d "'" || echo "skip")
@@ -99,4 +99,4 @@ apply_rules() {
   esac
 }
 
-apply_rules
+add_rules

@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 #
-# Version: 1.18.2
+в# Version: 1.18.3
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
 # - Single entry point: main_menu() always. When evi.env and evi.secrets.env exist (CONFIG_EXISTS=1), main menu shows context-aware labels: section "manage deployment", option 1 "check & repair prerequisites", option 2 "reconfigure containers environment", option 3 "apply configuration and restart containers". Otherwise first-run labels: section "new deployment", option 1 "install prerequisites", option 2 "containers environment configuration", option 3 "deploy and start evi containers".
+#
+# Changes in v1.18.3:
+# - UFW workflow: single path for first run and reconfigure. apply_firewall_admin_tools() always runs ufw-delete-rules.sh (remove existing 9090/5445, print each removal) then ufw-add-rules.sh (add from evi.env). Renamed ufw-configure.sh → ufw-add-rules.sh, ufw-reconfigure.sh → ufw-delete-rules.sh.
 #
 # Changes in v1.18.2:
 # - UFW for cockpit/pgadmin (9090, 5445) moved to deploy/scripts/ufw-configure.sh (first-time) and ufw-reconfigure.sh (reconfigure/restore). apply_firewall_admin_tools() now calls these scripts: "configure" when CONFIG_EXISTS=0 (guided first run), "reconfigure" when CONFIG_EXISTS=1 (guided reconfigure) or restore. Reconfigure deletes existing rules by number (skip empty/non-numeric to avoid "Usage" errors) then adds from evi.env.
@@ -804,18 +807,13 @@ get_cockpit_allowed_summary() {
   esac
 }
 
-# Apply UFW rules for cockpit (9090) and pgadmin (5445) from EVI_FIREWALL_ADMIN_* in evi.env.
-# mode: empty or "configure" = first-time (ufw-configure.sh); "reconfigure" = existing config (ufw-reconfigure.sh: delete then add).
+# Apply UFW rules for cockpit (9090) and pgadmin (5445): delete existing rules then add from evi.env. Same workflow for first run and reconfigure.
 apply_firewall_admin_tools() {
-  local mode="${1:-configure}"
   [[ -f "${TARGET_ENV}" ]] || return 0
   ensure_executable
   log "applying firewall rules for cockpit (ports 9090, 5445)..."
-  if [[ "${mode}" == "reconfigure" ]]; then
-    "${SCRIPTS_DIR}/ufw-reconfigure.sh" "${TARGET_ENV}"
-  else
-    "${SCRIPTS_DIR}/ufw-configure.sh" "${TARGET_ENV}"
-  fi
+  "${SCRIPTS_DIR}/ufw-delete-rules.sh"
+  "${SCRIPTS_DIR}/ufw-add-rules.sh" "${TARGET_ENV}"
 }
 
 guided_setup() {
@@ -1436,12 +1434,8 @@ guided_setup() {
   
   info "configuration saved to evi.env and evi.secrets.env"
 
-  # Apply UFW rules for cockpit (9090) and pgadmin (5445); reconfigure = delete old rules then add (when evi config already existed)
-  if [[ "${reconfigure_mode}" -eq 1 ]]; then
-    apply_firewall_admin_tools reconfigure
-  else
-    apply_firewall_admin_tools
-  fi
+  # Apply UFW rules: delete existing 9090/5445 rules then add from evi.env (same workflow for first run and reconfigure)
+  apply_firewall_admin_tools
 
   # Generate certificates if needed
   if [[ "${tls_mode}" == "manual" ]] && [[ "${generate_certs}" == "yes" ]]; then
@@ -2709,7 +2703,7 @@ execute_restore() {
     log "restoring firewall rules..."
     sudo ufw allow 80/tcp 2>/dev/null || true
     sudo ufw allow 443/tcp 2>/dev/null || true
-    apply_firewall_admin_tools reconfigure
+    apply_firewall_admin_tools
     printf "  ${SYM_OK} firewall rules restored\n"
   else
     printf "  ${SYM_PENDING} ufw not active, skipping firewall\n"
