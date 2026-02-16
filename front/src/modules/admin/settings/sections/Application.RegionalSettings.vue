@@ -1,9 +1,14 @@
 <!--
-  Version: 1.10.0
+  Version: 1.10.1
   File: Application.RegionalSettings.vue - frontend file
   Description: Regional settings configuration including timezone, country, fallback language, and time format
   Purpose: Configure regional application settings with full backend integration and settings store
   Frontend file that manages regional settings UI and integrates with settings store
+  
+  Changes in v1.10.1:
+  - Region name validation: allowed characters now include hyphen (-) and underscore (_)
+  - Updated validation error message to mention allowed hyphen and underscore
+  - Success toast for regions update now uses i18n key (regions.messages.updateSuccess)
   
   Changes in v1.5.0:
   - Countries list now loaded dynamically from backend API instead of hardcoded values
@@ -483,7 +488,7 @@ function addRegion(): void {
 }
 
 /**
- * Validate region name format (only letters and digits, any alphabet)
+ * Validate region name format (letters, digits, hyphen, underscore; any alphabet)
  */
 function validateRegionNameFormat(name: string): { isValid: boolean; error?: string } {
   // Allow empty names (will be filtered later)
@@ -491,15 +496,14 @@ function validateRegionNameFormat(name: string): { isValid: boolean; error?: str
     return { isValid: true };
   }
   
-  // Check: only letters (any alphabet) and digits, no special characters or punctuation
+  // Check: letters (any alphabet), digits, hyphen, underscore; no other special characters
   // Using Unicode property escapes: \p{L} for letters, \p{N} for digits
-  // Allows letters from any alphabet (Latin, Cyrillic, Arabic, etc.) and digits
-  const validPattern = /^[\p{L}\p{N}]+$/u;
+  const validPattern = /^[\p{L}\p{N}_-]+$/u;
   
   if (!validPattern.test(name.trim())) {
     return {
       isValid: false,
-      error: 'Название региона может содержать только буквы (любой алфавит) и цифры. Спецсимволы и знаки препинания запрещены'
+      error: 'Название региона может содержать только буквы (любой алфавит), цифры, дефис и подчёркивание. Остальные спецсимволы и знаки препинания запрещены.'
     };
   }
   
@@ -518,7 +522,7 @@ function updateRegionName(region: Region, newName: string): void {
     return;
   }
   
-  // Validate format (only letters and digits)
+  // Validate format (letters, digits, hyphen, underscore)
   const formatValidation = validateRegionNameFormat(trimmedName);
   if (!formatValidation.isValid && formatValidation.error) {
     uiStore.showErrorSnackbar(formatValidation.error);
@@ -673,7 +677,7 @@ async function updateRegionsChanges(): Promise<void> {
         throw new Error('Название региона не может превышать 100 символов');
       }
       
-      // Validate format (only letters and digits)
+      // Validate format (letters, digits, hyphen, underscore)
       const formatValidation = validateRegionNameFormat(trimmedName);
       if (!formatValidation.isValid && formatValidation.error) {
         throw new Error(formatValidation.error);
@@ -686,7 +690,7 @@ async function updateRegionsChanges(): Promise<void> {
     // Reload regions to get fresh data from server
     await loadRegions();
     
-    uiStore.showSuccessSnackbar('Регионы успешно обновлены');
+    uiStore.showSuccessSnackbar(t('admin.settings.application.regionalsettings.regions.messages.updateSuccess'));
   } catch (error) {
     console.error('Failed to update regions:', error);
     uiStore.showErrorSnackbar(error instanceof Error ? error.message : 'Ошибка обновления регионов');

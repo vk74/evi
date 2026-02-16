@@ -1,10 +1,13 @@
 /**
- * version: 1.0.0
+ * version: 1.0.1
  * Service to update regions for admin settings module (backend).
  * Executes batch operations: create new, update existing, delete removed regions in a single transaction.
- * Includes validation: region_name required, max 100 chars, only letters/digits, uniqueness.
+ * Includes validation: region_name required, max 100 chars, letters/digits/hyphen/underscore, uniqueness.
  * Publishes events with informative payload for audit purposes.
  * File: service.admin.update.regions.ts (backend)
+ *
+ * Changes in v1.0.1:
+ * - Updated validation to allow hyphen (-) and underscore (_) in region names
  */
 
 import { Pool } from 'pg'
@@ -33,13 +36,13 @@ function validateRegionNameFormat(name: string): { isValid: boolean; error?: str
     return { isValid: false, error: 'Region name cannot exceed 100 characters' }
   }
   
-  // Check format: only letters (any alphabet) and digits, no special characters or punctuation
+  // Check format: only letters (any alphabet), digits, hyphen and underscore
   // Using Unicode property escapes: \p{L} for letters, \p{N} for digits
-  const validPattern = /^[\p{L}\p{N}]+$/u
+  const validPattern = /^[\p{L}\p{N}_-]+$/u
   if (!validPattern.test(trimmedName)) {
     return {
       isValid: false,
-      error: 'Region name can only contain letters (any alphabet) and digits. Special characters and punctuation are not allowed'
+      error: 'Region name can only contain letters (any alphabet), digits, hyphen and underscore. Other special characters and punctuation are not allowed'
     }
   }
   
