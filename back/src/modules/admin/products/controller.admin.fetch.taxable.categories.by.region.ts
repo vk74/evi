@@ -16,7 +16,7 @@ import { queries } from '../pricing/queries.admin.pricing'
  * Fetch categories for a specific region
  */
 async function fetchTaxableCategoriesByRegionLogic(req: Request, res: Response): Promise<any> {
-    const regionId = parseInt(req.params.regionId)
+    const regionId = parseInt(req.params.regionId as string)
     
     if (isNaN(regionId)) {
         return {

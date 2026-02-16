@@ -36,7 +36,7 @@ interface ChangeGroupOwnerRequestBody {
  * @param res Express response object
  */
 async function changeGroupOwnerController(req: Request & { user?: { uuid: string } }, res: Response) {
-  const groupId = req.params.groupId;
+  const groupId = req.params.groupId as string;
   const requestData: ChangeGroupOwnerRequestBody = req.body;
   
   // Publish request received event

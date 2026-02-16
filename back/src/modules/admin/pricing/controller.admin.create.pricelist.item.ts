@@ -26,7 +26,7 @@ async function createPriceListItemLogic(req: Request, res: Response): Promise<an
     // If request reaches controller, JWT is valid
 
     // Extract price list ID from URL parameters
-    const priceListId = parseInt(req.params.priceListId);
+    const priceListId = parseInt(req.params.priceListId as string);
 
     // Extract request body
     const body = req.body as CreatePriceListItemRequest;

@@ -27,7 +27,7 @@ import { connectionHandler } from '../../../../core/helpers/connection.handler';
  * @param res - Express Response object
  */
 async function fetchGroupMembersLogic(req: Request, res: Response): Promise<any> {
-  const groupId = req.params.groupId;
+  const groupId = req.params.groupId as string;
 
   // Call service layer to fetch group members, passing request object
   const request: FetchGroupMembersRequest = { groupId };

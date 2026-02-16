@@ -26,7 +26,7 @@ async function loadUserLogic(req: Request, res: Response): Promise<any> {
     // If request reaches controller, JWT is valid
 
     // Get user ID from URL parameters
-    const userId = req.params.userId;
+    const userId = req.params.userId as string;
 
     // Load user data
     const result = await loadUser(userId, req);

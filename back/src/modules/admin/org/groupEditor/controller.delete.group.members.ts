@@ -27,7 +27,7 @@ import { connectionHandler } from '../../../../core/helpers/connection.handler';
  * @param res - Express Response object
  */
 async function removeGroupMembersLogic(req: Request, res: Response): Promise<any> {
-  const groupId = req.params.groupId;
+  const groupId = req.params.groupId as string;
   const { userIds } = req.body;
 
   // Call service layer to remove group members, passing request object

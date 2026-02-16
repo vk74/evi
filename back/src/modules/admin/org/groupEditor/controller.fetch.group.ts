@@ -28,7 +28,7 @@ import { connectionHandler } from '../../../../core/helpers/connection.handler';
  * @param res - Express Response object
  */
 async function fetchGroupLogic(req: Request, res: Response): Promise<any> {
-  const groupId = req.params.groupId;
+  const groupId = req.params.groupId as string;
 
   if (!groupId) {
     throw new Error('Group ID is required');

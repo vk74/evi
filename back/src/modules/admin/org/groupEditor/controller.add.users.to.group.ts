@@ -36,7 +36,7 @@ interface AddUsersToGroupRequestBody {
  * @param res Express response object
  */
 async function addUsersToGroupController(req: Request & { user?: { uuid: string } }, res: Response) {
-  const groupId = req.params.groupId;
+  const groupId = req.params.groupId as string;
   const requestData: AddUsersToGroupRequestBody = req.body;
   
   // Publish request received event

@@ -14,7 +14,7 @@ import { deletePriceListItemsService } from './service.admin.delete.pricelist.it
 import type { DeletePriceListItemsRequest } from './types.admin.pricing'
 
 const deletePriceListItemsController = async (req: Request, res: Response): Promise<any> => {
-  const priceListId = parseInt(req.params.priceListId)
+  const priceListId = parseInt(req.params.priceListId as string)
   const body = req.body as DeletePriceListItemsRequest
   const userUuid = getRequestorUuidFromReq(req)
   

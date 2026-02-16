@@ -31,7 +31,7 @@ interface UsernameResponse {
  * @param res Express Response object for sending the response
  */
 async function getUsernameByUuidLogic(req: Request, res: Response): Promise<UsernameResponse> {
-  const userId = req.params.userId;
+  const userId = req.params.userId as string;
 
   // Validate input parameters
   if (!userId) {

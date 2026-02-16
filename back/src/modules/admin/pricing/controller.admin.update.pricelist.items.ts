@@ -13,7 +13,7 @@ import { updatePriceListItemsService } from './service.admin.update.pricelist.it
 import type { UpdatePriceListItemsRequest } from './types.admin.pricing'
 
 const updatePriceListItemsController = async (req: Request, res: Response): Promise<any> => {
-  const priceListId = parseInt(req.params.priceListId)
+  const priceListId = parseInt(req.params.priceListId as string)
   const body = req.body as UpdatePriceListItemsRequest
   
   const result = await updatePriceListItemsService(pool, req, priceListId, body, null)
