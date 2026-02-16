@@ -1,10 +1,14 @@
 <!--
   File: ModuleLogin.vue
-  Version: 1.2.0
+  Version: 1.2.1
   Description: User login component for frontend
   Purpose: Handles authentication process, JWT token processing and user state management
   Frontend file that manages user login form, integrates with JWT token processing, and handles user session management
-  
+
+  Changes in v1.2.1:
+  - Enter in username or password field submits form (same as Sign in button)
+  - v-form does not submit on Enter natively in Vuetify 3; added @keydown.enter.prevent="login" on both fields
+
   Features:
   - User authentication with username and password
   - Device fingerprint generation and validation
@@ -102,7 +106,7 @@ const emit = defineEmits<{
         {{ t('login.title') }}
       </div>
       <div>
-        <v-form>
+        <v-form @submit.prevent="login">
           <v-text-field
             ref="loginInput"
             v-model="username"
@@ -111,6 +115,7 @@ const emit = defineEmits<{
             density="comfortable"
             color="teal"
             required
+            @keydown.enter.prevent="login"
           />
           <v-text-field
             v-model="password"
@@ -120,11 +125,13 @@ const emit = defineEmits<{
             density="comfortable"
             color="teal"
             required
+            @keydown.enter.prevent="login"
           />
         </v-form>
       </div>
       <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
         <v-btn
+          type="submit"
           color="teal"
           variant="outlined"
           @click="login"

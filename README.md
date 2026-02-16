@@ -20,7 +20,7 @@ To run evi, your physical server or virtual machine needs the following minimal 
 - **Network:** 1 NIC
 - **SSD** ~ 1.5 Gb of free space for containers environment
 
-- **OS:**  **evi has been tested only on Ubuntu**. EVI is compatible with Debian-based distributions: Ubuntu variations, Debian, Linux Mint, Pop!_OS, and other distros that use `apt-get`. They are expected to work but were not tested formally.
+- **OS:**  **EVI has been tested only on Ubuntu**. EVI is compatible with Debian-based distributions: Ubuntu variations, Debian, Linux Mint, Pop!_OS, and other distros that use `apt-get`. They are expected to work but were not tested formally.
 
 
 ## 🚀 Installation instructions
