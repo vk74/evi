@@ -1,7 +1,10 @@
-# Version: 1.3.1
+# Version: 1.4.0
 # Description: Multi-stage container build for the evi backend.
 # Creates a build stage to compile TypeScript and a lean runtime stage.
 # Backend file: Containerfile
+#
+# Changes in v1.4.0:
+# - Updated base image from node:20-alpine to node:24-alpine (aligned with project Node.js 24 requirement)
 #
 # Changes in v1.3.1:
 # - Removed baking JWT signing keys into the image; keys must be mounted via secrets/volumes in production
@@ -9,7 +12,7 @@
 # =========================
 # Build stage
 # =========================
-FROM docker.io/library/node:20-alpine AS build
+FROM docker.io/library/node:24-alpine AS build
 
 WORKDIR /app
 
@@ -28,7 +31,7 @@ RUN npm run build
 # =========================
 # Runtime stage
 # =========================
-FROM docker.io/library/node:20-alpine
+FROM docker.io/library/node:24-alpine
 
 # Set production environment
 ENV NODE_ENV=production

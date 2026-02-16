@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# version: 1.11.1
+# version: 1.12.0
 # purpose: developer release automation script for evi application.
 # deployment file: release.sh
 # logic:
@@ -10,6 +10,11 @@
 # - Step-by-step (menu) and CLI commands only; end-user deploy tree is installed into directory evi in home directory (~/evi).
 # - Independent from install.sh and evictl (developer workflow only).
 # - Deploy directory contents (db migrations, demo-data) are produced by release scripts only; do not edit deploy manually.
+#
+# Changes in v1.12.0:
+# - build_image_all: added build summary table (component, version, time, percentage, total, platforms)
+# - Each build_image_* now exports BUILD_TIME_FE/BE/DB for summary aggregation
+# - sync_versions: also updates front/package.json (version = eviFeVersion) and back/package.json (version = eviBeVersion)
 #
 # Changes in v1.11.1:
 # - Fixed update_schema_sql_version(): replaced broken __SCHEMA_VER__ placeholder approach
@@ -1210,6 +1215,10 @@ sync_versions() {
   update_root_package_json_component_versions "${version_db}" "${version_fe}" "${version_be}"
   update_package_json_version "${ROOT_PACKAGE_JSON}" "${version_release}"
 
+  # Update front/package.json and back/package.json version fields (align with container versions)
+  update_package_json_version "${PROJECT_ROOT}/front/package.json" "${version_fe}"
+  update_package_json_version "${PROJECT_ROOT}/back/package.json" "${version_be}"
+
   # Update README.md first line (version = product release version)
   update_readme_version "${README_FILE}" "${version_release}"
 
@@ -1384,6 +1393,7 @@ build_image_fe() {
   fi
   comp_end=$(date +%s)
   comp_sec=$((comp_end - comp_start))
+  BUILD_TIME_FE="${comp_sec}"
   info "evi-fe build completed in $(format_duration "${comp_sec}")"
   printf "  ${CYAN}ghcr.io/${GHCR_NAMESPACE}/evi-fe:${version}${NC}\n"
 }
@@ -1415,6 +1425,7 @@ build_image_be() {
   fi
   comp_end=$(date +%s)
   comp_sec=$((comp_end - comp_start))
+  BUILD_TIME_BE="${comp_sec}"
   info "evi-be build completed in $(format_duration "${comp_sec}")"
   printf "  ${CYAN}ghcr.io/${GHCR_NAMESPACE}/evi-be:${version}${NC}\n"
 }
@@ -1446,16 +1457,53 @@ build_image_db() {
   fi
   comp_end=$(date +%s)
   comp_sec=$((comp_end - comp_start))
+  BUILD_TIME_DB="${comp_sec}"
   info "evi-db build completed in $(format_duration "${comp_sec}")"
   printf "  ${CYAN}ghcr.io/${GHCR_NAMESPACE}/evi-db:${version}${NC}\n"
 }
 
-# Build all images (evi-fe, evi-be, evi-db) in one step
+# Build all images (evi-fe, evi-be, evi-db) in one step with summary
 build_image_all() {
   log "building all images (evi-fe, evi-be, evi-db)..."
+  BUILD_TIME_FE=0
+  BUILD_TIME_BE=0
+  BUILD_TIME_DB=0
+  local all_start all_end all_sec
+  all_start=$(date +%s)
+
   build_image_fe
   build_image_be
   build_image_db
+
+  all_end=$(date +%s)
+  all_sec=$((all_end - all_start))
+
+  # Print build summary
+  local ver_fe ver_be ver_db
+  ver_fe=$(read_component_version "fe")
+  ver_be=$(read_component_version "be")
+  ver_db=$(read_component_version "db")
+  local pct_fe=0 pct_be=0 pct_db=0
+  if [[ "${all_sec}" -gt 0 ]]; then
+    pct_fe=$((BUILD_TIME_FE * 100 / all_sec))
+    pct_be=$((BUILD_TIME_BE * 100 / all_sec))
+    pct_db=$((BUILD_TIME_DB * 100 / all_sec))
+  fi
+
+  echo ""
+  printf "${CYAN}╔══════════════════════════════════════════════════╗${NC}\n"
+  printf "${CYAN}║              BUILD SUMMARY                      ║${NC}\n"
+  printf "${CYAN}╠══════════════════════════════════════════════════╣${NC}\n"
+  printf "${CYAN}║${NC}  %-14s  %-10s  %8s  %5s   ${CYAN}║${NC}\n" "Component" "Version" "Time" "%"
+  printf "${CYAN}╠══════════════════════════════════════════════════╣${NC}\n"
+  printf "${CYAN}║${NC}  ${GREEN}%-14s${NC}  %-10s  %8s  %4d%%   ${CYAN}║${NC}\n" "evi-fe" "${ver_fe}" "$(format_duration "${BUILD_TIME_FE}")" "${pct_fe}"
+  printf "${CYAN}║${NC}  ${GREEN}%-14s${NC}  %-10s  %8s  %4d%%   ${CYAN}║${NC}\n" "evi-be" "${ver_be}" "$(format_duration "${BUILD_TIME_BE}")" "${pct_be}"
+  printf "${CYAN}║${NC}  ${GREEN}%-14s${NC}  %-10s  %8s  %4d%%   ${CYAN}║${NC}\n" "evi-db" "${ver_db}" "$(format_duration "${BUILD_TIME_DB}")" "${pct_db}"
+  printf "${CYAN}╠══════════════════════════════════════════════════╣${NC}\n"
+  printf "${CYAN}║${NC}  %-14s  %-10s  ${YELLOW}%8s${NC}         ${CYAN}║${NC}\n" "TOTAL" "" "$(format_duration "${all_sec}")"
+  printf "${CYAN}║${NC}  %-14s  %-10s                    ${CYAN}║${NC}\n" "Platforms" "${BUILD_PLATFORMS}"
+  printf "${CYAN}╚══════════════════════════════════════════════════╝${NC}\n"
+  echo ""
   log "all images built"
 }
 

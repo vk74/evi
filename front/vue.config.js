@@ -1,9 +1,13 @@
 /*
-  File version: 1.2.0
+  File version: 1.3.0
   This is a frontend file. FRONTEND file: vue.config.js
   Purpose: Vue CLI build configuration tuned for faster container builds
   Logic: Enable persistent filesystem cache and proper code splitting to reduce build time and bundle sizes
-  
+
+  Changes in v1.3.0:
+  - Suppress mini-css-extract-plugin "Conflicting order" warnings via css.extract ignoreOrder option
+  - Changed transpileDependencies from true (all node_modules) to ['vuetify'] for faster builds
+
   Changes in v1.2.0:
   - chainWebpack: set fork-ts-checker typescript.memoryLimit from NODE_MEMORY_CHILD_MB when set (container build via release.sh). No fallback.
 */
@@ -11,7 +15,7 @@
 const path = require('path');
 
 module.exports = {
-  transpileDependencies: true,
+  transpileDependencies: ['vuetify'],
   pluginOptions: {
     vuetify: {}
   },
@@ -89,7 +93,10 @@ module.exports = {
     }
   },
   css: {
-    sourceMap: false
+    sourceMap: false,
+    extract: {
+      ignoreOrder: true
+    }
   },
   productionSourceMap: false,
   lintOnSave: false,

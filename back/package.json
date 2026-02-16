@@ -1,6 +1,6 @@
 {
   "name": "evi-backend",
-  "version": "0.9.12",
+  "version": "0.11.5",
   "description": "",
   "main": "src/server.ts",
   "_moduleAliases": {
@@ -30,7 +30,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@modelcontextprotocol/server-postgres": "^0.6.2",
     "@types/cookie-parser": "^1.4.9",
     "ajv": "^8.17.1",
     "axios": "^1.11.0",
