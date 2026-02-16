@@ -32,8 +32,10 @@ services:
       - "127.0.0.1:${POSTGRES_PORT:-5445}:5432"
     
     # Volume for persistent data. This ensures that database data survives container restarts.
+    # PG 18+ stores data in /var/lib/postgresql/18/main (pg_ctlcluster format),
+    # so the volume must be mounted at /var/lib/postgresql (not /data)
     volumes:
-      - evi_db_volume:/var/lib/postgresql/data
+      - evi_db_volume:/var/lib/postgresql
     
     # Health check to ensure the database is ready before other services start
     healthcheck:

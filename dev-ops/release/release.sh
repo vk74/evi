@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# version: 1.11.0
+# version: 1.11.1
 # purpose: developer release automation script for evi application.
 # deployment file: release.sh
 # logic:
@@ -10,6 +10,10 @@
 # - Step-by-step (menu) and CLI commands only; end-user deploy tree is installed into directory evi in home directory (~/evi).
 # - Independent from install.sh and evictl (developer workflow only).
 # - Deploy directory contents (db migrations, demo-data) are produced by release scripts only; do not edit deploy manually.
+#
+# Changes in v1.11.1:
+# - Fixed update_schema_sql_version(): replaced broken __SCHEMA_VER__ placeholder approach
+#   with pattern-based sed that finds and replaces literal version strings in VALUES line
 #
 # Changes in v1.11.0:
 # - Option 1 (set versions): also updates first line of README.md; README version = product release version.
@@ -586,7 +590,9 @@ update_root_package_json_component_versions() {
   return 0
 }
 
-# Update version placeholders in db/init/02_schema.sql (one replacement per column: schema_version, evi_fe, evi_be, evi_db)
+# Update version literals in db/init/02_schema.sql (one replacement per column: schema_version, evi_fe, evi_be, evi_db).
+# Finds the VALUES line with 4 quoted version strings (e.g. '0.10.2', '0.10.3', '0.10.3', '0.10.2',)
+# and replaces them with new versions. Schema_version and evi_db both use version_db.
 update_schema_sql_version() {
   local file_path="$1"
   local version_db="$2"
@@ -600,22 +606,28 @@ update_schema_sql_version() {
     err "INSERT INTO app.instance not found in ${file_path}"
     return 1
   fi
-  if ! grep -q "__SCHEMA_VER__\|__FE_VER__\|__BE_VER__\|__DB_VER__" "${file_path}"; then
-    err "Version placeholders (__SCHEMA_VER__ etc.) not found in ${file_path}"
+  # Match the line with 4 single-quoted version literals followed by commas
+  # Pattern: leading whitespace, 'VER', 'VER', 'VER', 'VER',
+  local version_line_pattern="^[[:space:]]*'[0-9][^']*',[[:space:]]*'[0-9][^']*',[[:space:]]*'[0-9][^']*',[[:space:]]*'[0-9][^']*',$"
+  if ! grep -qE "${version_line_pattern}" "${file_path}"; then
+    err "Version literals line not found in ${file_path}. Expected pattern: 'schema', 'fe', 'be', 'db',"
     return 1
   fi
+  # Read current values for logging
+  local old_line
+  old_line=$(grep -E "${version_line_pattern}" "${file_path}" | head -1)
   local tmpf
   tmpf=$(mktemp)
   local v_db_esc v_fe_esc v_be_esc
   v_db_esc=$(printf '%s' "${version_db}" | sed 's/[&\\]/\\&/g')
   v_fe_esc=$(printf '%s' "${version_fe}" | sed 's/[&\\]/\\&/g')
   v_be_esc=$(printf '%s' "${version_be}" | sed 's/[&\\]/\\&/g')
-  if sed -e "s/__SCHEMA_VER__/${v_db_esc}/g" \
-         -e "s/__FE_VER__/${v_fe_esc}/g" \
-         -e "s/__BE_VER__/${v_be_esc}/g" \
-         -e "s/__DB_VER__/${v_db_esc}/g" \
+  # Replace the version literals line, preserving leading whitespace
+  if sed -E "s/${version_line_pattern}/    '${v_db_esc}', '${v_fe_esc}', '${v_be_esc}', '${v_db_esc}',/" \
          "${file_path}" > "${tmpf}" && mv "${tmpf}" "${file_path}"; then
-    info "Updated ${file_path}: schema_version, evi_fe, evi_be, evi_db set to ${version_db}, ${version_fe}, ${version_be}, ${version_db}"
+    info "Updated ${file_path}: schema_version=${version_db}, evi_fe=${version_fe}, evi_be=${version_be}, evi_db=${version_db}"
+    info "  was:${old_line}"
+    info "  now:    '${version_db}', '${version_fe}', '${version_be}', '${version_db}',"
     return 0
   fi
   rm -f "${tmpf}"

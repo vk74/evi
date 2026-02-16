@@ -1,4 +1,4 @@
-# Version: 1.0.1
+# Version: 1.0.2
 # Purpose: Podman Quadlet container unit for evi PostgreSQL database.
 # Deployment file: evi-db.container
 # Logic: Runs DB on the internal network only (no host port published).
@@ -9,6 +9,9 @@
 #
 # Changes in v1.0.0:
 # - Initial DB container unit (internal-only, persistent volume)
+#
+# Changes in v1.0.2:
+# - Volume mount changed from /var/lib/postgresql/data to /var/lib/postgresql for PG 18+ compatibility
 #
 
 [Unit]
@@ -26,8 +29,8 @@ ContainerName=evi-db
 # Internal network
 Network={{EVI_NETWORK}}
 
-# Persistent data volume
-Volume=evi_db_data:/var/lib/postgresql/data:Z
+# Persistent data volume (PG 18+ uses /var/lib/postgresql/18/main internally)
+Volume=evi_db_data:/var/lib/postgresql:Z
 
 # Environment
 Environment=POSTGRES_PASSWORD={{EVI_POSTGRES_PASSWORD}}

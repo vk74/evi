@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // evi Local Podman Build & Management Script
-// Version: 1.3.0 (Fixes and Improvements)
+// Version: 1.3.1
 // Description: A streamlined Node.js script to manage the local Podman environment for evi.
 // Interactive menu system with submenus for container management operations.
 //
@@ -9,6 +9,9 @@
 // - Main menu now re-displayed after each command (1–4) instead of exiting
 // - Exit option changed from [5] to [0], kept at the end of the menu
 // - Invalid option returns to main menu instead of exiting
+//
+// Changes in v1.3.1:
+// - Updated PostgreSQL base image references from postgres:17 to postgres:18
 //
 const { execSync, spawnSync } = require('child_process');
 const readline = require('readline');
@@ -465,9 +468,9 @@ function buildAndStartDB() {
   log('\n🐘 Starting Database Container...', colors.cyan, true);
 
   const podmanCmd = getPodmanCommand();
-  timings['Pull postgres:17'] = runCommand(
-    `${podmanCmd} pull docker.io/postgres:17`,
-    'Pull latest postgres:17 base image'
+  timings['Pull postgres:18'] = runCommand(
+    `${podmanCmd} pull docker.io/postgres:18`,
+    'Pull latest postgres:18 base image'
   );
 
   timings['Build DB'] = runCommand(
@@ -708,9 +711,9 @@ async function buildDBWithVolume(useCache, seedDemoData = false) {
   try {
     const podmanCmd = getPodmanCommand();
     if (!useCache) {
-      timings['Pull postgres:17'] = runCommand(
-        `${podmanCmd} pull docker.io/postgres:17`,
-        'Pull latest postgres:17 base image'
+      timings['Pull postgres:18'] = runCommand(
+        `${podmanCmd} pull docker.io/postgres:18`,
+        'Pull latest postgres:18 base image'
       );
     } else {
       log('📦 Using cached images only...', colors.yellow);
@@ -785,9 +788,9 @@ function buildDBForExistingVolume(useCache) {
   try {
     const podmanCmd = getPodmanCommand();
     if (!useCache) {
-      timings['Pull postgres:17'] = runCommand(
-        `${podmanCmd} pull docker.io/postgres:17`,
-        'Pull latest postgres:17 base image'
+      timings['Pull postgres:18'] = runCommand(
+        `${podmanCmd} pull docker.io/postgres:18`,
+        'Pull latest postgres:18 base image'
       );
     } else {
       log('📦 Using cached images only...', colors.yellow);

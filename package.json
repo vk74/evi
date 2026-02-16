@@ -1,7 +1,7 @@
 {
   "name": "evi",
-  "version": "0.10.3",
-  "eviDbVersion": "0.10.3",
+  "version": "0.10.5",
+  "eviDbVersion": "0.11.2",
   "eviFeVersion": "0.10.3",
   "eviBeVersion": "0.10.3",
   "description": "evi application",
@@ -43,7 +43,7 @@
     "rimraf": "^6.0.1"
   },
   "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=8.0.0"
+    "node": ">=24.0.0",
+    "npm": ">=11.0.0"
   }
 }

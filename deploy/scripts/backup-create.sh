@@ -338,9 +338,9 @@ create_manifest() {
     *)        platform="linux/${arch}" ;;
   esac
   
-  local pg_version="17"
+  local pg_version="18"
   if podman container inspect evi-db --format '{{.State.Running}}' 2>/dev/null | grep -q "true"; then
-    pg_version=$(podman exec evi-db psql -U postgres -t -c "SHOW server_version;" 2>/dev/null | tr -d ' ' | cut -d. -f1 || echo "17")
+    pg_version=$(podman exec evi-db psql -U postgres -t -c "SHOW server_version;" 2>/dev/null | tr -d ' ' | cut -d. -f1 || echo "18")
   fi
   
   # Determine pgadmin image value for JSON
