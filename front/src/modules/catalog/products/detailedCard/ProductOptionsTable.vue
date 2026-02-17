@@ -1,5 +1,5 @@
 <!--
-version: 1.11.0
+version: 1.12.0
 Frontend file ProductOptionsTable.vue.
 Purpose: Displays product option rows with search, counter, and pagination; mirrors PairEditor table UX.
 Filename: ProductOptionsTable.vue
@@ -73,6 +73,10 @@ Changes in v1.10.0:
 
 Changes in v1.11.0:
 - getEstimationRows now uses option short_description from API for Excel description column
+
+Changes in v1.12.0:
+- Added info icon with tooltip for options that have a short description
+- Tooltip displays the short_description text on hover
 -->
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
@@ -80,7 +84,7 @@ import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/core/state/appstate'
 import { useUiStore } from '@/core/state/uistate'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
-import { PhCaretUpDown } from '@phosphor-icons/vue'
+import { PhCaretUpDown, PhInfo } from '@phosphor-icons/vue'
 import { fetchPricesByCodes } from '../../service.catalog.fetch.prices.by.codes'
 import { getPricelistByRegion } from '../../service.catalog.get.pricelist.by.region'
 import { 
@@ -841,7 +845,26 @@ defineExpose({ clearSelections, getUnitsById, getOptionPrices, getEstimationRows
       hide-default-footer
     >
       <template #[`item.option_name`]="{ item }">
-        <span>{{ formatOptionNameWithPrefix(item as OptionWithLevel) }}</span>
+        <div class="d-flex align-center">
+          <span>{{ formatOptionNameWithPrefix(item as OptionWithLevel) }}</span>
+          <v-tooltip
+            v-if="item.short_description"
+            location="top"
+            open-on-hover
+            max-width="300"
+          >
+            <template #activator="{ props }">
+              <div v-bind="props" class="d-inline-flex ml-2">
+                <PhInfo 
+                  :size="20" 
+                  class="text-medium-emphasis cursor-help" 
+                  color="teal"
+                />
+              </div>
+            </template>
+            <span>{{ item.short_description }}</span>
+          </v-tooltip>
+        </div>
       </template>
 
       <template #[`item.product_code`]="{ item }">
