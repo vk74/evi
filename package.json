@@ -1,9 +1,9 @@
 {
   "name": "evi",
-  "version": "0.11.6",
-  "eviDbVersion": "0.11.6",
-  "eviFeVersion": "0.11.6",
-  "eviBeVersion": "0.11.6",
+  "version": "0.11.7",
+  "eviDbVersion": "0.11.7",
+  "eviFeVersion": "0.11.7",
+  "eviBeVersion": "0.11.7",
   "description": "evi application",
   "private": true,
   "scripts": {

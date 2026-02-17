@@ -1,7 +1,13 @@
 #
-# version: 1.5.0
+# version: 1.5.1
 # Purpose: Frontend container build for serving the SPA in production. FRONTEND file: Containerfile
 # Logic: Multi-stage build (Node for build with Vite → Nginx for runtime). Stateless, serves compiled assets from /usr/share/nginx/html.
+#
+# Changes in v1.5.1:
+# - Build stage uses $BUILDPLATFORM to run natively on host architecture (no QEMU emulation)
+# - Fixes esbuild Go runtime crash (lfstack.push) when cross-compiling under QEMU
+# - Runtime stage (nginx) remains multi-arch for target platforms
+# - Added --omit=dev note: not applicable since vite is in devDependencies
 #
 # Changes in v1.5.0:
 # - Migrated from Vue CLI (webpack) to Vite build
@@ -16,9 +22,9 @@
 #
 
 # =========================
-# Build stage
+# Build stage (runs on host architecture to avoid QEMU; output is arch-independent static files)
 # =========================
-FROM docker.io/library/node:24-alpine AS build
+FROM --platform=$BUILDPLATFORM docker.io/library/node:24-alpine AS build
 
 WORKDIR /app
 
@@ -29,7 +35,7 @@ COPY vite.config.ts ./
 COPY index.html ./
 
 RUN --mount=type=cache,target=/root/.npm \
-    npm ci --no-audit --fund=false --progress=false
+    npm ci --no-audit --fund=false --progress=false --loglevel=error
 
 # Copy source code
 COPY ./ .
