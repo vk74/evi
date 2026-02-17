@@ -47,7 +47,7 @@ INSERT INTO app.instance (
 )
 VALUES (
     split_part(current_setting('server_version'), ' ', 1),
-    '0.11.7', '0.11.7', '0.11.7', '0.11.7',
+    '0.11.7', '0.11.8', '0.11.7', '0.11.7',
     NULL,
     NOW(),
     NOW(),
