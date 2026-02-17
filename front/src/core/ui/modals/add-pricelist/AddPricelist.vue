@@ -13,7 +13,6 @@ Changes in v1.5.1:
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { PhCaretUpDown } from '@phosphor-icons/vue'
 import { fetchCurrenciesService } from '@/modules/admin/pricing/currencies/service.fetch.currencies'
 import type { Currency } from '@/modules/admin/pricing/types.pricing.admin'
 
@@ -154,11 +153,7 @@ onMounted(async () => {
               density="comfortable"
               color="teal"
               hide-details
-            >
-              <template #append-inner>
-                <PhCaretUpDown class="dropdown-icon" />
-              </template>
-            </v-select>
+            />
           </div>
 
           <!-- Status toggle -->
@@ -197,14 +192,5 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-/* Dropdown icon positioning */
-.dropdown-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
 </style>
 

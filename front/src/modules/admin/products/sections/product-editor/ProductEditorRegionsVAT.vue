@@ -1,9 +1,12 @@
 <!--
   File: ProductEditorRegionsVAT.vue
-  Version: 1.4.0
+  Version: 1.4.1
   Description: Component for managing product regional availability and taxable categories
   Purpose: Provides interface for managing product availability by region and applicable taxable categories
   Frontend file - ProductEditorRegionsVAT.vue
+
+  Changes in v1.4.1:
+  - Removed custom PhCaretUpDown icon from category dropdown; only Vuetify built-in indicator remains.
 
   Changes in v1.1.0:
   - Increased VAT column width by 25px
@@ -48,7 +51,7 @@ import { useI18n } from 'vue-i18n'
 import { useProductsAdminStore } from '../../state.products.admin'
 import { useUiStore } from '@/core/state/uistate'
 import { can } from '@/core/helpers/helper.check.permissions'
-import { PhCaretUpDown, PhCheckSquare, PhSquare } from '@phosphor-icons/vue'
+import { PhCheckSquare, PhSquare } from '@phosphor-icons/vue'
 import { fetchAllRegions } from '@/modules/admin/settings/service.admin.fetch.regions'
 import type { Region } from '@/modules/admin/settings/types.admin.regions'
 import { fetchProductRegions } from '../../service.fetch.productRegions'
@@ -536,11 +539,7 @@ onMounted(async () => {
                   color="teal"
                   style="min-width: 200px;"
                   @update:model-value="(value) => handleCategoryChange(item, value)"
-                >
-                  <template #append-inner>
-                    <PhCaretUpDown class="dropdown-icon" />
-                  </template>
-                </v-select>
+                />
               </template>
               </v-data-table>
             </div>
@@ -713,16 +712,6 @@ onMounted(async () => {
 .regions-vat-table :deep(td[data-column="availability"]) {
   padding: 0 !important;
   text-align: center !important;
-}
-
-/* Dropdown icon styling */
-.dropdown-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-  color: rgba(0, 0, 0, 0.6);
 }
 
 /* Sidebar styles */

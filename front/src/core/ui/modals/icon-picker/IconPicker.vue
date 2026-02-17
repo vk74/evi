@@ -12,7 +12,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUiStore } from '@/core/state/uistate'
-import { PhX, PhCaretUpDown, PhMagnifyingGlass, PhQuestion } from '@phosphor-icons/vue'
+import { PhX, PhMagnifyingGlass, PhQuestion } from '@phosphor-icons/vue'
 
 // Props
 interface Props {
@@ -212,11 +212,7 @@ watch(() => props.selectedSize, (newValue) => {
               hide-details
               class="library-select"
               @update:model-value="handleLibraryChange"
-            >
-              <template #append-inner>
-                <PhCaretUpDown class="dropdown-icon" />
-              </template>
-            </v-select>
+            />
           </v-col>
           <v-col
             cols="12"
@@ -232,11 +228,7 @@ watch(() => props.selectedSize, (newValue) => {
               hide-details
               class="style-select"
               @update:model-value="handleStyleChange"
-            >
-              <template #append-inner>
-                <PhCaretUpDown class="dropdown-icon" />
-              </template>
-            </v-select>
+            />
           </v-col>
           <v-col
             cols="12"
@@ -252,11 +244,7 @@ watch(() => props.selectedSize, (newValue) => {
               hide-details
               class="size-select"
               @update:model-value="handleSizeChange"
-            >
-              <template #append-inner>
-                <PhCaretUpDown class="dropdown-icon" />
-              </template>
-            </v-select>
+            />
           </v-col>
         </v-row>
 
@@ -331,15 +319,6 @@ watch(() => props.selectedSize, (newValue) => {
 </template>
 
 <style scoped>
-/* Dropdown icon positioning */
-.dropdown-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
 /* Search field styles */
 .search-field {
   width: 100%;

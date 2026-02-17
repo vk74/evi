@@ -73,7 +73,6 @@ import {
   PhCheckSquare,
   PhSquare,
   PhArrowClockwise,
-  PhCaretUpDown,
   PhFunnel
 } from '@phosphor-icons/vue'
 import Paginator from '@/core/ui/paginator/Paginator.vue'

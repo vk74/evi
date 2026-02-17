@@ -1,8 +1,11 @@
 <!--
-Version: 1.8.0
+Version: 1.8.1
 VAT rates assignment component for pricing administration module.
 Each category row can have only one active marker (displayed as check mark chip).
 Filename: PricingTaxRegions.vue
+
+Changes in v1.8.1:
+- Removed custom PhCaretUpDown icon from region dropdown; only Vuetify built-in indicator remains.
 
 Changes in v1.8.0:
 - Refactored to support merged database structure (app.regions_taxable_categories)
@@ -16,7 +19,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
-import { PhPlus, PhTrash, PhCheck, PhCaretUpDown, PhWarningCircle } from '@phosphor-icons/vue';
+import { PhPlus, PhTrash, PhCheck, PhWarningCircle } from '@phosphor-icons/vue';
 import { fetchTaxRegions } from './service.fetch.taxRegions';
 import { updateTaxRegions } from './service.update.taxRegions';
 import { can } from '@/core/helpers/helper.check.permissions';
@@ -737,11 +740,7 @@ onMounted(() => {
                 hide-details
                 class="region-select ms-4"
                 @update:model-value="onRegionChange"
-              >
-                <template #append-inner>
-                  <PhCaretUpDown :size="14" class="dropdown-icon" />
-                </template>
-              </v-select>
+              />
             </div>
           </div>
           
@@ -1079,14 +1078,6 @@ onMounted(() => {
   width: 200px;
   min-width: 200px;
   position: relative;
-}
-
-.region-select :deep(.dropdown-icon) {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
 }
 
 /* Category input field styles - remove borders */

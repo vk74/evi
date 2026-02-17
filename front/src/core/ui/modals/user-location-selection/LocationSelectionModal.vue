@@ -45,7 +45,6 @@ import { useAppStore } from '@/core/state/appstate';
 import { getUserLocation } from '@/core/services/service.get.user.location';
 import { getRegions } from './service.get.regions';
 import { updateUserLocation } from './service.update.user.location';
-import { PhCaretUpDown } from '@phosphor-icons/vue';
 
 // Init i18n and stores
 const { t } = useI18n();
@@ -240,9 +239,6 @@ onMounted(async () => {
               :title="t('locationSelection.selectLocation')"
             />
           </template>
-          <template #append-inner>
-            <PhCaretUpDown class="dropdown-icon" />
-          </template>
         </v-select>
       </v-card-text>
       
@@ -272,13 +268,5 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-/* Dropdown icon positioning */
-.dropdown-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
 </style>
 

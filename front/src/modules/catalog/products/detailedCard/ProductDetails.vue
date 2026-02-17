@@ -1,8 +1,11 @@
 <!--
-version: 1.20.0
+version: 1.20.1
 Frontend file for product details view component.
 Displays extended info as an opened product card format.
 File: ProductDetails.vue
+
+Changes in v1.20.1:
+- Removed custom PhCaretUpDown icon from units count dropdown; only Vuetify built-in indicator remains.
 
 Changes in v1.5.0:
 - Moved product name from header to "main" block
@@ -120,7 +123,7 @@ import type { CatalogProductOption } from '../types.products'
 import ProductOptionsTable from './ProductOptionsTable.vue'
 import ProductTechSpecs from './ProductTechSpecs.vue'
 import ProductContacts from './ProductContacts.vue'
-import { PhCaretUpDown, PhSquare, PhMicrosoftExcelLogo } from '@phosphor-icons/vue'
+import { PhSquare, PhMicrosoftExcelLogo } from '@phosphor-icons/vue'
 import { fetchPricesByCodes } from '../../service.catalog.fetch.prices.by.codes'
 import { getPricelistByRegion } from '../../service.catalog.get.pricelist.by.region'
 import { getCachedPrice, cachePrice, isPriceCacheValid } from '../../state.catalog'
@@ -600,11 +603,7 @@ watch(() => options.value, () => {
                     class="units-vselect"
                     style="max-width: 120px"
                     @update:model-value="mainProductUnitsCount = $event as number"
-                  >
-                    <template #append-inner>
-                      <PhCaretUpDown class="dropdown-icon" />
-                    </template>
-                  </v-select>
+                  />
                 </div>
               </div>
             </div>
@@ -869,13 +868,6 @@ watch(() => options.value, () => {
 }
 .units-vselect :deep(.v-field) { border-radius: 6px; }
 .units-vselect { position: relative; }
-.dropdown-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
 .price-field :deep(.v-field) { border-radius: 6px; }
    
  @media (max-width: 720px) {

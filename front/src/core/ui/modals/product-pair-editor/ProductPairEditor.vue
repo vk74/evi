@@ -13,7 +13,7 @@ import { useUiStore } from '@/core/state/uistate'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 import type { SelectedOption, OptionPairConfig, PairEditorResult, PairRecord, CreatePairsRequest, UpdatePairsRequest } from './types.pair.editor'
 import readProductOptionPairs from './service.read.product.option.pairs'
-import { PhCheckSquare, PhSquare, PhCaretUpDown } from '@phosphor-icons/vue'
+import { PhCheckSquare, PhSquare } from '@phosphor-icons/vue'
 import createProductOptionPairs from './service.create.product.option.pairs'
 import updateProductOptionPairs from './service.update.product.option.pairs'
 
@@ -271,11 +271,7 @@ const handlePair = async () => {
               class="units-select"
               style="max-width: 120px"
               @update:model-value="setUnitsCount(item.product_id, $event as number)"
-            >
-              <template #append-inner>
-                <PhCaretUpDown class="dropdown-icon" />
-              </template>
-            </v-select>
+            />
           </template>
 
           <template #[`item.unit_price`]="{ item }">
@@ -340,12 +336,5 @@ const handlePair = async () => {
 }
 
 .units-select { position: relative; }
-.dropdown-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
 </style>
 

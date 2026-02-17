@@ -1,5 +1,5 @@
 <!--
-Version: 1.7.2
+Version: 1.7.3
 Price list editor details section with items table and action buttons.
 Frontend file: PriceListEditorDetails.vue
 
@@ -24,6 +24,9 @@ Changes in v1.7.1:
 
 Changes in v1.7.2:
 - Added caret up/down icon to item type dropdown to indicate it's a selectable list
+
+Changes in v1.7.3:
+- Removed custom PhCaretUpDown icon from item type dropdown; only Vuetify built-in indicator remains.
 -->
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue'
@@ -48,8 +51,7 @@ import {
   PhCheckSquare,
   PhSquare,
   PhFloppyDisk,
-  PhPencilSimple,
-  PhCaretUpDown
+  PhPencilSimple
 } from '@phosphor-icons/vue'
 
 const { t, locale } = useI18n()
@@ -942,11 +944,7 @@ const updateAllItems = async () => {
             density="compact"
             variant="plain"
             hide-details
-          >
-            <template #append-inner>
-              <PhCaretUpDown :size="16" color="rgba(0, 0, 0, 0.6)" />
-            </template>
-          </v-select>
+          />
         </template>
 
         <!-- Product Name - editable -->
