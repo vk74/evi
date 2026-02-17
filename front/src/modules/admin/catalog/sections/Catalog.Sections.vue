@@ -1,6 +1,6 @@
 <!--
   File: Catalog.Sections.vue
-  Version: 1.1.0
+  Version: 1.2.0
   Description: Component for managing catalog sections
   Purpose: Provides interface for adding, removing, and editing catalog sections
   Features:
@@ -9,6 +9,11 @@
   - Edit section names and icons
   - Section visibility toggle
   - Bulk operations
+
+  Changes in v1.2.0:
+  - Section name in table is clickable; opens section in SectionEditor (same as select + Edit/View)
+  - Extracted openSectionInEditor(sectionId) for reuse from edit button and name click
+  - Cursor pointer on section name when canViewOrEdit
 -->
 
 <script setup lang="ts">
@@ -123,6 +128,7 @@ onMounted(() => {
 const canCreate = computed(() => can('adminCatalog:sections:create:all'))
 const canDelete = computed(() => can('adminCatalog:sections:delete:all'))
 const canUpdate = computed(() => can('adminCatalog:sections:update:all'))
+const canViewOrEdit = computed(() => can('adminCatalog:sections:read:all') || canUpdate.value)
 
 // Computed properties
 const selectedCount = computed(() => selectedSections.value.size)
@@ -156,11 +162,17 @@ const addSection = () => {
   catalogStore.openSectionEditor('creation')
 }
 
+/**
+ * Open section in editor. Same behaviour as selecting one section and clicking Edit/View.
+ */
+const openSectionInEditor = (sectionId: string) => {
+  catalogStore.openSectionEditor('edit', sectionId)
+}
+
 const editSection = () => {
   const selectedIds = Array.from(selectedSections.value)
   if (selectedIds.length === 1) {
-    const sectionId = selectedIds[0]
-    catalogStore.openSectionEditor('edit', sectionId)
+    openSectionInEditor(selectedIds[0])
   }
 }
 
@@ -441,7 +453,10 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
                 class="mr-2"
               />
               <PhFolder v-else :size="16" class="mr-2" color="rgb(20, 184, 166)" />
-              <span>{{ item.name }}</span>
+              <span
+                :class="{ 'section-name-link': canViewOrEdit }"
+                @click="() => canViewOrEdit && openSectionInEditor(item.id)"
+              >{{ item.name }}</span>
             </div>
           </template>
 
@@ -739,5 +754,9 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
   padding: 0 9px !important;
   min-height: 22px !important;
   height: 22px !important;
+}
+
+.section-name-link {
+  cursor: pointer;
 }
 </style> 
