@@ -3,6 +3,32 @@
 Release observation log: artifacts, component versions, and participants. For compatibility map or analytics, JSON can be derived from this file later.
 
 ---
+## 2026-02-17 | 0.11.6
+
+**Scope:** 
+availablecomponents:evi-fe,evi-be,evi-db,evi-reverse-proxy,evi-pgadmin,host
+evi-fe,evi-be,evi-db
+
+**Components:**
+
+| Component | Version | Notes |
+|-----------|---------|-------|
+| evi-be | 0.11.6 | - |
+| evi-db | 0.11.6 | PostgreSQL 17, schema 0.11.6 |
+| evi-reverse-proxy | docker.io/caddy:2.8-alpine | - |
+| evi-pgadmin | docker.io/dpage/pgadmin4:8 | - |
+
+**Key dependencies:** Vue 3.5.21, Express 5.1.0, pg 8.18.0, PostgreSQL 17
+
+**Notes:**
+- -release 0.11.6 — vk74
+- updated components list — vk74
+- release 0.11.5 across all components, including frontend, backend, and database. Adjusted Docker container base images to Node.js 24-alpine for both frontend and backend. Updated README and environment configuration files to reflect the new version. Enhanced release script to synchronize version updates automatically. — vk74
+
+**Contributors:** 1 authors
+
+---
+
 ## 2026-02-17 | 0.11.5
 
 **Scope:** 
