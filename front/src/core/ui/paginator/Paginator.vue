@@ -1,12 +1,15 @@
 <!--
-version: 1.0.0
+version: 1.0.1
 Frontend file Paginator.vue.
 Purpose: Reusable, clean pagination control matching UsersList paginator UX.
+
+Changes in v1.0.1:
+- Removed custom PhCaretUpDown icon from items-per-page dropdown; only Vuetify built-in indicator remains.
 -->
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { PhCaretDoubleLeft, PhCaretLeft, PhCaretRight, PhCaretDoubleRight, PhCaretUpDown } from '@phosphor-icons/vue'
+import { PhCaretDoubleLeft, PhCaretLeft, PhCaretRight, PhCaretDoubleRight } from '@phosphor-icons/vue'
 
 interface Props {
   page: number
@@ -82,11 +85,7 @@ function updateItemsPerPage(v: number) {
         class="items-per-page-select"
         style="width: 100px"
         @update:model-value="updateItemsPerPage($event as number)"
-      >
-        <template #append-inner>
-          <PhCaretUpDown class="dropdown-icon" />
-        </template>
-      </v-select>
+      />
     </div>
     <div class="text-body-2 mr-4" v-if="showRecordsInfo">
       {{ recordsInfo }}
@@ -125,13 +124,6 @@ function updateItemsPerPage(v: number) {
   position: relative;
 }
 .paginator .v-btn { min-width: 32px; height: 32px; font-size: 0.875rem; }
-.dropdown-icon { 
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
 </style>
 
 
