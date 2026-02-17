@@ -1,6 +1,6 @@
 <!--
  * @file ProductsList.vue
- * Version: 1.5.0
+ * Version: 1.6.0
  * Products list section component.
  * Frontend file that displays list of products for admin users.
  * 
@@ -49,6 +49,11 @@
  * - Modified editProduct function to allow users with read:all permission to view products
  * - Updated EDIT button to show "VIEW" for auditors and "EDIT" for users with update permissions
  * - Button now visible for users with read:all OR update permissions
+ *
+ * Changes in v1.6.0:
+ * - Product name in table is clickable; opens product in editor (same as select + Edit)
+ * - Extracted openProductInEditor(productId) for reuse from edit button and name click
+ * - Cursor pointer on product name when user can view/edit
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, defineAsyncComponent } from 'vue'
@@ -213,41 +218,38 @@ const addProduct = () => {
   uiStore.showSuccessSnackbar(t('admin.products.messages.createMode'))
 }
 
+/**
+ * Open product in editor (fetch data, switch to editor section).
+ * Same behaviour as selecting one product and clicking Edit.
+ */
+const openProductInEditor = async (productId: string) => {
+  if (!can('adminProducts:items:read:all') &&
+      !can('adminProducts:items:update:all') &&
+      !can('adminProducts:items:update:own')) return
+
+  try {
+    isLoading.value = true
+    const success = await serviceFetchSingleProduct.fetchAndUpdateStore(productId)
+    if (success) {
+      productsStore.openProductEditorForEdit(productId)
+      productsStore.setActiveSection('product-editor')
+      clearSelections()
+      uiStore.showSuccessSnackbar(t('admin.products.messages.editSuccess'))
+    } else {
+      uiStore.showErrorSnackbar(t('admin.products.messages.editError'))
+    }
+  } catch (error) {
+    console.error('Error loading product for edit:', error)
+    uiStore.showErrorSnackbar(t('admin.products.messages.editError'))
+  } finally {
+    isLoading.value = false
+  }
+}
+
 const editProduct = async () => {
   const selectedIds = Array.from(selectedProducts.value)
   if (selectedIds.length === 1) {
-    // Check permission - either read:all (auditor) or update:all/update:own
-    if (!can('adminProducts:items:read:all') && 
-        !can('adminProducts:items:update:all') && 
-        !can('adminProducts:items:update:own')) return
-
-    const productId = selectedIds[0]
-    
-    try {
-      // Show loading state
-      isLoading.value = true
-      
-      // Load product data and update store
-      const success = await serviceFetchSingleProduct.fetchAndUpdateStore(productId)
-      
-      if (success) {
-        // Set editor mode to edit and switch to editor section
-        productsStore.openProductEditorForEdit(productId)
-        productsStore.setActiveSection('product-editor')
-        
-        // Clear selections
-        clearSelections()
-        
-        uiStore.showSuccessSnackbar(t('admin.products.messages.editSuccess'))
-      } else {
-        uiStore.showErrorSnackbar(t('admin.products.messages.editError'))
-      }
-    } catch (error) {
-      console.error('Error loading product for edit:', error)
-      uiStore.showErrorSnackbar(t('admin.products.messages.editError'))
-    } finally {
-      isLoading.value = false
-    }
+    await openProductInEditor(selectedIds[0])
   }
 }
 
@@ -701,7 +703,10 @@ const handleAssignOwnerClose = () => {
           </template>
 
           <template #[`item.name`]="{ item }">
-            <span>{{ getProductName(item) }}</span>
+            <span
+              :class="{ 'product-name-link': canViewOrEditProducts }"
+              @click="() => canViewOrEditProducts && openProductInEditor(item.product_id)"
+            >{{ getProductName(item) }}</span>
           </template>
 
           <template #[`item.status_code`]="{ item }">
@@ -1014,5 +1019,9 @@ const handleAssignOwnerClose = () => {
   padding: 0 9px !important;
   min-height: 22px !important;
   height: 22px !important;
+}
+
+.product-name-link {
+  cursor: pointer;
 }
 </style>
