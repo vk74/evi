@@ -1,5 +1,5 @@
 <!--
-Version: 1.8.0
+Version: 1.9.0
 Price Lists management section.
 Frontend file for managing price lists in the pricing admin module.
 Features editable name and status fields with manual is_active control.
@@ -20,6 +20,11 @@ Changes in v1.8.0:
 - Changed region loading from app.regions setting to app.regions table via API
 - Updated regions data structure to use Region objects (region_id, region_name) instead of string array
 - Updated getAvailableRegions() and getRegionOptions() to work with new Region object format
+
+Changes in v1.9.0:
+- Price list name in table is clickable; opens price list in PriceListEditor (same as select + Edit)
+- Extracted openPriceListInEditor(priceListId) for reuse from edit button and name click
+- Name column shows as text with cursor pointer when canViewOrEdit; inline name edit in table removed (edit in editor)
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
@@ -163,27 +168,20 @@ const handleCreatePricelist = async (data: { name: string; currency: string; isA
   }
 }
 
-const editPriceList = async () => {
-  if (!hasOneSelected.value) {
-    uiStore.showErrorSnackbar(t('admin.pricing.priceLists.messages.noItemsSelected'))
-    return
-  }
-
-  // Check permission
+/**
+ * Open price list in editor (fetch and open). Same behaviour as selecting one and clicking Edit.
+ */
+const openPriceListInEditor = async (priceListId: number) => {
   if (!canViewOrEdit.value) return
 
-  const priceListId = Array.from(selectedPriceLists.value)[0]
-  
   try {
     isLoading.value = true
-    
-    // Fetch price list data from backend
+
     const result = await fetchPriceListService.fetchPriceListById(priceListId)
-    
+
     if (result.success && result.data?.priceList) {
-      // Open editor in edit mode with loaded data
       pricingStore.openPriceListEditorForEdit(
-        priceListId.toString(), 
+        priceListId.toString(),
         {
           id: result.data.priceList.price_list_id,
           name: result.data.priceList.name,
@@ -206,6 +204,17 @@ const editPriceList = async () => {
   } finally {
     isLoading.value = false
   }
+}
+
+const editPriceList = async () => {
+  if (!hasOneSelected.value) {
+    uiStore.showErrorSnackbar(t('admin.pricing.priceLists.messages.noItemsSelected'))
+    return
+  }
+  if (!canViewOrEdit.value) return
+
+  const priceListId = Array.from(selectedPriceLists.value)[0]
+  await openPriceListInEditor(priceListId)
 }
 
 const duplicatePriceList = () => {
@@ -746,15 +755,10 @@ onMounted(async () => {
           </template>
 
           <template #[`item.name`]="{ item }">
-            <v-text-field
-              :model-value="item.name"
-              density="compact"
-              variant="plain"
-              :loading="isUpdatingName === item.price_list_id"
-              :disabled="!canUpdate || isUpdatingName === item.price_list_id"
-              hide-details
-              @update:model-value="debouncedNameUpdate(item.price_list_id, $event)"
-            />
+            <span
+              :class="{ 'pricelist-name-link': canViewOrEdit }"
+              @click="() => canViewOrEdit && openPriceListInEditor(item.price_list_id)"
+            >{{ item.name || '-' }}</span>
           </template>
 
           <template #[`item.region`]="{ item }">
@@ -1106,5 +1110,9 @@ onMounted(async () => {
   padding: 0 9px !important;
   min-height: 22px !important;
   height: 22px !important;
+}
+
+.pricelist-name-link {
+  cursor: pointer;
 }
 </style>
