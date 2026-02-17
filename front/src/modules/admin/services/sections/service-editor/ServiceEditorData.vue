@@ -1,11 +1,14 @@
 <!--
   File: ServiceEditorData.vue
-  Version: 1.0.0
+  Version: 1.0.1
   Description: Component for service data form and actions
   Purpose: Provides interface for creating and editing service data
   Frontend file - ServiceEditorData.vue
   Created: 2024-12-19
   Last Updated: 2024-12-19
+
+  Changes in v1.0.1:
+  - Removed custom PhCaretUpDown icon from priority and status dropdowns; only Vuetify built-in indicator remains.
 -->
 
 <script setup lang="ts">
@@ -22,7 +25,7 @@ import { serviceCreateService } from '../../service.create.service'
 import { serviceUpdateService } from '../../service.update.service'
 import { serviceAdminFetchSingleService } from './service.admin.fetchsingleservice'
 import * as PhosphorIcons from '@phosphor-icons/vue'
-import { PhImage, PhMagnifyingGlass, PhCaretUpDown, PhX, PhPlus } from '@phosphor-icons/vue'
+import { PhImage, PhMagnifyingGlass, PhX, PhPlus } from '@phosphor-icons/vue'
 
 // Initialize stores and i18n
 const { t, locale } = useI18n()
@@ -595,11 +598,7 @@ onMounted(() => {
                       item-value="value"
                       required
                       color="teal"
-                    >
-                      <template #append-inner>
-                        <PhCaretUpDown class="dropdown-icon" />
-                      </template>
-                    </v-select>
+                    />
                   </v-col>
                   <v-col
                     cols="12"
@@ -616,11 +615,7 @@ onMounted(() => {
                       item-value="value"
                       required
                       color="teal"
-                    >
-                      <template #append-inner>
-                        <PhCaretUpDown class="dropdown-icon" />
-                      </template>
-                    </v-select>
+                    />
                   </v-col>
                 </v-row>
               </v-col>
@@ -1448,15 +1443,6 @@ onMounted(() => {
 /* Sidebar button styles */
 .side-bar-section .v-btn {
   min-width: 240px;
-}
-
-/* Dropdown icon positioning */
-.dropdown-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
 }
 
 /* Icon placeholder styles */

@@ -1,9 +1,12 @@
 <!--
   File: Application.Security.SessionManagement.vue
-  Version: 1.1.0
+  Version: 1.1.1
   Description: Session management settings component for frontend
   Purpose: Configure session-related security settings including duration, limits, and concurrent sessions
   Frontend file that manages session configuration UI and integrates with settings store
+
+  Changes in v1.1.1:
+  - Removed custom PhCaretUpDown icon from token lifetime/refresh dropdowns; only Vuetify built-in indicator remains.
 -->
 
 <script setup lang="ts">
@@ -14,7 +17,7 @@ import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
 import { updateSettingFromComponent } from '@/modules/admin/settings/service.update.settings';
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
-import { PhWarningCircle, PhCaretUpDown } from '@phosphor-icons/vue';
+import { PhWarningCircle } from '@phosphor-icons/vue';
 
 // Section path identifier - using component name for better consistency
 const section_path = 'Application.Security.SessionManagement';
@@ -522,11 +525,7 @@ onMounted(() => {
                 style="max-width: 300px;"
                 :disabled="isSettingDisabled('access.token.lifetime')"
                 :loading="settingLoadingStates['access.token.lifetime']"
-              >
-                <template #append-inner>
-                  <PhCaretUpDown class="dropdown-icon" />
-                </template>
-              </v-select>
+              />
               <v-tooltip
                 v-if="settingErrorStates['access.token.lifetime']"
                 location="top"
@@ -559,11 +558,7 @@ onMounted(() => {
                 style="max-width: 300px;"
                 :disabled="isSettingDisabled('refresh.jwt.n.seconds.before.expiry')"
                 :loading="settingLoadingStates['refresh.jwt.n.seconds.before.expiry']"
-              >
-                <template #append-inner>
-                  <PhCaretUpDown class="dropdown-icon" />
-                </template>
-              </v-select>
+              />
               <v-tooltip
                 v-if="settingErrorStates['refresh.jwt.n.seconds.before.expiry']"
                 location="top"
@@ -603,11 +598,7 @@ onMounted(() => {
                 style="max-width: 300px;"
                 :disabled="isSettingDisabled('refresh.token.lifetime')"
                 :loading="settingLoadingStates['refresh.token.lifetime']"
-              >
-                <template #append-inner>
-                  <PhCaretUpDown class="dropdown-icon" />
-                </template>
-              </v-select>
+              />
               <v-tooltip
                 v-if="settingErrorStates['refresh.token.lifetime']"
                 location="top"
@@ -640,11 +631,7 @@ onMounted(() => {
                 style="max-width: 300px;"
                 :disabled="isSettingDisabled('max.refresh.tokens.per.user')"
                 :loading="settingLoadingStates['max.refresh.tokens.per.user']"
-              >
-                <template #append-inner>
-                  <PhCaretUpDown class="dropdown-icon" />
-                </template>
-              </v-select>
+              />
               <v-tooltip
                 v-if="settingErrorStates['max.refresh.tokens.per.user']"
                 location="top"
@@ -1029,15 +1016,6 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* Dropdown icon positioning */
-.dropdown-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
 .session-management-container {
   /* Base container styling */
   position: relative;

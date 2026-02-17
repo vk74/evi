@@ -2,7 +2,10 @@
   File: Application.System.DataValidation.vue - frontend file
   Description: Data validation system settings for application data integrity
   Purpose: Configure data validation rules, patterns, and validation policies
-  Version: 1.4.1
+  Version: 1.4.2
+
+  Changes in v1.4.2:
+  - Removed custom PhCaretUpDown icon from min/max length dropdowns; only Vuetify built-in indicator remains.
   
   Features:
   - Standard fields validation settings (REMOVED)
@@ -15,7 +18,6 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed, nextTick, getCurrentInstance } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { PhCaretUpDown } from '@phosphor-icons/vue';
 import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings';
 import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
 import { updateSettingFromComponent } from '@/modules/admin/settings/service.update.settings';
@@ -820,11 +822,7 @@ onMounted(() => {
                           class="dropdown-select"
                           :disabled="isSettingDisabled(`wellKnownFields.${field.id === 'user-name' ? 'userName' : 'groupName'}.minLength`)"
                           :loading="settingLoadingStates[`wellKnownFields.${field.id === 'user-name' ? 'userName' : 'groupName'}.minLength`]"
-                        >
-                          <template #append-inner>
-                            <PhCaretUpDown class="dropdown-icon" />
-                          </template>
-                        </v-select>
+                        />
                         <span class="text-caption text-grey-darken-1 ml-2">
                           {{ field.id === 'user-name' || field.id === 'group-name' ? '1-5' : '1-8' }}
                         </span>
@@ -841,11 +839,7 @@ onMounted(() => {
                           class="dropdown-select"
                           :disabled="isSettingDisabled(`wellKnownFields.${field.id === 'user-name' ? 'userName' : 'groupName'}.maxLength`)"
                           :loading="settingLoadingStates[`wellKnownFields.${field.id === 'user-name' ? 'userName' : 'groupName'}.maxLength`]"
-                        >
-                          <template #append-inner>
-                            <PhCaretUpDown class="dropdown-icon" />
-                          </template>
-                        </v-select>
+                        />
                         <span class="text-caption text-grey-darken-1 ml-2">
                           {{ field.id === 'user-name' || field.id === 'group-name' ? '5-50' : '1-100' }}
                         </span>
@@ -959,15 +953,6 @@ onMounted(() => {
 
 .field-settings .v-text-field {
   margin-bottom: 8px;
-}
-
-/* Dropdown icon positioning */
-.dropdown-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
 }
 
 /* Make dividers same color as border in parent component */

@@ -1,9 +1,12 @@
 <!--
   File: ProductEditorDetails.vue
-  Version: 1.10.0
+  Version: 1.10.1
   Description: Component for product details form and actions
   Purpose: Provides interface for creating and editing product details with dynamic validation
   Frontend file - ProductEditorDetails.vue
+
+  Changes in v1.10.1:
+  - Removed custom PhCaretUpDown icon from status and language dropdowns; only Vuetify built-in indicator remains.
   
   Changes in v1.2.0:
   - Added dynamic validation for owner, backupOwner, and specialistsGroups fields
@@ -101,7 +104,7 @@ import type { ProductStatus } from '../../types.products.admin'
 const DataLoading = defineAsyncComponent(() => import('@/core/ui/loaders/DataLoading.vue'))
 const ItemSelector = defineAsyncComponent(() => import('@/core/ui/modals/item-selector/ItemSelector.vue'))
 
-import { PhX, PhPlus, PhCaretUpDown, PhImage } from '@phosphor-icons/vue'
+import { PhX, PhPlus, PhImage } from '@phosphor-icons/vue'
 
 // Initialize stores and i18n
 const { t, locale } = useI18n()
@@ -878,11 +881,7 @@ onMounted(async () => {
                   color="teal"
                   :readonly="isReadOnly"
                   required
-                >
-                  <template #append-inner>
-                    <PhCaretUpDown class="dropdown-icon" />
-                  </template>
-                </v-select>
+                />
               </v-col>
             </v-row>
 
@@ -1007,11 +1006,7 @@ onMounted(async () => {
                   :label="t('admin.products.editor.description.language.label')"
                   variant="outlined"
                   color="teal"
-                >
-                  <template #append-inner>
-                    <PhCaretUpDown class="dropdown-icon" />
-                  </template>
-                </v-select>
+                />
               </v-col>
             </v-row>
 
@@ -1352,15 +1347,6 @@ onMounted(async () => {
 .picture-placeholder {
   width: 100%;
   max-width: 300px;
-}
-
-/* Dropdown icon positioning */
-.dropdown-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
 }
 
 .picture-placeholder-content {

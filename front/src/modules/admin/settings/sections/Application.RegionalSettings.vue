@@ -1,9 +1,12 @@
 <!--
-  Version: 1.10.1
+  Version: 1.10.2
   File: Application.RegionalSettings.vue - frontend file
   Description: Regional settings configuration including timezone, country, fallback language, and time format
   Purpose: Configure regional application settings with full backend integration and settings store
   Frontend file that manages regional settings UI and integrates with settings store
+
+  Changes in v1.10.2:
+  - Removed custom PhCaretUpDown icon from timezone and fallback language dropdowns; only Vuetify built-in indicator remains.
   
   Changes in v1.10.1:
   - Region name validation: allowed characters now include hyphen (-) and underscore (_)
@@ -56,7 +59,7 @@ import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
 import { updateSettingFromComponent } from '@/modules/admin/settings/service.update.settings';
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
-import { PhCaretUpDown, PhWarningCircle, PhPlus, PhTrash } from '@phosphor-icons/vue';
+import { PhWarningCircle, PhPlus, PhTrash } from '@phosphor-icons/vue';
 import type { Region } from '@/modules/admin/settings/types.admin.regions';
 import { fetchAllRegions } from '@/modules/admin/settings/service.admin.fetch.regions';
 import { updateRegions } from '@/modules/admin/settings/service.admin.update.regions';
@@ -768,11 +771,7 @@ onMounted(async () => {
               style="max-width: 300px;"
               :disabled="isSettingDisabled('current.timezone')"
               :loading="settingLoadingStates['current.timezone']"
-            >
-              <template #append-inner>
-                <PhCaretUpDown class="dropdown-icon" />
-              </template>
-            </v-select>
+            />
             <v-tooltip
               v-if="settingErrorStates['current.timezone']"
               location="top"
@@ -956,11 +955,7 @@ onMounted(async () => {
               style="max-width: 300px;"
               :disabled="isSettingDisabled('fallback.language')"
               :loading="settingLoadingStates['fallback.language']"
-            >
-              <template #append-inner>
-                <PhCaretUpDown class="dropdown-icon" />
-              </template>
-            </v-select>
+            />
             <v-tooltip
               v-if="settingErrorStates['fallback.language']"
               location="top"
@@ -1040,15 +1035,6 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-/* Dropdown icon positioning */
-.dropdown-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
 .regional-settings-container {
   position: relative;
 }

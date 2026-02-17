@@ -1,6 +1,6 @@
 <!--
   File: SectionEditor.vue
-  Version: 1.1.1
+  Version: 1.1.2
   Description: Component for section editor with navigation bar and change tracking
   Purpose: Provides interface for creating and editing section data with visual feedback for unsaved changes
   Frontend file - SectionEditor.vue
@@ -17,6 +17,9 @@
   Changes in v1.1.1:
   - Changed UPDATE button back to SAVE
   - Added glow effect to CREATE button in creation mode
+  
+  Changes in v1.1.2:
+  - Removed custom PhCaretUpDown icon from status dropdown; only Vuetify built-in indicator remains.
 -->
 
 <script setup lang="ts">
@@ -33,7 +36,7 @@ import { catalogSectionsFetchService } from '@/modules/admin/catalog/service.adm
 import { catalogSectionUpdateService } from './service.admin.update.catalog.section'
 import type { SectionStatus, CatalogSection } from '@/modules/admin/catalog/types.catalog.admin'
 import * as PhosphorIcons from '@phosphor-icons/vue'
-import { PhMagnifyingGlass, PhCaretUpDown, PhCheckSquare, PhSquare, PhPaintBrush, PhImage } from '@phosphor-icons/vue'
+import { PhMagnifyingGlass, PhCheckSquare, PhSquare, PhPaintBrush, PhImage } from '@phosphor-icons/vue'
 import { can } from '@/core/helpers/helper.check.permissions'
 
 const { t, locale } = useI18n()
@@ -513,11 +516,7 @@ const handleBackupOwnerSelected = (result: any) => {
                           item-value="value"
                           color="teal"
                           :readonly="isReadOnly"
-                        >
-                          <template #append-inner>
-                            <PhCaretUpDown v-if="!isReadOnly" class="dropdown-icon" />
-                          </template>
-                        </v-select>
+                        />
                       </v-col>
                       <v-col
                         cols="12"
@@ -814,15 +813,6 @@ const handleBackupOwnerSelected = (result: any) => {
   flex: 1;
   overflow-y: auto;
   height: calc(100vh - 64px);
-}
-
-/* Dropdown icon positioning */
-.dropdown-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
 }
 
 /* Main content area */

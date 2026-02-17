@@ -1,8 +1,11 @@
 <!--
-version: 1.3.0
+version: 1.3.1
 Frontend file UserEditorDetails.vue.
 Purpose: User details form with dynamic validation using public policies and form state management.
 Features: Dynamic validation for username/email/phone, static validation for FIO fields, form submission handling.
+
+Changes in v1.3.1:
+- Removed custom PhCaretUpDown icon from gender and status dropdowns; only Vuetify built-in indicator remains.
 
 Changes in v1.1.0:
 - Added can() check for permissions
@@ -33,7 +36,7 @@ import { PasswordChangeMode } from '@/core/ui/modals/change-password/types.chang
 import { createUserService } from './service.create.new.user'
 import { updateUserService } from './service.update.user'
 import PasswordPoliciesPanel from '@/core/ui/panels/panel.current.password.policies.vue'
-import { PhCaretUpDown, PhCheckSquare, PhSquare, PhEye, PhEyeSlash } from '@phosphor-icons/vue'
+import { PhCheckSquare, PhSquare, PhEye, PhEyeSlash } from '@phosphor-icons/vue'
 import { fetchPublicValidationRules } from '@/core/services/service.fetch.public.validation.rules'
 import { fetchPublicPasswordPolicies } from '@/core/services/service.fetch.public.password.policies'
 import { usePublicSettingsStore, type PasswordPolicies, type ValidationRules } from '@/core/state/state.public.settings'
@@ -508,11 +511,7 @@ onBeforeUnmount(() => {
                       { title: t('admin.org.editor.fields.gender.options.male'), value: Gender.MALE },
                       { title: t('admin.org.editor.fields.gender.options.female'), value: Gender.FEMALE },
                       { title: t('admin.org.editor.fields.gender.options.notDefined'), value: Gender.NOT_DEFINED }
-                    ]" item-title="title" item-value="value" :disabled="isReadOnly">
-                    <template #append-inner>
-                      <PhCaretUpDown class="dropdown-icon" />
-                    </template>
-                  </v-select>
+                    ]" item-title="title" item-value="value" :disabled="isReadOnly" />
                   </v-col>
                 </v-row>
               </v-col>
@@ -540,11 +539,7 @@ onBeforeUnmount(() => {
                       ]" 
                       item-title="title" 
                       item-value="value"
-                    >
-                    <template #append-inner>
-                      <PhCaretUpDown class="dropdown-icon" />
-                    </template>
-                  </v-select>
+                    />
                   </v-col>
                   <v-col cols="12" md="6">
                     <div class="d-flex align-center">
@@ -691,15 +686,6 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-/* Dropdown icon positioning */
-.dropdown-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
 /* Main content area */
 .main-content-area {
   min-width: 0;

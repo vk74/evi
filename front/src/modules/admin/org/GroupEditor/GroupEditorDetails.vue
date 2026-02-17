@@ -1,7 +1,10 @@
 <!--
-version: 1.2.0
+version: 1.2.1
 Frontend file GroupEditorDetails.vue.
 Purpose: Renders the group details form (create/edit) and its right-side actions.
+
+Changes in v1.2.1:
+- Removed custom PhCaretUpDown icon from status dropdown; only Vuetify built-in indicator remains.
 
 Changes in v1.1.0:
 - Added can() check for permissions
@@ -22,7 +25,6 @@ import { GroupStatus, type EditMode, type IGroupData } from './types.group.edito
 import { useValidationRules } from '@/core/validation/rules.common.fields'
 import { defineAsyncComponent } from 'vue'
 import { fetchGroupService } from './service.fetch.group'
-import { PhCaretUpDown } from '@phosphor-icons/vue'
 import { can } from '@/core/helpers/helper.check.permissions'
 
 const ItemSelector = defineAsyncComponent(() => import('../../../../core/ui/modals/item-selector/ItemSelector.vue'))
@@ -308,11 +310,7 @@ onMounted(() => {
                   :rules="groupStatusRules"
                   variant="outlined"
                   density="comfortable"
-                >
-                  <template #append-inner>
-                    <PhCaretUpDown class="dropdown-icon" />
-                  </template>
-                </v-select>
+                />
               </v-col>
 
               <v-col cols="12">
@@ -423,15 +421,6 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* Dropdown icon positioning */
-.dropdown-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
 /* Group UUID display styles - similar to GroupEditorMembers.vue */
 .group-uuid-container {
   display: flex;
