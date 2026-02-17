@@ -14,9 +14,9 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useServicesAdminStore } from '../../state.services.admin'
 import { defineAsyncComponent } from 'vue'
-const ServiceEditorData = defineAsyncComponent(() => import(/* webpackChunkName: "admin-service-editor-data" */ './ServiceEditorData.vue'))
-const ServiceEditorPreferences = defineAsyncComponent(() => import(/* webpackChunkName: "admin-service-editor-preferences" */ './ServiceEditorPreferences.vue'))
-const ServiceEditorCatalogPublication = defineAsyncComponent(() => import(/* webpackChunkName: "admin-service-editor-catalog-publication" */ './ServiceEditorCatalogPublication.vue'))
+const ServiceEditorData = defineAsyncComponent(() => import('./ServiceEditorData.vue'))
+const ServiceEditorPreferences = defineAsyncComponent(() => import('./ServiceEditorPreferences.vue'))
+const ServiceEditorCatalogPublication = defineAsyncComponent(() => import('./ServiceEditorCatalogPublication.vue'))
 
 // Initialize stores and i18n
 const { t } = useI18n()

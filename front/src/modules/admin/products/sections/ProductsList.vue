@@ -73,7 +73,7 @@ import {
 } from '@phosphor-icons/vue'
 import Paginator from '@/core/ui/paginator/Paginator.vue'
 import debounce from 'lodash/debounce'
-const ItemSelector = defineAsyncComponent(() => import(/* webpackChunkName: "ui-item-selector" */ '@/core/ui/modals/item-selector/ItemSelector.vue'))
+const ItemSelector = defineAsyncComponent(() => import('@/core/ui/modals/item-selector/ItemSelector.vue'))
 
 // Types
 interface TableHeader {

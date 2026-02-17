@@ -25,7 +25,7 @@ import { fetchGroupService } from './service.fetch.group'
 import { PhCaretUpDown } from '@phosphor-icons/vue'
 import { can } from '@/core/helpers/helper.check.permissions'
 
-const ItemSelector = defineAsyncComponent(() => import(/* webpackChunkName: "ui-item-selector" */ '../../../../core/ui/modals/item-selector/ItemSelector.vue'))
+const ItemSelector = defineAsyncComponent(() => import('../../../../core/ui/modals/item-selector/ItemSelector.vue'))
 
 const { t } = useI18n()
 const groupEditorStore = useGroupEditorStore()

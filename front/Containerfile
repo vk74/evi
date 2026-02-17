@@ -1,16 +1,18 @@
 #
-# version: 1.4.0
+# version: 1.5.0
 # Purpose: Frontend container build for serving the SPA in production. FRONTEND file: Containerfile
-# Logic: Multi-stage build (Node for build → Nginx for runtime). Stateless, serves compiled assets from /usr/share/nginx/html.
+# Logic: Multi-stage build (Node for build with Vite → Nginx for runtime). Stateless, serves compiled assets from /usr/share/nginx/html.
+#
+# Changes in v1.5.0:
+# - Migrated from Vue CLI (webpack) to Vite build
+# - Removed babel.config.js and jsconfig.json COPY steps (no longer exist)
+# - Added index.html and vite.config.ts to COPY
+# - Replaced VUE_APP_API_URL with VITE_API_URL
+# - Removed NODE_MEMORY_MAIN_MB/NODE_MEMORY_CHILD_MB (Vite+esbuild uses much less memory)
+# - Removed BUILD_FLAGS (no longer needed)
 #
 # Changes in v1.4.0:
 # - Updated build stage base image from node:18-alpine to node:24-alpine (aligned with project Node.js 24 requirement)
-#
-# Changes in v1.3.0:
-# - Split heap 50/50: NODE_MEMORY_MAIN_MB (main process) and NODE_MEMORY_CHILD_MB (fork-ts-checker child). No defaults; release.sh requires >= 16 GB RAM and passes both.
-#
-# Changes in v1.2.0:
-# - ARG NODE_MEMORY_MB and ENV NODE_OPTIONS for Node heap limit during build (prevents OOM/SIGKILL); release.sh passes 8192 or 16384 based on host RAM.
 #
 
 # =========================
@@ -22,9 +24,9 @@ WORKDIR /app
 
 # Install dependencies first (leverage layer cache)
 COPY package-lock.json package.json ./
-COPY babel.config.js ./
 COPY tsconfig.json ./
-COPY jsconfig.json ./
+COPY vite.config.ts ./
+COPY index.html ./
 
 RUN --mount=type=cache,target=/root/.npm \
     npm ci --no-audit --fund=false --progress=false
@@ -33,30 +35,18 @@ RUN --mount=type=cache,target=/root/.npm \
 COPY ./ .
 
 # Accept build argument for API URL (defaults to localhost for local dev)
-ARG VUE_APP_API_URL=http://localhost:3000
-ENV VUE_APP_API_URL=${VUE_APP_API_URL}
+ARG VITE_API_URL=http://localhost:3000
+ENV VITE_API_URL=${VITE_API_URL}
 
-# Optional build flags (e.g. --no-parallel to save memory)
-ARG BUILD_FLAGS=""
-
-# Node heap: main process and fork-ts-checker child (MB). Passed by release.sh (requires >= 16 GB RAM); no defaults.
-ARG NODE_MEMORY_MAIN_MB
-ARG NODE_MEMORY_CHILD_MB
-ENV NODE_OPTIONS="--max-old-space-size=${NODE_MEMORY_MAIN_MB}"
-ENV NODE_MEMORY_CHILD_MB=${NODE_MEMORY_CHILD_MB}
-
-# Build production assets (cache webpack/babel caches)
-RUN --mount=type=cache,target=/app/node_modules/.cache \
-    npm run build -- ${BUILD_FLAGS}
+# Build production assets (cache Vite caches)
+RUN --mount=type=cache,target=/app/node_modules/.vite \
+    npm run build:skip-tsc
 
 
 # =========================
 # Runtime stage
 # =========================
 FROM docker.io/library/nginx:alpine
-
-# Non-root user for security
-# (Nginx in alpine runs as root by default; we keep root to bind 80 but use minimal surface.)
 
 # Copy built assets
 COPY --from=build /app/dist /usr/share/nginx/html
@@ -71,6 +61,3 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget -qO- http://127.0.0.1/ || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]
-
-
-

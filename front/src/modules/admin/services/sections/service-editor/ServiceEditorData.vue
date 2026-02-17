@@ -14,9 +14,9 @@ import { useI18n } from 'vue-i18n'
 import { useServicesAdminStore } from '../../state.services.admin'
 import { useUiStore } from '@/core/state/uistate'
 import { defineAsyncComponent } from 'vue'
-const ItemSelector = defineAsyncComponent(() => import(/* webpackChunkName: "ui-item-selector" */ '@/core/ui/modals/item-selector/ItemSelector.vue'))
-const DataLoading = defineAsyncComponent(() => import(/* webpackChunkName: "ui-data-loading" */ '@/core/ui/loaders/DataLoading.vue'))
-const IconPicker = defineAsyncComponent(() => import(/* webpackChunkName: "ui-icon-picker" */ '@/core/ui/modals/icon-picker/IconPicker.vue'))
+const ItemSelector = defineAsyncComponent(() => import('@/core/ui/modals/item-selector/ItemSelector.vue'))
+const DataLoading = defineAsyncComponent(() => import('@/core/ui/loaders/DataLoading.vue'))
+const IconPicker = defineAsyncComponent(() => import('@/core/ui/modals/icon-picker/IconPicker.vue'))
 import { ServicePriority, ServiceStatus, type Service } from '../../types.services.admin'
 import { serviceCreateService } from '../../service.create.service'
 import { serviceUpdateService } from '../../service.update.service'

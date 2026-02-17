@@ -1332,7 +1332,7 @@ build_multi_arch_component() {
     pl_start=$(date +%s)
 
     if [[ "$name" == "fe" ]]; then
-      if ! podman build --platform "${pl}" --build-arg VUE_APP_API_URL=/api --build-arg "BUILD_FLAGS=--no-parallel" --build-arg "NODE_MEMORY_MAIN_MB=${NODE_MEMORY_MAIN_MB}" --build-arg "NODE_MEMORY_CHILD_MB=${NODE_MEMORY_CHILD_MB}" -t "${tag}" "${context}"; then
+      if ! podman build --platform "${pl}" --build-arg VITE_API_URL=/api -t "${tag}" "${context}"; then
         err "Build failed: ${main_tag} for ${pl}"
         return 1
       fi
@@ -1380,7 +1380,6 @@ build_image_fe() {
   check_and_cleanup_existing_images "${version}" "build" "fe"
   info "Building for version: ${version} (namespace: ${GHCR_NAMESPACE}), component: evi-fe"
   info "Platforms: ${BUILD_PLATFORMS}"
-  set_frontend_node_memory_from_ram
   local fe_image="ghcr.io/${GHCR_NAMESPACE}/evi-fe:${version}"
   local comp_start comp_end comp_sec
   comp_start=$(date +%s)

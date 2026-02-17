@@ -56,27 +56,27 @@ import CriticalSettingsErrorModal from './core/ui/modals/CriticalSettingsErrorMo
 import LocationSelectionModal from './core/ui/modals/user-location-selection/LocationSelectionModal.vue';
 
 
-// Async component imports with named chunks and prefetch hints
-const ModuleCatalog = defineAsyncComponent(() => import(/* webpackChunkName: "mod-catalog" */ /* webpackPrefetch: true */ './modules/catalog/ModuleCatalog.vue'));
-const ModuleWork = defineAsyncComponent(() => import(/* webpackChunkName: "mod-work" */ './modules/work/ModuleWork.vue'));
-const ModuleAR = defineAsyncComponent(() => import(/* webpackChunkName: "mod-reports" */ './modules/ar/ModuleAR.vue'));
+// Async component imports (Vite auto-splits dynamic imports into chunks)
+const ModuleCatalog = defineAsyncComponent(() => import('./modules/catalog/ModuleCatalog.vue'));
+const ModuleWork = defineAsyncComponent(() => import('./modules/work/ModuleWork.vue'));
+const ModuleAR = defineAsyncComponent(() => import('./modules/ar/ModuleAR.vue'));
 
-const ModuleAccount = defineAsyncComponent(() => import(/* webpackChunkName: "mod-account" */ './modules/account/ModuleAccount.vue'));
-const AccountPreferences = defineAsyncComponent(() => import(/* webpackChunkName: "mod-preferences" */ './modules/account/AccountPreferences.vue'));
-const ModuleKnowledgeBase = defineAsyncComponent(() => import(/* webpackChunkName: "mod-kb" */ /* webpackPrefetch: true */ './modules/KB/ModuleKnowledgeBase.vue'));
-const ModuleSessionData = defineAsyncComponent(() => import(/* webpackChunkName: "mod-session" */ './modules/about/ModuleSessionData.vue'));
-const ModuleLicense = defineAsyncComponent(() => import(/* webpackChunkName: "mod-license" */ './modules/about/ModuleLicense.vue'));
-const ModuleDeveloperInfo = defineAsyncComponent(() => import(/* webpackChunkName: "mod-developer-info" */ './modules/about/ModuleDeveloperInfo.vue'));
-const ModuleComponents = defineAsyncComponent(() => import(/* webpackChunkName: "mod-components" */ './modules/about/ModuleComponents.vue'));
-const ModuleAbout = defineAsyncComponent(() => import(/* webpackChunkName: "mod-about" */ './modules/about/ModuleAbout.vue'));
+const ModuleAccount = defineAsyncComponent(() => import('./modules/account/ModuleAccount.vue'));
+const AccountPreferences = defineAsyncComponent(() => import('./modules/account/AccountPreferences.vue'));
+const ModuleKnowledgeBase = defineAsyncComponent(() => import('./modules/KB/ModuleKnowledgeBase.vue'));
+const ModuleSessionData = defineAsyncComponent(() => import('./modules/about/ModuleSessionData.vue'));
+const ModuleLicense = defineAsyncComponent(() => import('./modules/about/ModuleLicense.vue'));
+const ModuleDeveloperInfo = defineAsyncComponent(() => import('./modules/about/ModuleDeveloperInfo.vue'));
+const ModuleComponents = defineAsyncComponent(() => import('./modules/about/ModuleComponents.vue'));
+const ModuleAbout = defineAsyncComponent(() => import('./modules/about/ModuleAbout.vue'));
 
-// Admin submodule imports (split per submodule; no prefetch for non-admin users)
-const SubModuleCatalogAdmin = defineAsyncComponent(() => import(/* webpackChunkName: "admin-catalog" */ './modules/admin/catalog/SubModuleCatalogAdmin.vue'));
-const SubModuleServiceAdmin = defineAsyncComponent(() => import(/* webpackChunkName: "admin-service" */ './modules/admin/services/SubModuleServiceAdmin.vue'));
-const SubModuleOrgAdmin = defineAsyncComponent(() => import(/* webpackChunkName: "admin-org" */ './modules/admin/org/SubModuleOrgAdmin.vue'));
-const SubModuleAppSettings = defineAsyncComponent(() => import(/* webpackChunkName: "admin-settings" */ './modules/admin/settings/SubModuleAppSettings.vue'));
-const SubModuleProducts = defineAsyncComponent(() => import(/* webpackChunkName: "admin-products" */ './modules/admin/products/SubModuleProducts.vue'));
-const SubModulePricing = defineAsyncComponent(() => import(/* webpackChunkName: "admin-pricing" */ './modules/admin/pricing/SubModulePricing.vue'));
+// Admin submodule imports (split per submodule)
+const SubModuleCatalogAdmin = defineAsyncComponent(() => import('./modules/admin/catalog/SubModuleCatalogAdmin.vue'));
+const SubModuleServiceAdmin = defineAsyncComponent(() => import('./modules/admin/services/SubModuleServiceAdmin.vue'));
+const SubModuleOrgAdmin = defineAsyncComponent(() => import('./modules/admin/org/SubModuleOrgAdmin.vue'));
+const SubModuleAppSettings = defineAsyncComponent(() => import('./modules/admin/settings/SubModuleAppSettings.vue'));
+const SubModuleProducts = defineAsyncComponent(() => import('./modules/admin/products/SubModuleProducts.vue'));
+const SubModulePricing = defineAsyncComponent(() => import('./modules/admin/pricing/SubModulePricing.vue'));
 
 // Store and i18n initialization
 const userStore = useUserAuthStore();
@@ -659,23 +659,23 @@ onMounted(async () => {
         // Trigger background fetch of the currently active submodule
         switch (activeAdminSubModule.value) {
           case 'catalogAdmin':
-            import(/* webpackChunkName: "admin-catalog" */ './modules/admin/catalog/SubModuleCatalogAdmin.vue');
+            import('./modules/admin/catalog/SubModuleCatalogAdmin.vue');
             break;
           case 'serviceAdmin':
-            import(/* webpackChunkName: "admin-service" */ './modules/admin/services/SubModuleServiceAdmin.vue');
+            import('./modules/admin/services/SubModuleServiceAdmin.vue');
             break;
           case 'orgAdmin':
-            import(/* webpackChunkName: "admin-org" */ './modules/admin/org/SubModuleOrgAdmin.vue');
+            import('./modules/admin/org/SubModuleOrgAdmin.vue');
             break;
           case 'productsAdmin':
-            import(/* webpackChunkName: "admin-products" */ './modules/admin/products/SubModuleProducts.vue');
+            import('./modules/admin/products/SubModuleProducts.vue');
             break;
           case 'pricingAdmin':
-            import(/* webpackChunkName: "admin-pricing" */ './modules/admin/pricing/SubModulePricing.vue');
+            import('./modules/admin/pricing/SubModulePricing.vue');
             break;
           case 'appAdmin':
           default:
-            import(/* webpackChunkName: "admin-settings" */ './modules/admin/settings/SubModuleAppSettings.vue');
+            import('./modules/admin/settings/SubModuleAppSettings.vue');
             break;
         }
       }

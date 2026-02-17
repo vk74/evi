@@ -22,10 +22,10 @@ import { useI18n } from 'vue-i18n'
 import { useProductsAdminStore } from '../../state.products.admin'
 import { defineAsyncComponent } from 'vue'
 
-const ProductEditorDetails = defineAsyncComponent(() => import(/* webpackChunkName: "admin-product-editor-details" */ './ProductEditorDetails.vue'))
-const ProductEditorOptions = defineAsyncComponent(() => import(/* webpackChunkName: "admin-product-editor-options" */ './ProductEditorOptions.vue'))
-const ProductEditorPreferences = defineAsyncComponent(() => import(/* webpackChunkName: "admin-product-editor-preferences" */ './ProductEditorPreferences.vue'))
-const ProductEditorRegionsVAT = defineAsyncComponent(() => import(/* webpackChunkName: "admin-product-editor-regions-vat" */ './ProductEditorRegionsVAT.vue'))
+const ProductEditorDetails = defineAsyncComponent(() => import('./ProductEditorDetails.vue'))
+const ProductEditorOptions = defineAsyncComponent(() => import('./ProductEditorOptions.vue'))
+const ProductEditorPreferences = defineAsyncComponent(() => import('./ProductEditorPreferences.vue'))
+const ProductEditorRegionsVAT = defineAsyncComponent(() => import('./ProductEditorRegionsVAT.vue'))
 
 // Initialize stores and i18n
 const { t } = useI18n()

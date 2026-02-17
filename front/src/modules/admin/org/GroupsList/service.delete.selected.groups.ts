@@ -95,7 +95,7 @@ export const deleteSelectedGroupsService = {
             const groupError: GroupError = {
                 code: 'DELETE_GROUPS_ERROR',
                 message: 'Failed to delete selected groups',
-                details: process.env.NODE_ENV === 'development' ?
+                details: import.meta.env.DEV ?
                     (error instanceof Error ? error.message : String(error)) :
                     undefined
             };

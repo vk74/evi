@@ -29,7 +29,7 @@ export function areHttpOnlyCookiesSupported(): boolean {
  * Gets the current environment (development/production)
  */
 export function getEnvironment(): 'development' | 'production' {
-  return process.env.NODE_ENV === 'production' ? 'production' : 'development';
+  return import.meta.env.PROD ? 'production' : 'development';
 }
 
 /**

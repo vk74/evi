@@ -1,9 +1,12 @@
 /**
  * @file state.user.auth.ts
- * Version: 1.4.1
+ * Version: 1.4.2
  * TypeScript state management for user authentication.
  * Frontend file that manages user authentication state with persistence and integration with auth services.
  * Updated to support device fingerprinting and new database structure.
+ *
+ * Changes in v1.4.2:
+ * - Replaced require() calls with top-level ESM import for Vite compatibility
  *
  * Changes in v1.4.1:
  * - loadPersistedState: clear permissions when user is not logged in (no jwt) to prevent Admin module visibility for unauthenticated users
@@ -22,6 +25,7 @@
 import { defineStore } from 'pinia'
 import { jwtDecode } from 'jwt-decode'
 import { useUiStore } from '@/core/state/uistate'
+import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings'
 import type { 
   UserState, 
   JwtPayload
@@ -38,8 +42,6 @@ let retryCount = 0
  */
 function getRefreshBeforeExpiry(): number {
   try {
-    // Import here to avoid circular dependency
-    const { useAppSettingsStore } = require('@/modules/admin/settings/state.app.settings');
     const store = useAppSettingsStore();
     
     const settings = store.getCachedSettings('Application.Security.SessionManagement');
@@ -62,8 +64,6 @@ function getRefreshBeforeExpiry(): number {
  */
 function getFallbackLanguage(): string {
   try {
-    // Import here to avoid circular dependency
-    const { useAppSettingsStore } = require('@/modules/admin/settings/state.app.settings');
     const store = useAppSettingsStore();
     
     // Try to get from regular cache first

@@ -13,7 +13,7 @@ Changes in v1.15.0:
 import { useI18n } from 'vue-i18n';
 import { defineAsyncComponent } from 'vue';
 
-const PricingTaxRegions = defineAsyncComponent(() => import(/* webpackChunkName: "admin-pricing-tax-regions" */ './PricingTaxRegions.vue'));
+const PricingTaxRegions = defineAsyncComponent(() => import('./PricingTaxRegions.vue'));
 
 // Translations
 const { t } = useI18n();

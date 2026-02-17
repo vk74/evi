@@ -1,13 +1,17 @@
 /**
- * Version: 1.0.0
+ * Version: 1.0.1
  * Universal helper for getting any setting value from application settings system.
  * Frontend file that provides wrapper over getSettingValue from service.fetch.settings.ts.
  * Returns null if setting not found or is confidential, otherwise returns setting value.
  * Uses settings cache (TTL 5 minutes).
  * Filename: get.setting.value.ts (frontend)
+ *
+ * Changes in v1.0.1:
+ * - Replaced require() with top-level ESM import for Vite compatibility
  */
 
 import { fetchSettings, getSettingValue } from '@/modules/admin/settings/service.fetch.settings';
+import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings';
 import type { AppSetting } from '@/modules/admin/settings/types.settings';
 
 /**
@@ -57,7 +61,6 @@ export function getSettingValueSync<T = any>(
   settingName: string
 ): T | null {
   try {
-    const { useAppSettingsStore } = require('@/modules/admin/settings/state.app.settings');
     const store = useAppSettingsStore();
     const settings = store.getCachedSettings(sectionPath);
     

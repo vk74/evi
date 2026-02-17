@@ -21,7 +21,7 @@ import Paginator from '@/core/ui/paginator/Paginator.vue'
 import { PhMagnifyingGlass, PhX, PhCheckCircle, PhMinusCircle, PhArrowsClockwise, PhCheckSquare, PhSquare } from '@phosphor-icons/vue'
 import { can } from '@/core/helpers/helper.check.permissions'
 
-const ItemSelector = defineAsyncComponent(() => import(/* webpackChunkName: "ui-item-selector" */ '../../../../core/ui/modals/item-selector/ItemSelector.vue'))
+const ItemSelector = defineAsyncComponent(() => import('../../../../core/ui/modals/item-selector/ItemSelector.vue'))
 
 const { t } = useI18n()
 const groupEditorStore = useGroupEditorStore()

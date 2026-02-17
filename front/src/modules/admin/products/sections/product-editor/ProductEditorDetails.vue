@@ -98,8 +98,8 @@ import { usePublicSettingsStore, type ValidationRules } from '@/core/state/state
 import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings'
 import type { ProductStatus } from '../../types.products.admin'
 
-const DataLoading = defineAsyncComponent(() => import(/* webpackChunkName: "ui-data-loading" */ '@/core/ui/loaders/DataLoading.vue'))
-const ItemSelector = defineAsyncComponent(() => import(/* webpackChunkName: "ui-item-selector" */ '@/core/ui/modals/item-selector/ItemSelector.vue'))
+const DataLoading = defineAsyncComponent(() => import('@/core/ui/loaders/DataLoading.vue'))
+const ItemSelector = defineAsyncComponent(() => import('@/core/ui/modals/item-selector/ItemSelector.vue'))
 
 import { PhX, PhPlus, PhCaretUpDown, PhImage } from '@phosphor-icons/vue'
 

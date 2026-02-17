@@ -86,7 +86,7 @@ import {
   PhFunnel
 } from '@phosphor-icons/vue'
 
-const ProductPairEditor = defineAsyncComponent(() => import(/* webpackChunkName: "ui-product-pair-editor" */ '@/core/ui/modals/product-pair-editor/ProductPairEditor.vue'))
+const ProductPairEditor = defineAsyncComponent(() => import('@/core/ui/modals/product-pair-editor/ProductPairEditor.vue'))
 
 // Types
 type OptionItem = ProductListItem

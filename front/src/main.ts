@@ -1,9 +1,13 @@
 /*
-  Version: v0.4.0
+  Version: v0.5.0
   Purpose: Frontend bootstrap file (main.ts). Creates the Vue application, initializes
   internationalization (i18n), state management (Pinia with persistence), registers
   UI framework (Vuetify), mounts the app, and initializes authenticated user state.
   This is a frontend file: main.ts
+
+  Changes in v0.5.0:
+  - Migrated to Vite: replaced require() with ESM-compatible pattern
+  - CSS import path updated for Vite resolution
   
   Changes in v0.4.0:
   - getInitialLocale now retrieves fallback language from Application.RegionalSettings.fallback.language setting
@@ -19,7 +23,6 @@
   - Simple inline conversion to i18n locale codes ('en'/'ru') only where needed for vue-i18n compatibility
   - No normalization functions - direct mapping only
 */
-// src/main.ts
 import { createApp } from 'vue';
 import App from './App.vue';
 import { createPinia } from 'pinia';
@@ -56,36 +59,9 @@ const messages = translations;
  * Returns null if settings not available (before Pinia initialization).
  */
 function getFallbackLanguageFromSettings(): string | null {
-  try {
-    // Try to get from settings store (may not be available at this point)
-    // This is a best-effort attempt - settings may not be loaded yet
-    const { useAppSettingsStore } = require('@/modules/admin/settings/state.app.settings');
-    const store = useAppSettingsStore();
-    
-    // Try to get from regular cache first
-    let settings = store.getCachedSettings('Application.RegionalSettings');
-    
-    // Fallback to public cache if regular cache not available
-    if (!settings) {
-      const publicCacheEntry = store.publicSettingsCache['Application.RegionalSettings'];
-      if (publicCacheEntry) {
-        settings = publicCacheEntry.data;
-      }
-    }
-    
-    if (settings) {
-      const setting = settings.find(s => s.setting_name === 'fallback.language');
-      if (setting && setting.value && typeof setting.value === 'string') {
-        // Convert full language name to i18n locale code as-is
-        if (setting.value === 'english') return 'en';
-        if (setting.value === 'russian') return 'ru';
-      }
-    }
-  } catch (error) {
-    // Settings store may not be available yet - this is expected
-    // Will fall back to default
-  }
-  
+  // Settings store is not available at this point (Pinia not yet created).
+  // The locale will be properly synced later in initializeUserState().
+  // Here we only check localStorage for a persisted preference.
   return null;
 }
 

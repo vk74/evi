@@ -1,20 +1,21 @@
-// src/core/api/config.ts
+/**
+ * version: 1.1.0
+ * purpose: API URL configuration and axios defaults.
+ * file: FRONTEND file: config.ts
+ * logic: Reads VITE_API_URL from Vite environment variables, falls back to localhost.
+ *
+ * Changes in v1.1.0:
+ * - Migrated from process.env.VUE_APP_API_URL to import.meta.env.VITE_API_URL (Vite migration)
+ * - Removed dual Vue CLI / Vite compatibility check
+ */
+
 import type { AxiosServiceConfig } from './types';
 
-// Константы конфигурации
-// Use environment variable VUE_APP_API_URL if available, otherwise fallback to localhost
-// In container, VITE_API_URL is set, but Vue CLI uses VUE_APP_ prefix
-// So we check both VUE_APP_API_URL and VITE_API_URL for compatibility
+// Get backend API URL from Vite environment variable or fallback to localhost
 const getApiUrl = (): string => {
-  // Check for Vue CLI environment variable (VUE_APP_*)
-  if (process.env.VUE_APP_API_URL) {
-    return process.env.VUE_APP_API_URL;
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
   }
-  // Check for Vite-style environment variable (for container compatibility)
-  if (process.env.VITE_API_URL) {
-    return process.env.VITE_API_URL;
-  }
-  // Fallback to localhost for local development
   return 'http://localhost:3000';
 };
 

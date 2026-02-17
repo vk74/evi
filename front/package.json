@@ -2,24 +2,26 @@
   "name": "evi-frontend",
   "version": "0.11.6",
   "private": true,
+  "type": "module",
   "scripts": {
-    "serve": "vue-cli-service serve",
-    "dev:front": "NODE_ENV=development vue-cli-service serve",
-    "build": "vue-cli-service build",
-    "build:type-check": "vue-tsc --noEmit && vue-cli-service build",
+    "dev": "vite",
+    "dev:front": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "build:skip-tsc": "vite build",
     "type-check": "vue-tsc --noEmit",
-    "lint": "vue-cli-service lint",
-    "test-front:all": "jest --config jest.config.js"
+    "lint": "eslint src --ext .ts,.vue",
+    "preview": "vite preview",
+    "test-front:all": "jest --config jest.config.cjs"
   },
   "dependencies": {
     "@hapi/hoek": "^11.0.6",
     "@phosphor-icons/vue": "^2.2.1",
     "@vueuse/core": "^14.2.1",
     "axios": "^1.11.0",
-    "core-js": "^3.45.1",
     "exceljs": "^4.4.0",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
+    "lodash": "^4.17.23",
     "pinia": "^3.0.3",
     "pinia-plugin-persistedstate": "^4.0.0",
     "roboto-fontface": "*",
@@ -28,16 +30,11 @@
     "vuetify": "^3.9.7"
   },
   "devDependencies": {
-    "@babel/core": "^7.26.0",
-    "@babel/eslint-parser": "^7.25.9",
-    "@babel/preset-env": "^7.26.0",
     "@types/jest": "^30.0.0",
+    "@types/lodash": "^4.17.23",
     "@typescript-eslint/eslint-plugin": "^8.42.0",
     "@typescript-eslint/parser": "^8.42.0",
-    "@vue/cli-plugin-babel": "~5.0.0",
-    "@vue/cli-plugin-eslint": "~5.0.0",
-    "@vue/cli-plugin-typescript": "^5.0.9",
-    "@vue/cli-service": "^5.0.9",
+    "@vitejs/plugin-vue": "^5.2.0",
     "@vue/eslint-config-typescript": "^14.6.0",
     "@vue/test-utils": "^2.4.6",
     "eslint": "^9.35.0",
@@ -48,16 +45,8 @@
     "remove-trailing-separator": "^1.1.0",
     "ts-jest": "^29.1.2",
     "typescript": "^5.9.2",
-    "vue-cli-plugin-vuetify": "~2.5.8",
-    "vue-tsc": "^3.0.6",
-    "webpack": "^5.96.1",
-    "webpack-chain": "^6.5.1",
-    "webpack-plugin-vuetify": "^3.1.2"
-  },
-  "browserslist": [
-    "> 1%",
-    "last 2 versions",
-    "not dead",
-    "not ie 11"
-  ]
+    "vite": "^6.3.0",
+    "vite-plugin-vuetify": "^2.1.1",
+    "vue-tsc": "^3.0.6"
+  }
 }
