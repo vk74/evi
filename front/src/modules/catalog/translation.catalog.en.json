@@ -102,8 +102,9 @@
         }
       },
       "techSpecsTable": {
-        "parameter": "Parameter",
-        "value": "Value"
+        "parameter": "parameter",
+        "value": "value",
+        "noTechSpecs": "No technical specifications available"
       },
       "contactInfo": {
         "owner": "Owner",

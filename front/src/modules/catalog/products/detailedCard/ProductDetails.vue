@@ -1,8 +1,11 @@
 <!--
-version: 1.20.1
+version: 1.20.2
 Frontend file for product details view component.
 Displays extended info as an opened product card format.
 File: ProductDetails.vue
+
+Changes in v1.20.2:
+- Removed duplicate tech_specs block (raw JSON in details-grid); tech specs shown only in section via ProductTechSpecs
 
 Changes in v1.20.1:
 - Removed custom PhCaretUpDown icon from units count dropdown; only Vuetify built-in indicator remains.
@@ -629,19 +632,6 @@ watch(() => options.value, () => {
  
         </div>
 
-        <!-- Other details blocks -->
-        <div class="details-grid">
-          <div v-if="hasTechSpecs && isTechSpecsVisible" class="detail-block">
-            <div class="block-title">
-              {{ t('catalog.productDetails.techSpecs') }}
-            </div>
-            <div class="block-body">
-              <pre>{{ JSON.stringify(details?.tech_specs, null, 2) }}</pre>
-            </div>
-          </div>
-
-        </div>
-
         <!-- Sections area -->
         <div class="product-sections mt-6">
           <div class="sections-nav">
@@ -825,7 +815,6 @@ watch(() => options.value, () => {
 }
 .photo-text { font-weight: 500; }
 .right-column { display: flex; flex-direction: column; gap: 16px; }
-.details-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
 .detail-block { background: #fff; border: 1px solid rgba(59, 130, 246, 0.1); border-radius: 8px; padding: 12px; }
 .block-title { font-weight: 600; margin-bottom: 8px; color: rgb(59, 130, 246); }
 .product-name-title { font-weight: 700; margin-bottom: 8px; color: #009688; font-size: 1.43rem; }

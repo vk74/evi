@@ -1551,6 +1551,12 @@ onMounted(async () => {
   border-bottom: none !important;
 }
 
+.tech-specs-table :deep(thead .v-data-table__th) {
+  background-color: rgba(0, 0, 0, 0.03);
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.87);
+}
+
 .tech-specs-table :deep(thead .v-data-table__th:nth-child(1)),
 .tech-specs-table :deep(thead .v-data-table__th:nth-child(2)) {
   text-transform: lowercase;

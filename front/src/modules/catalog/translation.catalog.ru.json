@@ -102,8 +102,9 @@
         }
       },
       "techSpecsTable": {
-        "parameter": "Параметр",
-        "value": "Значение"
+        "parameter": "параметр",
+        "value": "значение",
+        "noTechSpecs": "Нет технических характеристик"
       },
       "contactInfo": {
         "owner": "Владелец",
