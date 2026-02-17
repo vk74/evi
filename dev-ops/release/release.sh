@@ -1501,7 +1501,7 @@ build_image_all() {
   printf "${CYAN}║${NC}  ${GREEN}%-14s${NC}  %-10s  %8s  %4d%%   ${CYAN}  ║${NC}\n" "evi-db" "${ver_db}" "$(format_duration "${BUILD_TIME_DB}")" "${pct_db}"
   printf "${CYAN}╠══════════════════════════════════════════════════╣${NC}\n"
   printf "${CYAN}║${NC}  %-14s  %-10s  ${YELLOW}%8s${NC}         ${CYAN}   ║${NC}\n" "TOTAL" "" "$(format_duration "${all_sec}")"
-  printf "${CYAN}║${NC}  %-14s  %-10s               ${CYAN}║${NC}\n" "Platforms" "${BUILD_PLATFORMS}"
+  printf "${CYAN}║${NC}  %-14s  %-10s          ${CYAN}║${NC}\n" "Platforms" "${BUILD_PLATFORMS}"
   printf "${CYAN}╚══════════════════════════════════════════════════╝${NC}\n"
   echo ""
   log "all images built"

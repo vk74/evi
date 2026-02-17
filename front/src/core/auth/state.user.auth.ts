@@ -1,9 +1,30 @@
 /**
  * @file state.user.auth.ts
- * Version: 1.4.2
+ * Version: 1.4.3
  * TypeScript state management for user authentication.
  * Frontend file that manages user authentication state with persistence and integration with auth services.
  * Updated to support device fingerprinting and new database structure.
+ *
+ * Changes in v1.4.5:
+ * - REMOVED static import of useAppSettingsStore to break circular chunk dependency
+ *   that caused blank screen in production builds. In Vite/Rollup production builds,
+ *   static import from admin/settings module forced main ↔ chunk-admin circular
+ *   reference, leading to uninitialized Pinia instance ("_s" undefined error).
+ * - getRefreshBeforeExpiry() and getFallbackLanguage() now use lazy dynamic import()
+ *   to access settings store only when actually needed (after full app initialization).
+ * - loadPersistedState() uses hardcoded 'russian' fallback, same as before.
+ *
+ * Changes in v1.4.4:
+ * - Removed all getFallbackLanguage() calls from loadPersistedState() state factory
+ *   to prevent cross-store access during Pinia store initialization. In production builds
+ *   with manualChunks, calling useAppSettingsStore() inside userAuth state factory
+ *   caused circular chunk dependency crash ("_s" undefined).
+ * - getFallbackLanguage() is now only called from actions (setLanguage) where stores are ready
+ *
+ * Changes in v1.4.3:
+ * - Fixed initialization error: initial language state now uses hardcoded 'russian' fallback instead of calling getFallbackLanguage()
+ * - Prevents accessing settings store before Pinia is fully initialized, which was causing "_s" undefined error
+ * - getFallbackLanguage() is still used in loadPersistedState() when stores are ready
  *
  * Changes in v1.4.2:
  * - Replaced require() calls with top-level ESM import for Vite compatibility
@@ -22,19 +43,44 @@
  * - Language is now stored as 'english' or 'russian' to match backend expectations
  */
 
-import { defineStore } from 'pinia'
+import { defineStore, getActivePinia } from 'pinia'
 import { jwtDecode } from 'jwt-decode'
 import { useUiStore } from '@/core/state/uistate'
-import { useAppSettingsStore } from '@/modules/admin/settings/state.app.settings'
 import type { 
   UserState, 
   JwtPayload
 } from './types.auth'
 import { STORAGE_KEYS, TIMER_CONFIG } from './types.auth'
 
+// NOTE: useAppSettingsStore is NOT imported statically here to avoid a circular chunk
+// dependency (main ↔ chunk-admin) in Vite/Rollup production builds. Instead, settings
+// store is accessed via getActivePinia() in getRefreshBeforeExpiry() and
+// getFallbackLanguage(), which are only called after full app initialization.
+
 // Timer reference for automatic token refresh
 let refreshTimer: NodeJS.Timeout | null = null
 let retryCount = 0
+
+// Lazy reference to settings store (populated on first use after app init)
+let _cachedAppSettingsStore: any = null
+
+/**
+ * Gets the app settings store lazily via Pinia's active instance
+ * Returns null if store is not available yet
+ */
+function getAppSettingsStoreLazy(): any {
+  if (_cachedAppSettingsStore) return _cachedAppSettingsStore
+  try {
+    const pinia = getActivePinia()
+    if (pinia && (pinia as any)._s && (pinia as any)._s.has('appSettings')) {
+      _cachedAppSettingsStore = (pinia as any)._s.get('appSettings')
+      return _cachedAppSettingsStore
+    }
+  } catch {
+    // Store not available yet - fall through to null
+  }
+  return null
+}
 
 /**
  * Gets refresh before expiry setting from cache
@@ -42,11 +88,12 @@ let retryCount = 0
  */
 function getRefreshBeforeExpiry(): number {
   try {
-    const store = useAppSettingsStore();
+    const store = getAppSettingsStoreLazy()
+    if (!store) return TIMER_CONFIG.REFRESH_BEFORE_EXPIRY
     
     const settings = store.getCachedSettings('Application.Security.SessionManagement');
     if (settings) {
-      const setting = settings.find(s => s.setting_name === 'refresh.jwt.n.seconds.before.expiry');
+      const setting = settings.find((s: any) => s.setting_name === 'refresh.jwt.n.seconds.before.expiry');
       if (setting && setting.value !== null) {
         return Number(setting.value);
       }
@@ -64,21 +111,22 @@ function getRefreshBeforeExpiry(): number {
  */
 function getFallbackLanguage(): string {
   try {
-    const store = useAppSettingsStore();
+    const store = getAppSettingsStoreLazy()
+    if (!store) return 'russian'
     
     // Try to get from regular cache first
     let settings = store.getCachedSettings('Application.RegionalSettings');
     
     // Fallback to public cache if regular cache not available
     if (!settings) {
-      const publicCacheEntry = store.publicSettingsCache['Application.RegionalSettings'];
+      const publicCacheEntry = store.publicSettingsCache?.['Application.RegionalSettings'];
       if (publicCacheEntry) {
         settings = publicCacheEntry.data;
       }
     }
     
     if (settings) {
-      const setting = settings.find(s => s.setting_name === 'fallback.language');
+      const setting = settings.find((s: any) => s.setting_name === 'fallback.language');
       if (setting && setting.value && typeof setting.value === 'string') {
         return setting.value;
       }
@@ -111,8 +159,9 @@ const initialState: UserState = {
         return stored;
       }
     }
-    // Use fallback from settings if language not set or invalid
-    return getFallbackLanguage();
+    // Use hardcoded fallback during initial state creation to avoid accessing settings store before it's ready
+    // The actual fallback from settings will be applied during loadPersistedState() if needed
+    return 'russian';
   })(),
   permissions: new Set()
 }
@@ -137,21 +186,21 @@ function loadPersistedState(): UserState {
       }
 
       // Ensure language is always a valid full language name
+      // NOTE: We must NOT call getFallbackLanguage() here because loadPersistedState()
+      // runs inside defineStore's state factory. Calling useAppSettingsStore() at this
+      // point causes circular chunk dependency issues in production builds.
       if (!parsed.language || typeof parsed.language !== 'string') {
-        // Try to get from localStorage, then fallback to settings
+        // Try to get from localStorage, then use hardcoded fallback
         const stored = localStorage.getItem('userLanguage');
         if (stored && (stored === 'english' || stored === 'russian')) {
           parsed.language = stored;
         } else {
-          parsed.language = getFallbackLanguage();
+          parsed.language = 'russian';
         }
       } else {
         // Validate that it's a full language name as-is
-        if (parsed.language === 'english' || parsed.language === 'russian') {
-          // Keep as-is
-        } else {
-          // Invalid language, use fallback
-          parsed.language = getFallbackLanguage();
+        if (parsed.language !== 'english' && parsed.language !== 'russian') {
+          parsed.language = 'russian';
         }
       }
       

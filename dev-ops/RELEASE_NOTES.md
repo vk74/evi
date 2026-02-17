@@ -3,6 +3,44 @@
 Release observation log: artifacts, component versions, and participants. For compatibility map or analytics, JSON can be derived from this file later.
 
 ---
+## 2026-02-17 | 0.11.7
+
+**Scope:** 
+[0;36m[evi][0mscopeauto-detection:
+componentpreviouscurrentchanged
+------------------------------
+evi-fe0.11.60.11.7[0;32m*[0m
+evi-be0.11.60.11.7[0;32m*[0m
+evi-dbn/a0.11.7[0;32m*[0m
+
+auto-detectedscope:[0;32mevi-fe,evi-be,evi-db[0m
+
+additionalcomponents:evi-reverse-proxy,evi-pgadmin,host
+
+evi-fe,evi-be,evi-db
+
+**Components:**
+
+| Component | Version | Notes |
+|-----------|---------|-------|
+| evi-be | 0.11.7 | - |
+| evi-db | 0.11.7 | PostgreSQL 17, schema 0.11.7 |
+| evi-pgadmin | docker.io/dpage/pgadmin4:8 | - |
+
+**Key dependencies:** Vue 3.5.21, Express 5.1.0, pg 8.18.0, PostgreSQL 17
+
+**Notes:**
+- fix: remove backup file from git, always cleanup backups in release.sh — vk74
+- fix: frontend container build crash under QEMU cross-compilation — vk74
+- migration from VueCLI / Webpack to Vite — vk74
+- changes to release step 10: auto scope of changes for creating release tag — vk74
+- -release 0.11.6 — vk74
+- updated components list — vk74
+
+**Contributors:** 1 authors
+
+---
+
 ## 2026-02-17 | 0.11.6
 
 **Scope:** 

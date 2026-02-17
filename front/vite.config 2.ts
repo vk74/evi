@@ -1,18 +1,10 @@
 /**
- * version: 1.2.0
+ * version: 1.0.0
  * purpose: Vite build configuration for evi frontend SPA.
  * file: FRONTEND file: vite.config.ts
  * logic: Configures Vue 3 + Vuetify plugins, path aliases, code splitting (manualChunks),
  *        dev server settings, and production build optimizations.
  *        Replaces previous vue.config.js (Vue CLI / webpack) configuration.
- *
- * Changes in v1.2.0:
- * - Fixed blank-screen bug in production builds caused by circular chunk dependency
- *   (main ↔ chunk-admin). manualChunks now ONLY splits vendor (node_modules) code.
- *   Application code is NOT manually chunked - Rollup splits admin submodules
- *   naturally via defineAsyncComponent dynamic imports in App.vue.
- *   This eliminates circular references between app chunks that caused
- *   Pinia's "_s" undefined error during module initialization.
  *
  * Changes in v1.0.0:
  * - Initial Vite configuration migrated from Vue CLI webpack setup
@@ -51,18 +43,19 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id: string) {
-          // Only split VENDOR (node_modules) code into manual chunks.
-          // Application code is NOT manually chunked to avoid circular
-          // chunk dependencies (main ↔ chunk-admin) that cause Pinia "_s"
-          // undefined error and blank screen in production builds.
-          // Admin components are naturally code-split via defineAsyncComponent
-          // dynamic imports in App.vue.
+          // Admin module chunk
+          if (id.includes('/src/modules/admin/')) {
+            return 'chunk-admin'
+          }
+          // Vuetify chunk
           if (id.includes('node_modules/vuetify')) {
             return 'chunk-vuetify'
           }
+          // Phosphor Icons chunk
           if (id.includes('node_modules/@phosphor-icons/vue')) {
             return 'chunk-icons-phosphor'
           }
+          // General vendor chunk
           if (id.includes('node_modules')) {
             return 'chunk-vendors'
           }
