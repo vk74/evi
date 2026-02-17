@@ -1,12 +1,22 @@
 #!/usr/bin/env bash
 #
-# version: 1.4.0
+# version: 1.5.0
 # purpose: append release record to dev-ops/RELEASE_NOTES.md (release diary format).
 # file: update-release-notes.sh (dev-ops/release/scripts)
 # logic: called from release.sh step 10 after create-github-release.sh. Reads version from package.json,
 #        auto-detects scope by comparing current component versions with previous release record.
 #        Extracts component versions, git log notes, contributors.
 #        Inserts new record at beginning of RELEASE_NOTES.md.
+#
+# changes in v1.5.0:
+# - Fixed critical output bug: display printf in prompt_scope_with_auto() now goes to
+#   stderr (>&2) so it does not pollute the function return value captured by $().
+#   Previously the entire detection table leaked into the scope string shown in the
+#   "info: release record appended" message.
+# - Improved table formatting: wider columns (%-14s) and box-drawing border
+# - Scope summary shown clearly before the Accept prompt
+# - After confirmation, a visible "Selected scope: ..." line is printed
+# - Components whose previous version was not found (n/a) are marked with "new" hint
 #
 # changes in v1.4.0:
 # - Auto-detect scope: compares current eviFeVersion/eviBeVersion/eviDbVersion with previous release
@@ -254,6 +264,8 @@ scope_contains() {
 }
 
 # Prompt user to confirm or override auto-detected scope
+# IMPORTANT: all display output goes to stderr (>&2) so that only the final
+# scope value is returned on stdout (captured by the caller via $()).
 prompt_scope_with_auto() {
   local auto_scope="$1"
 
@@ -269,46 +281,72 @@ prompt_scope_with_auto() {
   prev_be=$(echo "${prev_versions}" | awk '{print $2}')
   prev_db=$(echo "${prev_versions}" | awk '{print $3}')
 
-  echo ""
-  printf "${CYAN}[evi]${NC} scope auto-detection:\n"
-  printf "  %-8s  %-12s  %-12s  %s\n" "Component" "Previous" "Current" "Changed"
-  printf "  %-8s  %-12s  %-12s  %s\n" "--------" "--------" "-------" "-------"
+  # Build change markers and hints
+  local fe_mark be_mark db_mark
+  local fe_hint="" be_hint="" db_hint=""
+  if [[ "${cur_fe}" != "${prev_fe}" ]]; then
+    fe_mark="${GREEN}YES${NC}"
+    [[ -z "${prev_fe}" ]] && fe_hint=" (new)"
+  else
+    fe_mark="${YELLOW}no${NC}"
+  fi
+  if [[ "${cur_be}" != "${prev_be}" ]]; then
+    be_mark="${GREEN}YES${NC}"
+    [[ -z "${prev_be}" ]] && be_hint=" (new)"
+  else
+    be_mark="${YELLOW}no${NC}"
+  fi
+  if [[ "${cur_db}" != "${prev_db}" ]]; then
+    db_mark="${GREEN}YES${NC}"
+    [[ -z "${prev_db}" ]] && db_hint=" (new)"
+  else
+    db_mark="${YELLOW}no${NC}"
+  fi
 
-  local fe_mark="  " be_mark="  " db_mark="  "
-  [[ "${cur_fe}" != "${prev_fe}" ]] && fe_mark="${GREEN}*${NC}" || fe_mark="${YELLOW}-${NC}"
-  [[ "${cur_be}" != "${prev_be}" ]] && be_mark="${GREEN}*${NC}" || be_mark="${YELLOW}-${NC}"
-  [[ "${cur_db}" != "${prev_db}" ]] && db_mark="${GREEN}*${NC}" || db_mark="${YELLOW}-${NC}"
+  # Display detection table (all to stderr)
+  echo "" >&2
+  printf "${CYAN}[evi]${NC} Scope auto-detection — comparing with previous release:\n" >&2
+  echo "" >&2
+  printf "  %-14s  %-14s  %-14s  %s\n" "Component" "Previous" "Current" "Changed" >&2
+  printf "  %-14s  %-14s  %-14s  %s\n" "--------------" "--------------" "--------------" "-------" >&2
+  printf "  %-14s  %-14s  %-14s  %b%s\n" "evi-fe" "${prev_fe:---}" "${cur_fe}" "${fe_mark}" "${fe_hint}" >&2
+  printf "  %-14s  %-14s  %-14s  %b%s\n" "evi-be" "${prev_be:---}" "${cur_be}" "${be_mark}" "${be_hint}" >&2
+  printf "  %-14s  %-14s  %-14s  %b%s\n" "evi-db" "${prev_db:---}" "${cur_db}" "${db_mark}" "${db_hint}" >&2
+  echo "" >&2
+  printf "  ➤ Detected scope: ${GREEN}%s${NC}\n" "${auto_scope}" >&2
+  echo "" >&2
+  printf "  (additional: evi-reverse-proxy, evi-pgadmin, host — add via [E]dit)\n" >&2
+  echo "" >&2
 
-  printf "  %-8s  %-12s  %-12s  %b\n" "evi-fe" "${prev_fe:-n/a}" "${cur_fe}" "${fe_mark}"
-  printf "  %-8s  %-12s  %-12s  %b\n" "evi-be" "${prev_be:-n/a}" "${cur_be}" "${be_mark}"
-  printf "  %-8s  %-12s  %-12s  %b\n" "evi-db" "${prev_db:-n/a}" "${cur_db}" "${db_mark}"
-  echo ""
-  printf "  Auto-detected scope: ${GREEN}${auto_scope}${NC}\n"
-  echo ""
-  echo "  Additional components: evi-reverse-proxy, evi-pgadmin, host"
-  echo ""
-  read -r -p "  Accept scope? [Y]es / [E]dit / [A]ll: " choice
+  read -r -p "  Accept scope? [Y]es / [E]dit / [A]ll: " choice </dev/tty
   choice="${choice:-y}"
 
+  local final_scope=""
   case "${choice}" in
     [yY]|[yY][eE][sS]|"")
-      echo "${auto_scope}"
+      final_scope="${auto_scope}"
       ;;
     [aA]|[aA][lL][lL])
-      echo "evi-fe,evi-be,evi-db"
+      final_scope="evi-fe,evi-be,evi-db"
       ;;
     [eE]|[eE][dD][iI][tT])
-      read -r -p "  Enter scope (comma-separated): " manual_scope
+      read -r -p "  Enter scope (comma-separated): " manual_scope </dev/tty
       if [[ -z "${manual_scope// }" ]]; then
-        echo "${auto_scope}"
+        final_scope="${auto_scope}"
       else
-        echo "${manual_scope}" | tr -d ' '
+        final_scope=$(echo "${manual_scope}" | tr -d ' ')
       fi
       ;;
     *)
-      echo "${auto_scope}"
+      final_scope="${auto_scope}"
       ;;
   esac
+
+  # Show confirmation (to stderr so it doesn't leak into return value)
+  printf "\n  ${GREEN}✓${NC} Selected scope: ${GREEN}%s${NC}\n\n" "${final_scope}" >&2
+
+  # Return only the clean scope value on stdout
+  echo "${final_scope}"
 }
 
 # Build components table for release record
