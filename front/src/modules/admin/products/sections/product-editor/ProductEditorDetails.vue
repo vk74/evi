@@ -1,9 +1,16 @@
 <!--
   File: ProductEditorDetails.vue
-  Version: 1.10.1
+  Version: 1.11.0
   Description: Component for product details form and actions
   Purpose: Provides interface for creating and editing product details with dynamic validation
   Frontend file - ProductEditorDetails.vue
+
+  Changes in v1.11.0:
+  - Replaced techSpecs JSON textarea with a two-column table (Parameter / Value)
+  - Table has add row (+) button and trash icon per row (visible on hover)
+  - Column headers and add-row button use i18n (admin.products.editor.jsonb.techSpecs.parameterColumn/valueColumn/addRow)
+  - Tech specs table synced to formData.translations[lang].techSpecs (syncFormFromTechSpecsRows); persisted on create/update via existing API
+  - Add row: focus moves to new row Parameter cell; table column headers (parameter, value) styled lowercase
 
   Changes in v1.10.1:
   - Removed custom PhCaretUpDown icon from status and language dropdowns; only Vuetify built-in indicator remains.
@@ -87,7 +94,7 @@
 -->
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useProductsAdminStore } from '../../state.products.admin'
 import { useUiStore } from '@/core/state/uistate'
@@ -104,7 +111,7 @@ import type { ProductStatus } from '../../types.products.admin'
 const DataLoading = defineAsyncComponent(() => import('@/core/ui/loaders/DataLoading.vue'))
 const ItemSelector = defineAsyncComponent(() => import('@/core/ui/modals/item-selector/ItemSelector.vue'))
 
-import { PhX, PhPlus, PhImage } from '@phosphor-icons/vue'
+import { PhX, PhPlus, PhImage, PhTrash } from '@phosphor-icons/vue'
 
 // Initialize stores and i18n
 const { t, locale } = useI18n()
@@ -170,6 +177,67 @@ const initialProductData = ref<{
     russian?: { name: string; shortDesc: string; longDesc?: string; techSpecs?: Record<string, any> }
   }
 } | null>(null)
+
+// Technical specifications table (parameter-value pairs); synced with formData.translations[lang].techSpecs for create/update
+interface TechSpecRow {
+  parameter: string
+  value: string
+}
+const techSpecsRows = ref<TechSpecRow[]>([])
+
+function syncTechSpecsRowsFromForm(): void {
+  const spec = formData.value.translations[selectedLanguage.value]?.techSpecs
+  if (spec && typeof spec === 'object' && !Array.isArray(spec)) {
+    techSpecsRows.value = Object.entries(spec).map(([parameter, value]) => ({
+      parameter,
+      value: value != null ? String(value) : ''
+    }))
+  } else {
+    techSpecsRows.value = []
+  }
+}
+
+const techSpecsTableWrapper = ref<HTMLElement | null>(null)
+
+function addTechSpecRow(): void {
+  techSpecsRows.value.push({ parameter: '', value: '' })
+  nextTick(() => {
+    const wrapper = techSpecsTableWrapper.value
+    if (!wrapper) return
+    const inputs = wrapper.querySelectorAll('.tech-specs-parameter-input input')
+    const last = inputs[inputs.length - 1]
+    if (last && last instanceof HTMLInputElement) {
+      last.focus()
+    }
+  })
+}
+
+function removeTechSpecRow(index: number): void {
+  if (index >= 0 && index < techSpecsRows.value.length) {
+    techSpecsRows.value.splice(index, 1)
+  }
+}
+
+/** Sync current table rows into formData.translations[selectedLanguage].techSpecs for save */
+function syncFormFromTechSpecsRows(): void {
+  const lang = selectedLanguage.value
+  if (!formData.value.translations[lang]) {
+    formData.value.translations[lang] = { name: '', shortDesc: '', longDesc: '', techSpecs: {} }
+  }
+  const obj: Record<string, string> = {}
+  techSpecsRows.value.forEach((r) => {
+    if (r.parameter.trim() !== '') {
+      obj[r.parameter.trim()] = r.value ?? ''
+    }
+  })
+  formData.value.translations[lang]!.techSpecs = obj
+}
+
+const techSpecsTableHeaders = computed(() => [
+  { title: t('admin.products.editor.jsonb.techSpecs.parameterColumn'), key: 'parameter', width: '40%' },
+  { title: t('admin.products.editor.jsonb.techSpecs.valueColumn'), key: 'value', width: '60%' },
+  { title: '', key: 'actions', width: '56px', sortable: false }
+])
 
 // Computed properties
 const isCreationMode = computed(() => productsStore.editorMode === 'creation')
@@ -302,6 +370,15 @@ watch(
   },
   { immediate: true }
 )
+
+watch(selectedLanguage, () => {
+  syncTechSpecsRowsFromForm()
+})
+
+// Keep formData.translations[lang].techSpecs in sync with table so create/update send current data
+watch(techSpecsRows, () => {
+  syncFormFromTechSpecsRows()
+}, { deep: true })
 
 // Get selected picture component (placeholder for now)
 const selectedPictureComponent = computed(() => {
@@ -753,6 +830,7 @@ const populateFormWithProductData = (productData: any) => {
   
   // Also update store for consistency (but don't trigger watch cycles)
   productsStore.setEditingProductData(productData)
+  syncTechSpecsRowsFromForm()
 }
 
 // Load product data from API (same approach as SectionEditor.loadSectionData)
@@ -811,6 +889,7 @@ onMounted(async () => {
     // Load product data for editing (same approach as SectionEditor)
     await loadProductData()
   }
+  syncTechSpecsRowsFromForm()
 })
 </script>
 
@@ -1072,19 +1151,71 @@ onMounted(async () => {
             </div>
 
             <v-row class="pt-3">
-              <v-col
-                cols="12"
-                md="6"
-              >
-                <v-textarea
-                  :model-value="JSON.stringify(formData.translations[selectedLanguage]?.techSpecs, null, 2)"
-                  :label="t('admin.products.editor.jsonb.techSpecs.label')"
-                  variant="outlined"
-                  rows="4"
+              <v-col cols="12" md="8">
+                <div class="tech-specs-label mb-2">
+                  {{ t('admin.products.editor.jsonb.techSpecs.label') }}
+                </div>
+                <div ref="techSpecsTableWrapper" class="tech-specs-table-wrapper">
+                  <v-data-table
+                    :headers="techSpecsTableHeaders"
+                    :items="techSpecsRows"
+                    :items-per-page="-1"
+                    hide-default-footer
+                    class="tech-specs-table"
+                  >
+                    <template #item.parameter="{ item }">
+                      <v-text-field
+                        :model-value="item.parameter"
+                        variant="plain"
+                        density="compact"
+                        hide-details
+                        class="tech-specs-cell-input tech-specs-parameter-input"
+                        :readonly="isReadOnly"
+                        :placeholder="t('admin.products.editor.jsonb.techSpecs.parameterColumn')"
+                        @update:model-value="(v: string) => { item.parameter = v }"
+                      />
+                    </template>
+                    <template #item.value="{ item }">
+                      <v-text-field
+                        :model-value="item.value"
+                        variant="plain"
+                        density="compact"
+                        hide-details
+                        class="tech-specs-cell-input"
+                        :readonly="isReadOnly"
+                        :placeholder="t('admin.products.editor.jsonb.techSpecs.valueColumn')"
+                        @update:model-value="(v: string) => { item.value = v }"
+                      />
+                    </template>
+                    <template #item.actions="{ item }">
+                      <div class="tech-specs-action-cell">
+                        <v-btn
+                          v-if="!isReadOnly"
+                          icon
+                          size="small"
+                          color="error"
+                          variant="text"
+                          @click="removeTechSpecRow(techSpecsRows.indexOf(item))"
+                        >
+                          <PhTrash :size="18" />
+                        </v-btn>
+                      </div>
+                    </template>
+                  </v-data-table>
+                </div>
+                <v-btn
+                  v-if="!isReadOnly"
+                  class="mt-2"
                   color="teal"
-                  :readonly="isReadOnly"
-                  @input="updateJsonbField('techSpecs', $event)"
-                />
+                  variant="outlined"
+                  size="small"
+                  @click="addTechSpecRow"
+                >
+                  <template #prepend>
+                    <PhPlus :size="16" />
+                  </template>
+                  {{ t('admin.products.editor.jsonb.techSpecs.addRow') }}
+                </v-btn>
               </v-col>
             </v-row>
           </v-col>
@@ -1400,5 +1531,75 @@ onMounted(async () => {
     box-shadow: 0 0 16px rgba(20, 184, 166, 0.5);
     transform: scale(1.01);
   }
+}
+
+/* Technical specifications table */
+.tech-specs-label {
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.tech-specs-table-wrapper {
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tech-specs-table :deep(.v-data-table__td),
+.tech-specs-table :deep(.v-data-table__th) {
+  border-bottom: none !important;
+}
+
+.tech-specs-table :deep(thead .v-data-table__th:nth-child(1)),
+.tech-specs-table :deep(thead .v-data-table__th:nth-child(2)) {
+  text-transform: lowercase;
+}
+
+.tech-specs-table :deep(.v-data-table__tr) {
+  position: relative;
+}
+
+.tech-specs-table :deep(.v-data-table__tr::after) {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 7px;
+  right: 7px;
+  height: 1px;
+  background-color: rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.tech-specs-table :deep(tbody > tr:last-child::after) {
+  display: none;
+}
+
+.tech-specs-action-cell {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  display: flex;
+  justify-content: center;
+}
+
+.tech-specs-table :deep(.v-data-table__tr:hover) .tech-specs-action-cell {
+  opacity: 1;
+}
+
+.tech-specs-cell-input :deep(.v-field) {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.tech-specs-cell-input :deep(.v-field__outline) {
+  display: none !important;
+}
+
+.tech-specs-cell-input :deep(.v-field__input) {
+  padding: 0 !important;
+}
+
+.tech-specs-table .tech-specs-cell-input :deep(input::placeholder) {
+  text-transform: lowercase;
 }
 </style>

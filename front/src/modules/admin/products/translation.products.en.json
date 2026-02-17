@@ -116,7 +116,10 @@
         "jsonb": {
           "title": "additional information",
           "techSpecs": {
-            "label": "technical specifications"
+            "label": "technical specifications",
+            "parameterColumn": "Parameter",
+            "valueColumn": "Value",
+            "addRow": "Add row"
           }
         },
         "visibility": {
