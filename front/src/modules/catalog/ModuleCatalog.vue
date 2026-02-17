@@ -1,5 +1,5 @@
 <!--
-version: 1.11.0
+version: 1.11.1
 Frontend file for catalog module.
 Catalog interface with sections, filters, and service/product cards.
 File: ModuleCatalog.vue
@@ -64,6 +64,9 @@ Changes in v1.10.0:
 Changes in v1.11.0:
 - Clear price cache on user location change so currency and price format update from new region pricelist
 - Watch on getUserLocation now calls clearPriceCache() before reloading products and prices
+
+Changes in v1.11.1:
+- Hid default dropdown triangle on sort v-select (menu-icon=""); only funnel icon shown
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
@@ -637,6 +640,7 @@ onMounted(async () => {
               variant="outlined"
               density="comfortable"
               hide-details
+              menu-icon=""
               color="teal"
               :base-color="isSortFilterActive ? 'teal' : undefined"
               style="min-width: 150px;"

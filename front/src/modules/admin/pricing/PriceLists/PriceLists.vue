@@ -1,5 +1,5 @@
 <!--
-Version: 1.9.0
+Version: 1.9.1
 Price Lists management section.
 Frontend file for managing price lists in the pricing admin module.
 Features editable name and status fields with manual is_active control.
@@ -25,6 +25,9 @@ Changes in v1.9.0:
 - Price list name in table is clickable; opens price list in PriceListEditor (same as select + Edit)
 - Extracted openPriceListInEditor(priceListId) for reuse from edit button and name click
 - Name column shows as text with cursor pointer when canViewOrEdit; inline name edit in table removed (edit in editor)
+
+Changes in v1.9.1:
+- Hid default dropdown triangle on currency and status filter v-selects (menu-icon=""); only funnel icon shown
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
@@ -646,6 +649,7 @@ onMounted(async () => {
                   color="teal"
                   :base-color="isCurrencyFilterActive ? 'teal' : undefined"
                   hide-details
+                  menu-icon=""
                   style="min-width: 120px;"
                   @update:model-value="handleCurrencyFilterChange"
                 >
@@ -670,6 +674,7 @@ onMounted(async () => {
                   color="teal"
                   :base-color="isStatusFilterActive ? 'teal' : undefined"
                   hide-details
+                  menu-icon=""
                   style="min-width: 150px;"
                   @update:model-value="handleStatusFilterChange"
                 >

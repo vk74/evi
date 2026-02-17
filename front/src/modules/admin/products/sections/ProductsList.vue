@@ -1,6 +1,6 @@
 <!--
  * @file ProductsList.vue
- * Version: 1.6.0
+ * Version: 1.6.1
  * Products list section component.
  * Frontend file that displays list of products for admin users.
  * 
@@ -54,6 +54,10 @@
  * - Product name in table is clickable; opens product in editor (same as select + Edit)
  * - Extracted openProductInEditor(productId) for reuse from edit button and name click
  * - Cursor pointer on product name when user can view/edit
+ *
+ * Changes in v1.6.1:
+ * - Hid default dropdown triangle on status and published filter v-selects (menu-icon="")
+ * - Only filter icon (funnel) is shown on the right
 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, defineAsyncComponent } from 'vue'
@@ -585,6 +589,7 @@ const handleAssignOwnerClose = () => {
                   color="teal"
                   :base-color="isStatusFilterActive ? 'teal' : undefined"
                   hide-details
+                  menu-icon=""
                   style="min-width: 150px;"
                   class="filter-select"
                   @update:model-value="handleStatusFilterChange"
@@ -610,6 +615,7 @@ const handleAssignOwnerClose = () => {
                   color="teal"
                   :base-color="isPublishedFilterActive ? 'teal' : undefined"
                   hide-details
+                  menu-icon=""
                   style="min-width: 150px;"
                   class="filter-select"
                   @update:model-value="handlePublishedFilterChange"

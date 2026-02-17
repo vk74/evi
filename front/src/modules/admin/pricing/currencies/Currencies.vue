@@ -1,5 +1,5 @@
 <!--
-Version: 1.3.4
+Version: 1.3.5
 Currencies list management section.
 Frontend file for managing currencies in the pricing admin module. Loads live data from backend.
 Includes error handling for deletion of currencies used in price lists.
@@ -14,6 +14,9 @@ Changes in v1.3.4:
 - Removed v-menu component for status selection
 - Status now changes immediately on chip click, matching PricingVAT.vue behavior
 - Renamed SAVE button to UPDATE for consistency with PricingVAT.vue
+
+Changes in v1.3.5:
+- Hid default dropdown triangle on status filter v-select (menu-icon=""); only funnel icon shown
 -->
 <script setup lang="ts">
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
@@ -359,6 +362,7 @@ function handleBeforeUnload(e: BeforeUnloadEvent) {
                   { title: t('admin.pricing.priceLists.filters.disabled'), value: 'disabled' }
                 ]"
                 hide-details
+                menu-icon=""
               >
                 <template #append-inner>
                   <PhFunnel class="dropdown-icon" />

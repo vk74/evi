@@ -1,6 +1,6 @@
 /**
  * @file UsersList.vue
- * Version: 1.4.0
+ * Version: 1.4.1
  * Component for displaying and managing the system users list with server-side processing.
  * Features: pagination, search, sorting, user management operations (create, edit, delete, reset password).
  * FRONTEND file: UsersList.vue
@@ -19,6 +19,9 @@
  * - Username in table is clickable; opens user in user editor (same as select + Edit/View)
  * - Extracted openUserInEditor(userId) for reuse from edit button and username click
  * - Cursor pointer on username when user has adminOrg:users:read:all
+ *
+ * Changes in v1.4.1:
+ * - Hid default dropdown triangle on status and staff filter v-selects (menu-icon=""); only funnel icon shown
  */
 <script setup lang="ts">
 import usersFetchService from './Service.fetch.users'
@@ -436,6 +439,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
                   color="teal"
                   :base-color="isStatusFilterActive ? 'teal' : undefined"
                   hide-details
+                  menu-icon=""
                   style="min-width: 180px;"
                 >
                   <template #append-inner>
@@ -459,6 +463,7 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
                   color="teal"
                   :base-color="isStaffFilterActive ? 'teal' : undefined"
                   hide-details
+                  menu-icon=""
                   style="min-width: 150px;"
                 >
                   <template #append-inner>

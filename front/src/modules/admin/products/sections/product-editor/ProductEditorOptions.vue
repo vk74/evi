@@ -1,6 +1,6 @@
 <!--
   File: ProductEditorOptions.vue
-  Version: 1.12.0
+  Version: 1.12.1
   Description: Component for product options management
   Purpose: Provides interface for managing product options pairing
   Frontend file - ProductEditorOptions.vue
@@ -61,6 +61,9 @@
   - Hide "Unpair All", "Pair Selected", and "Unpair Selected" buttons for auditors
   - Disable selection checkboxes in table for auditors
   - Keep "Clear selections" and "Refresh" buttons visible for all users
+
+  Changes in v1.12.1:
+  - Hid default dropdown triangle on status and paired filter v-selects (menu-icon=""); only funnel icon shown
 -->
 
 <script setup lang="ts">
@@ -632,6 +635,7 @@ watch(isOptionsTabActive, async (isActive) => {
                     color="teal"
                     :base-color="isStatusFilterActive ? 'teal' : undefined"
                     hide-details
+                    menu-icon=""
                     style="min-width: 180px;"
                   >
                     <template #append-inner>
@@ -655,6 +659,7 @@ watch(isOptionsTabActive, async (isActive) => {
                     color="teal"
                     :base-color="isPairedFilterActive ? 'teal' : undefined"
                     hide-details
+                    menu-icon=""
                     style="min-width: 150px;"
                   >
                     <template #append-inner>

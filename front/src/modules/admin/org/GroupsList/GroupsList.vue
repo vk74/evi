@@ -1,7 +1,7 @@
 <!--
 /**
  * @file GroupsList.vue
- * @version 1.4.0
+ * @version 1.4.1
  * Frontend component for displaying and managing the list of groups in the administration module.
  * 
  * Changes in v1.1.0:
@@ -19,6 +19,9 @@
  * - Extracted openGroupInEditor(groupId) for reuse from edit button and name click
  * - Cursor pointer on group name when user has adminOrg:groups:read:all
  * - Column header "name" renamed to "group name" (table.headers.groupName)
+ *
+ * Changes in v1.4.1:
+ * - Hid default dropdown triangle on status filter v-select (menu-icon=""); only funnel icon shown
  */
 -->
 
@@ -213,6 +216,7 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
                   color="teal"
                   :base-color="isStatusFilterActive ? 'teal' : undefined"
                   hide-details
+                  menu-icon=""
                   style="min-width: 180px;"
                 >
                   <template #append-inner>
