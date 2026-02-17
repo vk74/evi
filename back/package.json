@@ -1,6 +1,6 @@
 {
   "name": "evi-backend",
-  "version": "0.11.7",
+  "version": "0.11.8",
   "description": "",
   "main": "src/server.ts",
   "_moduleAliases": {
