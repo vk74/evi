@@ -1,6 +1,6 @@
 <!--
   File: Services.List.vue
-  Version: 1.0.0
+  Version: 1.1.0
   Description: Component for managing services list
   Purpose: Provides interface for viewing, adding, removing, and editing services
   Features:
@@ -10,6 +10,11 @@
   - Edit service details
   - Service visibility toggle
   - Bulk operations
+
+  Changes in v1.1.0:
+  - Service name in table is clickable; opens service in service editor (same as select + Edit)
+  - Extracted openServiceInEditor(serviceId) for reuse from edit button and name click
+  - Cursor pointer on service name to indicate clickability
 -->
 
 <script setup lang="ts">
@@ -190,12 +195,17 @@ const addService = () => {
   servicesStore.openServiceEditor('creation', undefined, undefined)
 }
 
+/**
+ * Open service in editor. Same behaviour as selecting one service and clicking Edit.
+ */
+const openServiceInEditor = (serviceId: string) => {
+  servicesStore.openServiceEditor('edit', serviceId, undefined)
+}
+
 const editService = () => {
   const selectedIds = Array.from(selectedServices.value)
   if (selectedIds.length === 1) {
-    const serviceId = selectedIds[0]
-    // Open editor without service data - it will be loaded from API
-    servicesStore.openServiceEditor('edit', serviceId, undefined)
+    openServiceInEditor(selectedIds[0])
   }
 }
 
@@ -507,7 +517,10 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
                 class="mr-2"
               />
               <PhGear v-else size="16" color="teal" class="mr-2" />
-              <span>{{ item.name }}</span>
+              <span
+                class="service-name-link"
+                @click="openServiceInEditor(item.id)"
+              >{{ item.name }}</span>
             </div>
           </template>
 
@@ -796,5 +809,9 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
   padding: 0 9px !important;
   min-height: 22px !important;
   height: 22px !important;
+}
+
+.service-name-link {
+  cursor: pointer;
 }
 </style> 
