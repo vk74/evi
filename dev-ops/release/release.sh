@@ -1084,12 +1084,13 @@ update_vue_component_versions() {
     changes=$((changes + 1))
   fi
   
+  # Always remove backup (it's in git-tracked directory and should not be committed)
+  rm -f "${backup_file}"
+
   if [[ ${changes} -gt 0 ]]; then
     info "Updated ${changes} version(s) in ModuleComponents.vue"
-    info "Backup saved: ${backup_file}"
   else
     info "All versions already up to date in ModuleComponents.vue"
-    rm -f "${backup_file}"
   fi
   
   return 0

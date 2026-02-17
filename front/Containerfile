@@ -35,7 +35,7 @@ COPY vite.config.ts ./
 COPY index.html ./
 
 RUN --mount=type=cache,target=/root/.npm \
-    npm ci --no-audit --fund=false --progress=false --loglevel=error
+    npm ci --no-audit --fund=false --progress=false
 
 # Copy source code
 COPY ./ .
