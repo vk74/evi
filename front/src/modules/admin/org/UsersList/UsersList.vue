@@ -1,6 +1,6 @@
 /**
  * @file UsersList.vue
- * Version: 1.2.0
+ * Version: 1.4.0
  * Component for displaying and managing the system users list with server-side processing.
  * Features: pagination, search, sorting, user management operations (create, edit, delete, reset password).
  * FRONTEND file: UsersList.vue
@@ -14,6 +14,11 @@
  * 
  * Changes in v1.3.0:
  * - Fixed create permission check to use adminOrg:users:create:all
+ *
+ * Changes in v1.4.0:
+ * - Username in table is clickable; opens user in user editor (same as select + Edit/View)
+ * - Extracted openUserInEditor(userId) for reuse from edit button and username click
+ * - Cursor pointer on username when user has adminOrg:users:read:all
  */
 <script setup lang="ts">
 import usersFetchService from './Service.fetch.users'
@@ -221,14 +226,23 @@ const resetPassword = async () => {
   }
 }
 
-const editUser = async () => {
+/**
+ * Open user in editor (load user data, switch to user-editor section).
+ * Same behaviour as selecting one user and clicking Edit/View.
+ */
+const openUserInEditor = async (userId: string) => {
+  if (!can('adminOrg:users:read:all')) return
   try {
-    const userId = getSelectedUserId()
     await loadUserService.fetchUserById(userId)
     usersSectionStore.setActiveSection('user-editor')
   } catch (error) {
     handleError(error, 'loading user data')
   }
+}
+
+const editUser = async () => {
+  if (!hasOneSelected.value) return
+  await openUserInEditor(getSelectedUserId())
 }
 
 const refreshList = async () => {
@@ -513,6 +527,13 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
 
           <template #[`item.user_id`]="{ item }">
             <span>{{ item.user_id }}</span>
+          </template>
+
+          <template #[`item.username`]="{ item }">
+            <span
+              :class="{ 'username-link': can('adminOrg:users:read:all') }"
+              @click="() => can('adminOrg:users:read:all') && openUserInEditor(item.user_id)"
+            >{{ item.username || '-' }}</span>
           </template>
 
           <template #[`item.account_status`]="{ item }">
@@ -807,5 +828,9 @@ const handleItemsPerPageChange = async (newItemsPerPage: ItemsPerPageOption) => 
   padding: 0 9px !important;
   min-height: 22px !important;
   height: 22px !important;
+}
+
+.username-link {
+  cursor: pointer;
 }
 </style>
