@@ -27,6 +27,7 @@
             "select": "select",
             "id": "id",
             "name": "name",
+            "groupName": "group name",
             "status": "status",
             "owner": "owner",
             "system": "system"

@@ -1,7 +1,7 @@
 <!--
 /**
  * @file GroupsList.vue
- * @version 1.2.0
+ * @version 1.4.0
  * Frontend component for displaying and managing the list of groups in the administration module.
  * 
  * Changes in v1.1.0:
@@ -13,6 +13,12 @@
  * 
  * Changes in v1.3.0:
  * - Fixed create permission check to use adminOrg:groups:create:all
+ *
+ * Changes in v1.4.0:
+ * - Group name in table is clickable; opens group in group editor (same as select + Edit/View)
+ * - Extracted openGroupInEditor(groupId) for reuse from edit button and name click
+ * - Cursor pointer on group name when user has adminOrg:groups:read:all
+ * - Column header "name" renamed to "group name" (table.headers.groupName)
  */
 -->
 
@@ -86,7 +92,7 @@ const showDeleteDialog = ref(false);
 const headers = computed<TableHeader[]>(() => [
   { title: t('admin.groups.list.table.headers.select'), key: 'selection', width: '40px', sortable: false },
   { title: t('admin.groups.list.table.headers.id'), key: 'group_id', width: '200px' },
-  { title: t('admin.groups.list.table.headers.name'), key: 'group_name', width: '300px' },
+  { title: t('admin.groups.list.table.headers.groupName'), key: 'group_name', width: '300px' },
   { title: t('admin.groups.list.table.headers.status'), key: 'group_status', width: '120px' },
   { title: t('admin.groups.list.table.headers.owner'), key: 'owner_username', width: '200px' },
   { title: t('admin.groups.list.table.headers.system'), key: 'is_system', width: '80px' }
@@ -119,19 +125,27 @@ const createGroup = () => {
   orgAdminStore.setActiveSection('group-editor');
 };
 
-const editGroup = async () => {
-  if (hasOneSelected.value) {
-    const selectedGroupId = groupsStore.selectedGroups[0];
-    try {
-      const groupData = await fetchGroupService.fetchGroupById(selectedGroupId);
-      groupEditorStore.initEditMode(groupData);
-      orgAdminStore.setActiveSection('group-editor');
-    } catch (error) {
-      uiStore.showErrorSnackbar('Не удалось загрузить данные группы для редактирования');
-    }
-  } else {
-    uiStore.showErrorSnackbar(t('admin.groups.list.messages.noGroupSelected'));
+/**
+ * Open group in editor (load group data, switch to group-editor section).
+ * Same behaviour as selecting one group and clicking Edit/View.
+ */
+const openGroupInEditor = async (groupId: string) => {
+  if (!can('adminOrg:groups:read:all')) return;
+  try {
+    const groupData = await fetchGroupService.fetchGroupById(groupId);
+    groupEditorStore.initEditMode(groupData);
+    orgAdminStore.setActiveSection('group-editor');
+  } catch (error) {
+    uiStore.showErrorSnackbar('Не удалось загрузить данные группы для редактирования');
   }
+};
+
+const editGroup = async () => {
+  if (!hasOneSelected.value) {
+    uiStore.showErrorSnackbar(t('admin.groups.list.messages.noGroupSelected'));
+    return;
+  }
+  await openGroupInEditor(groupsStore.selectedGroups[0]);
 };
 
 const onSortUpdate = (sortParams: { key: string; order: 'asc' | 'desc' | null }) => {
@@ -257,6 +271,12 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
               <PhCheckSquare v-if="isSelected(item.group_id)" :size="18" color="teal" />
               <PhSquare v-else :size="18" color="grey" />
             </v-btn>
+          </template>
+          <template #item.group_name="{ item }">
+            <span
+              :class="{ 'group-name-link': can('adminOrg:groups:read:all') }"
+              @click="() => can('adminOrg:groups:read:all') && openGroupInEditor(item.group_id)"
+            >{{ item.group_name || '-' }}</span>
           </template>
           <template #item.group_status="{ item }">
             <v-chip
@@ -444,5 +464,9 @@ watch([page, itemsPerPage], ([newPage, newItemsPerPage]) => {
   padding: 0 9px !important;
   min-height: 22px !important;
   height: 22px !important;
+}
+
+.group-name-link {
+  cursor: pointer;
 }
 </style>
