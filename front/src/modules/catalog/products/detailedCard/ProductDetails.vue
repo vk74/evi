@@ -1,5 +1,5 @@
 <!--
-version: 1.18.0
+version: 1.20.0
 Frontend file for product details view component.
 Displays extended info as an opened product card format.
 File: ProductDetails.vue
@@ -104,6 +104,9 @@ Changes in v1.18.0:
 
 Changes in v1.19.0:
 - Estimation export: main product + options (qty > 0); column A empty, data in B–I; catalog number = product_code; description = short_description; formulas for VAT and costs
+
+Changes in v1.20.0:
+- Emit open-product when option name is clicked in ProductOptionsTable; forwards to ModuleCatalog to open option product card
 -->
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
@@ -136,6 +139,10 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   cardColor: '#E8F4F8'
 })
+
+const emit = defineEmits<{
+  'open-product': [productId: string]
+}>()
 
 // Local state
 const details = ref<CatalogProductDetails | null>(null)
@@ -702,6 +709,7 @@ watch(() => options.value, () => {
                 :main-product-units-count="mainProductUnitsCount"
                 :main-product-id="productId"
                 @options-sum-changed="handleOptionsSumChanged"
+                @open-product="(productId: string) => emit('open-product', productId)"
               />
             </div>
             

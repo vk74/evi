@@ -662,6 +662,7 @@ onMounted(async () => {
           <ProductDetails 
             :product-id="selectedProductId"
             :card-color="cardColors.product"
+            @open-product="onSelectProduct"
           />
         </div>
         <div v-else>

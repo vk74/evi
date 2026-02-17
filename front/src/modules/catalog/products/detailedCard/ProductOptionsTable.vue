@@ -1,5 +1,5 @@
 <!--
-version: 1.12.0
+version: 1.13.0
 Frontend file ProductOptionsTable.vue.
 Purpose: Displays product option rows with search, counter, and pagination; mirrors PairEditor table UX.
 Filename: ProductOptionsTable.vue
@@ -77,6 +77,11 @@ Changes in v1.11.0:
 Changes in v1.12.0:
 - Added info icon with tooltip for options that have a short description
 - Tooltip displays the short_description text on hover
+
+Changes in v1.13.0:
+- Option name is clickable; emits open-product with option product_id
+- Cursor pointer on option name to indicate link behaviour
+- Parent can open the option product detail card on click
 -->
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
@@ -121,6 +126,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   'options-sum-changed': [sum: number]
+  'open-product': [productId: string]
 }>()
 
 const { t, locale } = useI18n()
@@ -846,7 +852,10 @@ defineExpose({ clearSelections, getUnitsById, getOptionPrices, getEstimationRows
     >
       <template #[`item.option_name`]="{ item }">
         <div class="d-flex align-center">
-          <span>{{ formatOptionNameWithPrefix(item as OptionWithLevel) }}</span>
+          <span
+            class="option-name-link"
+            @click="emit('open-product', item.product_id)"
+          >{{ formatOptionNameWithPrefix(item as OptionWithLevel) }}</span>
           <v-tooltip
             v-if="item.short_description"
             location="top"
@@ -946,5 +955,9 @@ defineExpose({ clearSelections, getUnitsById, getOptionPrices, getEstimationRows
 .units-caret {
   color: rgba(0, 0, 0, 0.54);
   flex-shrink: 0;
+}
+
+.option-name-link {
+  cursor: pointer;
 }
 </style>
