@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
 #
-# version: 1.5.0
+# version: 1.6.0
 # purpose: append release record to dev-ops/RELEASE_NOTES.md (release diary format).
 # file: update-release-notes.sh (dev-ops/release/scripts)
 # logic: called from release.sh step 10 after create-github-release.sh. Reads version from package.json,
 #        auto-detects scope by comparing current component versions with previous release record.
 #        Extracts component versions, git log notes, contributors.
 #        Inserts new record at beginning of RELEASE_NOTES.md.
+#
+# Changes in v1.6.0:
+# - Deploy-kit in scope: if git diff (prev_tag..HEAD) touches deploy/ or db/migrations/, add deploy-kit to scope.
+# - Core Stack Versions: output as bullet list; intro line before Components table.
+# - Notes: strip leading dashes from commit subject; author as (author) instead of — author.
+# - Components table: fixed column widths for alignment; deploy-kit row when in scope.
 #
 # changes in v1.5.0:
 # - Fixed critical output bug: display printf in prompt_scope_with_auto() now goes to
@@ -96,7 +102,8 @@ get_prev_tag() {
   fi
 }
 
-# Get git log from previous tag to HEAD
+# Get git log from previous tag to HEAD. Output: one line per commit, "- subject (author)".
+# Strips leading dashes from subject and uses parentheses for author.
 get_git_notes() {
   local prev_tag="$1"
   local range
@@ -105,7 +112,10 @@ get_git_notes() {
   else
     range="HEAD"
   fi
-  git log "${range}" --pretty=format:"- %s — %an" 2>/dev/null | sed 's/^- - /- /' || echo ""
+  git log "${range}" --pretty=format:"%s|%an" 2>/dev/null | while IFS='|' read -r subj author; do
+    subj=$(printf '%s' "${subj}" | sed 's/^[[:space:]-]*//')
+    printf '- %s (%s)\n' "${subj}" "${author}"
+  done
 }
 
 # Count contributors from previous tag to HEAD
@@ -146,25 +156,30 @@ get_dep_version() {
   fi
 }
 
-# Build key dependencies string
-get_key_deps() {
+# Build key dependencies as newline-separated list (for Core Stack Versions bullet list)
+get_key_deps_list() {
   local vue exp pg
   vue=$(get_dep_version "${FRONT_PKG}" "vue")
   exp=$(get_dep_version "${BACK_PKG}" "express")
   pg=$(get_dep_version "${BACK_PKG}" "pg")
   local pgver
   pgver=$(extract_postgres_version)
-  local parts=()
-  [[ -n "${vue}" ]] && parts+=("Vue ${vue}")
-  [[ -n "${exp}" ]] && parts+=("Express ${exp}")
-  [[ -n "${pg}" ]] && parts+=("pg ${pg}")
-  [[ -n "${pgver}" ]] && parts+=("PostgreSQL ${pgver}")
-  local result=""
-  for i in "${!parts[@]}"; do
-    [[ $i -gt 0 ]] && result="${result}, "
-    result="${result}${parts[i]}"
-  done
-  echo "${result}"
+  [[ -n "${vue}" ]] && echo "Vue ${vue}"
+  [[ -n "${exp}" ]] && echo "Express ${exp}"
+  [[ -n "${pg}" ]] && echo "pg ${pg}"
+  [[ -n "${pgver}" ]] && echo "PostgreSQL ${pgver}"
+}
+
+# True if deploy/ or db/migrations/ changed between prev_tag and HEAD
+has_deploy_kit_changes() {
+  local prev_tag="$1"
+  local range
+  if [[ -n "${prev_tag}" ]]; then
+    range="${prev_tag}..HEAD"
+  else
+    range="HEAD"
+  fi
+  git diff --name-only "${range}" -- deploy/ db/migrations/ 2>/dev/null | grep -q .
 }
 
 # Extract previous release component versions from RELEASE_NOTES.md
@@ -209,7 +224,8 @@ get_previous_release_versions() {
   echo "${prev_fe} ${prev_be} ${prev_db}"
 }
 
-# Auto-detect scope by comparing current vs previous component versions
+# Auto-detect scope by comparing current vs previous component versions.
+# Also adds deploy-kit if deploy/ or db/migrations/ changed since previous tag.
 auto_detect_scope() {
   local cur_fe cur_be cur_db
   cur_fe=$(read_component_version "eviFeVersion")
@@ -228,24 +244,26 @@ auto_detect_scope() {
 
   # If no previous release found, include all
   if [[ -z "${prev_fe}" && -z "${prev_be}" && -z "${prev_db}" ]]; then
-    echo "evi-fe,evi-be,evi-db"
-    return
+    changed=("evi-fe" "evi-be" "evi-db")
+  else
+    if [[ "${cur_fe}" != "${prev_fe}" ]]; then
+      changed+=("evi-fe")
+    fi
+    if [[ "${cur_be}" != "${prev_be}" ]]; then
+      changed+=("evi-be")
+    fi
+    if [[ "${cur_db}" != "${prev_db}" ]]; then
+      changed+=("evi-db")
+    fi
+    if [[ ${#changed[@]} -eq 0 ]]; then
+      changed=("evi-fe" "evi-be" "evi-db")
+    fi
   fi
 
-  if [[ "${cur_fe}" != "${prev_fe}" ]]; then
-    changed+=("evi-fe")
-  fi
-  if [[ "${cur_be}" != "${prev_be}" ]]; then
-    changed+=("evi-be")
-  fi
-  if [[ "${cur_db}" != "${prev_db}" ]]; then
-    changed+=("evi-db")
-  fi
-
-  # If nothing changed (same versions), default to all
-  if [[ ${#changed[@]} -eq 0 ]]; then
-    echo "evi-fe,evi-be,evi-db"
-    return
+  local prev_tag
+  prev_tag=$(get_prev_tag)
+  if has_deploy_kit_changes "${prev_tag}"; then
+    changed+=("deploy-kit")
   fi
 
   local result=""
@@ -312,6 +330,13 @@ prompt_scope_with_auto() {
   printf "  %-14s  %-14s  %-14s  %b%s\n" "evi-fe" "${prev_fe:---}" "${cur_fe}" "${fe_mark}" "${fe_hint}" >&2
   printf "  %-14s  %-14s  %-14s  %b%s\n" "evi-be" "${prev_be:---}" "${cur_be}" "${be_mark}" "${be_hint}" >&2
   printf "  %-14s  %-14s  %-14s  %b%s\n" "evi-db" "${prev_db:---}" "${cur_db}" "${db_mark}" "${db_hint}" >&2
+  local dk_mark
+  if has_deploy_kit_changes "$(get_prev_tag)"; then
+    dk_mark="${GREEN}YES${NC}"
+  else
+    dk_mark="${YELLOW}no${NC}"
+  fi
+  printf "  %-14s  %-14s  %-14s  %b\n" "deploy-kit" "(git diff)" "deploy/, db/migrations/" "${dk_mark}" >&2
   echo "" >&2
   printf "  ➤ Detected scope: ${GREEN}%s${NC}\n" "${auto_scope}" >&2
   echo "" >&2
@@ -328,6 +353,9 @@ prompt_scope_with_auto() {
       ;;
     [aA]|[aA][lL][lL])
       final_scope="evi-fe,evi-be,evi-db"
+      if has_deploy_kit_changes "$(get_prev_tag)"; then
+        final_scope="${final_scope},deploy-kit"
+      fi
       ;;
     [eE]|[eE][dD][iI][tT])
       read -r -p "  Enter scope (comma-separated): " manual_scope </dev/tty
@@ -349,14 +377,15 @@ prompt_scope_with_auto() {
   echo "${final_scope}"
 }
 
-# Build components table for release record
+# Build components table for release record. Fixed-width columns for alignment.
 build_components_table() {
   local scope="$1"
-  local version_fe version_be version_db schema_ver pg_ver proxy_img pgadmin_img
+  local version_fe version_be version_db schema_ver pg_ver proxy_img pgadmin_img product_ver
 
   version_fe=$(read_component_version "eviFeVersion")
   version_be=$(read_component_version "eviBeVersion")
   version_db=$(read_component_version "eviDbVersion")
+  product_ver=$(read_version)
   schema_ver=$(extract_schema_version)
   pg_ver=$(extract_postgres_version)
   proxy_img=$(extract_proxy_image)
@@ -364,24 +393,27 @@ build_components_table() {
 
   local lines=""
   if scope_contains "${scope}" "evi-fe"; then
-    lines="${lines}| evi-fe | ${version_fe} | - |"$'\n'
+    lines="${lines}| evi-fe            | ${version_fe}  | -                              |"$'\n'
   fi
   if scope_contains "${scope}" "evi-be"; then
-    lines="${lines}| evi-be | ${version_be} | - |"$'\n'
+    lines="${lines}| evi-be            | ${version_be}  | -                              |"$'\n'
   fi
   if scope_contains "${scope}" "evi-db"; then
     local db_notes="PostgreSQL ${pg_ver}"
     [[ -n "${schema_ver}" ]] && db_notes="${db_notes}, schema ${schema_ver}"
-    lines="${lines}| evi-db | ${version_db} | ${db_notes} |"$'\n'
+    lines="${lines}| evi-db            | ${version_db}  | ${db_notes}                    |"$'\n'
+  fi
+  if scope_contains "${scope}" "deploy-kit"; then
+    lines="${lines}| deploy-kit        | ${product_ver} | deploy/, db/migrations/        |"$'\n'
   fi
   if scope_contains "${scope}" "evi-reverse-proxy"; then
-    lines="${lines}| evi-reverse-proxy | ${proxy_img:-n/a} | - |"$'\n'
+    lines="${lines}| evi-reverse-proxy | ${proxy_img:-n/a} | -                              |"$'\n'
   fi
   if scope_contains "${scope}" "evi-pgadmin"; then
-    lines="${lines}| evi-pgadmin | ${pgadmin_img:-n/a} | - |"$'\n'
+    lines="${lines}| evi-pgadmin       | ${pgadmin_img:-n/a} | -                              |"$'\n'
   fi
   if scope_contains "${scope}" "host"; then
-    lines="${lines}| host | host stack | - |"$'\n'
+    lines="${lines}| host              | host stack    | -                              |"$'\n'
   fi
   echo "${lines}"
 }
@@ -435,15 +467,20 @@ main() {
   notes=$(get_git_notes "${prev_tag}")
   local contributor_count
   contributor_count=$(get_contributor_count "${prev_tag}")
-  local key_deps
-  key_deps=$(get_key_deps)
+  local key_deps_list
+  key_deps_list=$(get_key_deps_list)
 
   local components_table
   components_table=$(build_components_table "${scope}")
 
   local key_deps_block=""
-  if [[ -n "${key_deps}" ]]; then
-    key_deps_block="**Key dependencies:** ${key_deps}"$'\n\n'
+  if [[ -n "${key_deps_list}" ]]; then
+    key_deps_block="**Core Stack Versions:**"$'\n\n'
+    while IFS= read -r line; do
+      [[ -z "${line}" ]] && continue
+      key_deps_block="${key_deps_block}- ${line}"$'\n'
+    done <<< "${key_deps_list}"
+    key_deps_block="${key_deps_block}"$'\n'
   fi
 
   local notes_block="**Notes:**"$'\n'
@@ -458,9 +495,10 @@ main() {
 
   local record="## ${release_date} | ${version}"$'\n\n'
   record="${record}**Scope:** ${scope}"$'\n\n'
+  record="${record}The following components were updated in this release. Please see below for notes details."$'\n\n'
   record="${record}**Components:**"$'\n\n'
-  record="${record}| Component | Version | Notes |"$'\n'
-  record="${record}|-----------|---------|-------|"$'\n'
+  record="${record}| Component         | Version | Notes                          |"$'\n'
+  record="${record}|-------------------|---------|--------------------------------|"$'\n'
   record="${record}${components_table}"$'\n\n'
   record="${record}${key_deps_block}"
   record="${record}${notes_block}"

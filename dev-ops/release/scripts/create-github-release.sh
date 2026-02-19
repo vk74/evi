@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 #
-# version: 1.1.0
+# version: 1.2.0
 # purpose: create a single GitHub Release with product tag vX.Y.Z (version from package.json "version").
 # file: create-github-release.sh (dev-ops/release/scripts)
 # logic: read version from root package.json, validate format, check gh and existing release,
 #        build structured release notes with component versions and scope, run gh release create.
+#
+# Changes in v1.2.0:
+# - Deploy-kit in scope when deploy/ or db/migrations/ changed (git diff since previous tag).
+# - Core Stack Versions as bullet list; fixed-width components table; notes as "subject (author)".
 #
 # changes in v1.1.0:
 # - GitHub Release body now includes scope, component versions table, and key dependencies
@@ -111,7 +115,7 @@ get_previous_release_versions() {
   echo "${prev_fe} ${prev_be} ${prev_db}"
 }
 
-# Auto-detect scope by comparing current vs previous versions
+# Auto-detect scope by comparing current vs previous versions. Adds deploy-kit if deploy/ or db/migrations/ changed.
 auto_detect_scope() {
   local cur_fe cur_be cur_db
   cur_fe=$(read_component_version "eviFeVersion")
@@ -128,17 +132,20 @@ auto_detect_scope() {
   local changed=()
 
   if [[ -z "${prev_fe}" && -z "${prev_be}" && -z "${prev_db}" ]]; then
-    echo "evi-fe,evi-be,evi-db"
-    return
+    changed=("evi-fe" "evi-be" "evi-db")
+  else
+    [[ "${cur_fe}" != "${prev_fe}" ]] && changed+=("evi-fe")
+    [[ "${cur_be}" != "${prev_be}" ]] && changed+=("evi-be")
+    [[ "${cur_db}" != "${prev_db}" ]] && changed+=("evi-db")
+    if [[ ${#changed[@]} -eq 0 ]]; then
+      changed=("evi-fe" "evi-be" "evi-db")
+    fi
   fi
 
-  [[ "${cur_fe}" != "${prev_fe}" ]] && changed+=("evi-fe")
-  [[ "${cur_be}" != "${prev_be}" ]] && changed+=("evi-be")
-  [[ "${cur_db}" != "${prev_db}" ]] && changed+=("evi-db")
-
-  if [[ ${#changed[@]} -eq 0 ]]; then
-    echo "evi-fe,evi-be,evi-db"
-    return
+  local prev_tag
+  prev_tag=$(get_prev_tag)
+  if has_deploy_kit_changes "${prev_tag}"; then
+    changed+=("deploy-kit")
   fi
 
   local result=""
@@ -177,7 +184,19 @@ get_prev_tag() {
   fi
 }
 
-# Build GitHub Release body with scope, components, key deps, and notes
+# True if deploy/ or db/migrations/ changed between prev_tag and HEAD
+has_deploy_kit_changes() {
+  local prev_tag="$1"
+  local range
+  if [[ -n "${prev_tag}" ]]; then
+    range="${prev_tag}..HEAD"
+  else
+    range="HEAD"
+  fi
+  git diff --name-only "${range}" -- deploy/ db/migrations/ 2>/dev/null | grep -q .
+}
+
+# Build GitHub Release body with scope, components, Core Stack list, and notes
 build_release_body() {
   local version="$1"
   local scope
@@ -194,44 +213,41 @@ build_release_body() {
 
   local body="## evi ${version}"$'\n\n'
   body="${body}**Scope:** ${scope}"$'\n\n'
+  body="${body}The following components were updated in this release. Please see notes below for details."$'\n\n'
   body="${body}### Components"$'\n\n'
-  body="${body}| Component | Version | Notes |"$'\n'
-  body="${body}|-----------|---------|-------|"$'\n'
+  body="${body}| Component         | Version | Notes                          |"$'\n'
+  body="${body}|-------------------|---------|--------------------------------|"$'\n'
 
   if [[ ",${scope}," == *",evi-fe,"* ]]; then
-    body="${body}| evi-fe | ${ver_fe} | - |"$'\n'
+    body="${body}| evi-fe            | ${ver_fe}  | -                              |"$'\n'
   fi
   if [[ ",${scope}," == *",evi-be,"* ]]; then
-    body="${body}| evi-be | ${ver_be} | - |"$'\n'
+    body="${body}| evi-be            | ${ver_be}  | -                              |"$'\n'
   fi
   if [[ ",${scope}," == *",evi-db,"* ]]; then
     local db_notes="PostgreSQL ${pg_ver}"
     [[ -n "${schema_ver}" ]] && db_notes="${db_notes}, schema ${schema_ver}"
-    body="${body}| evi-db | ${ver_db} | ${db_notes} |"$'\n'
+    body="${body}| evi-db            | ${ver_db}  | ${db_notes}                    |"$'\n'
+  fi
+  if [[ ",${scope}," == *",deploy-kit,"* ]]; then
+    body="${body}| deploy-kit        | ${version} | deploy/, db/migrations/        |"$'\n'
   fi
 
-  # key dependencies
+  # Core Stack Versions as bullet list
   local vue exp pg_drv
   vue=$(get_dep_version "${FRONT_PKG}" "vue")
   exp=$(get_dep_version "${BACK_PKG}" "express")
   pg_drv=$(get_dep_version "${BACK_PKG}" "pg")
 
-  local deps_parts=()
-  [[ -n "${vue}" ]] && deps_parts+=("Vue ${vue}")
-  [[ -n "${exp}" ]] && deps_parts+=("Express ${exp}")
-  [[ -n "${pg_drv}" ]] && deps_parts+=("pg ${pg_drv}")
-  [[ -n "${pg_ver}" ]] && deps_parts+=("PostgreSQL ${pg_ver}")
-
-  if [[ ${#deps_parts[@]} -gt 0 ]]; then
-    local deps_str=""
-    for i in "${!deps_parts[@]}"; do
-      [[ $i -gt 0 ]] && deps_str="${deps_str}, "
-      deps_str="${deps_str}${deps_parts[i]}"
-    done
-    body="${body}"$'\n'"**Key dependencies:** ${deps_str}"$'\n'
+  if [[ -n "${vue}" || -n "${exp}" || -n "${pg_drv}" || -n "${pg_ver}" ]]; then
+    body="${body}"$'\n'"**Core Stack Versions:**"$'\n\n'
+    [[ -n "${vue}" ]] && body="${body}- Vue ${vue}"$'\n'
+    [[ -n "${exp}" ]] && body="${body}- Express ${exp}"$'\n'
+    [[ -n "${pg_drv}" ]] && body="${body}- pg ${pg_drv}"$'\n'
+    [[ -n "${pg_ver}" ]] && body="${body}- PostgreSQL ${pg_ver}"$'\n'
   fi
 
-  # git notes
+  # git notes: "subject (author)", strip leading dashes from subject
   local prev_tag
   prev_tag=$(get_prev_tag)
   local range
@@ -242,7 +258,10 @@ build_release_body() {
   fi
 
   local git_notes
-  git_notes=$(git log "${range}" --pretty=format:"- %s" 2>/dev/null | head -20 || echo "")
+  git_notes=$(git log "${range}" --pretty=format:"%s|%an" 2>/dev/null | head -20 | while IFS='|' read -r subj author; do
+    subj=$(printf '%s' "${subj}" | sed 's/^[[:space:]-]*//')
+    printf '- %s (%s)\n' "${subj}" "${author}"
+  done)
   if [[ -n "${git_notes}" ]]; then
     body="${body}"$'\n'"### Changes"$'\n\n'
     body="${body}${git_notes}"$'\n'
