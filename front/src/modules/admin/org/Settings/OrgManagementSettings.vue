@@ -13,6 +13,7 @@ import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
 import { updateSettingFromComponent } from '@/modules/admin/settings/service.update.settings';
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
+import { PhWarningCircle } from '@phosphor-icons/vue';
 
 // Section path identifiers - same as in respective components
 const groupsManagementPath = 'AdminOrgMgmt';
@@ -316,14 +317,15 @@ onMounted(() => {
           >
             <template #activator="{ props }">
               <v-icon 
-                icon="mdi-alert-circle" 
                 size="small" 
                 class="ms-2" 
                 color="error"
                 v-bind="props"
                 style="cursor: pointer;"
                 @click="retrySetting('add.only.active.users.to.groups')"
-              />
+              >
+                <PhWarningCircle :size="20" />
+              </v-icon>
             </template>
             <div class="pa-2">
               <p class="text-subtitle-2 mb-2">
@@ -352,14 +354,15 @@ onMounted(() => {
           >
             <template #activator="{ props }">
               <v-icon 
-                icon="mdi-alert-circle" 
                 size="small" 
                 class="ms-2" 
                 color="error"
                 v-bind="props"
                 style="cursor: pointer;"
                 @click="retrySetting('registration.page.enabled')"
-              />
+              >
+                <PhWarningCircle :size="20" />
+              </v-icon>
             </template>
             <div class="pa-2">
               <p class="text-subtitle-2 mb-2">

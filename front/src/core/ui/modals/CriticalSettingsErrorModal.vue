@@ -92,7 +92,6 @@ const handleReload = () => {
         <v-btn
           color="primary"
           variant="outlined"
-          prepend-icon="mdi-refresh"
           @click="handleRetry"
         >
           <template #prepend>
@@ -103,7 +102,6 @@ const handleReload = () => {
         <v-btn
           color="primary"
           variant="flat"
-          prepend-icon="mdi-reload"
           @click="handleReload"
         >
           <template #prepend>

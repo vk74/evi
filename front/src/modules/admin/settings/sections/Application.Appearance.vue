@@ -19,7 +19,7 @@ import { fetchSettings } from '@/modules/admin/settings/service.fetch.settings';
 import { updateSettingFromComponent } from '@/modules/admin/settings/service.update.settings';
 import { useUiStore } from '@/core/state/uistate';
 import DataLoading from '@/core/ui/loaders/DataLoading.vue';
-import { PhPaintBrush } from '@phosphor-icons/vue';
+import { PhPaintBrush, PhWarningCircle } from '@phosphor-icons/vue';
 import { getRgbFromHex } from '@/core/helpers/color.helpers';
 
 // Section path identifier
@@ -419,14 +419,15 @@ onMounted(() => {
           >
             <template #activator="{ props }">
               <v-icon 
-                icon="mdi-alert-circle" 
                 size="small" 
                 class="ms-2" 
                 color="error"
                 v-bind="props"
                 style="cursor: pointer;"
                 @click="retrySetting('navbar.backgroundcolor')"
-              />
+              >
+                <PhWarningCircle :size="20" />
+              </v-icon>
             </template>
             <div class="pa-2">
               <p class="text-subtitle-2 mb-2">

@@ -1,19 +1,21 @@
 /**
- * version: 1.1.0
- * purpose: Vuetify 3 plugin configuration with locale and icon settings.
+ * version: 1.2.0
+ * purpose: Vuetify 3 plugin configuration with locale settings.
  * file: FRONTEND file: vuetify.ts
- * logic: Creates and exports Vuetify instance with Russian/English locale support
- *        and MDI SVG icon set configuration.
+ * logic: Creates and exports Vuetify instance with Russian/English locale support.
+ *        Icons are used directly in components (e.g. Phosphor) and are not configured here.
  *
  * Changes in v1.1.0:
  * - Renamed from vuetify.js to vuetify.ts for consistency
  * - Updated locale imports to use Vite-compatible paths (vuetify/locale)
+ *
+ * Changes in v1.2.0:
+ * - Removed MDI icon set registration; components use Phosphor icons where needed
  */
 
 import { createVuetify } from 'vuetify'
 import 'vuetify/styles'
 import { ru, en } from 'vuetify/locale'
-import { aliases as mdiAliases, mdi } from 'vuetify/iconsets/mdi-svg'
 
 // Custom Russian translations with date picker overrides
 const customRussianTranslations = {
@@ -48,15 +50,11 @@ const customEnglishTranslations = {
 
 export default createVuetify({
   locale: {
-    defaultLocale: 'ru',
+    locale: 'ru',
+    fallback: 'en',
     messages: {
       ru: customRussianTranslations,
       en: customEnglishTranslations,
     },
-  },
-  icons: {
-    defaultSet: 'mdi',
-    aliases: mdiAliases,
-    sets: { mdi },
   },
 })

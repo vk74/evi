@@ -3,6 +3,42 @@
 Release observation log: artifacts, component versions, and participants. For compatibility map or analytics, JSON can be derived from this file later.
 
 ---
+## 2026-02-17 | 0.11.9
+
+**Scope:** evi-fe,evi-be,evi-db
+
+**Components:**
+
+| Component | Version | Notes |
+|-----------|---------|-------|
+| evi-fe | 0.11.9 | - |
+| evi-be | 0.11.8 | - |
+| evi-db | 0.11.8 | PostgreSQL 17, schema 0.11.8 |
+
+**Key dependencies:** Vue 3.5.21, Express 5.1.0, pg 8.18.0, PostgreSQL 17
+
+**Notes:**
+- -new release with lots of improvements in FE — vk74
+- linked tech specs in the product details card with DB — vk74
+- added tech specs table to admin product editor, details page — vk74
+- Hid default dropdown triangle on status filter v-select — vk74
+- -removed caret up down icon from drop-down windows — vk74
+- -removed caret up down icon from drop-down windows — vk74
+- custom paginator: Removed custom PhCaretUpDown icon from items-per-page dropdown — vk74
+- Section name in sections list table is clickable; opens section in SectionEditor — vk74
+- Price list name in  price lists table is clickable; opens price list in PriceListEditor — vk74
+- Service name in services list is clickable; opens service in service editor — vk74
+- Group name in groups list is clickable; opens group in group editor — vk74
+- Username in list of users  is clickable; opens user in user editor — vk74
+- Product name in products list is clickable; opens product in editor — vk74
+- added feat: enhance product interaction in catalog, click on product name in options table now opens detailed card of this product — vk74
+- product options table in catalog: added info tip icon for each option — vk74
+- -updated auto-scoping feature in release script — vk74
+
+**Contributors:** 1 authors
+
+---
+
 ## 2026-02-17 | 0.11.8
 
 **Scope:** 

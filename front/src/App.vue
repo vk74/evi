@@ -632,7 +632,7 @@ window.addEventListener('openLocationSelectionModal', () => {
 onMounted(async () => {
   // CRITICAL: Load public settings first (works for both authenticated and anonymous users)
   await loadInitialPublicSettings();
-  
+
   // Enable cross-tab settings synchronization via BroadcastChannel
   appSettingsStore.initCrossTabSync();
   
