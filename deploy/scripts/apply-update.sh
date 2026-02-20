@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.1
+# Version: 1.0.2
 # Purpose: Apply a downloaded EVI update by replacing the deploy kit and running post-update steps.
 # IMPORTANT: This script is called from the NEWLY DOWNLOADED kit, not from ~/evi/.
 # It is located at ~/evi/config/updates/<version>/deploy/scripts/apply-update.sh
@@ -11,6 +11,8 @@
 # - Validates that the new deploy kit is complete
 # - Removes all files/dirs in ~/evi/ except config/ (and .git/ is also removed)
 # - Copies new deploy kit files to ~/evi/
+# - Updates config/evi.env image tags from package.json (eviFeVersion, eviBeVersion, eviDbVersion)
+# - Updates quadlet Image= lines so systemd uses new images after restart
 # - Re-installs cockpit panels (if cockpit is available)
 # - Pulls updated container images
 # - Restarts systemd user services
@@ -18,6 +20,10 @@
 #
 # Changes in v1.0.1:
 # - Copy package.json from update staging to EVI_HOME (version source of truth)
+#
+# Changes in v1.0.2:
+# - Update evi.env EVI_FE_IMAGE, EVI_BE_IMAGE, EVI_DB_IMAGE from package.json before pull
+# - Regenerate quadlet Image= lines in ~/.config/containers/systemd so containers use new versions
 #
 
 set -euo pipefail
@@ -136,6 +142,89 @@ replace_deploy_kit() {
   fi
 
   log_tee " ${SYM_OK} new deploy kit copied to ${EVI_HOME}"
+}
+
+# --- Read a version field from package.json (no jq) ---
+read_package_json_version() {
+  local field="$1"
+  local pkg="${EVI_HOME}/package.json"
+  if [[ ! -f "$pkg" ]]; then
+    echo ""
+    return
+  fi
+  grep -o "\"${field}\"[[:space:]]*:[[:space:]]*\"[^\"]*\"" "$pkg" 2>/dev/null | \
+    sed 's/.*:[[:space:]]*"\([^"]*\)".*/\1/' | head -1 || echo ""
+}
+
+# --- Update EVI_*_IMAGE tags in config/evi.env from package.json ---
+# Preserves registry/repo (e.g. ghcr.io/vk74/evi-fe), only replaces tag with eviFeVersion etc.
+update_evi_env_image_tags() {
+  local env_file="${CONFIG_DIR}/evi.env"
+  if [[ ! -f "$env_file" ]]; then
+    log_tee " ${SYM_WARN} evi.env not found, skipping image tag update"
+    return
+  fi
+
+  local fe_ver be_ver db_ver
+  fe_ver=$(read_package_json_version "eviFeVersion")
+  be_ver=$(read_package_json_version "eviBeVersion")
+  db_ver=$(read_package_json_version "eviDbVersion")
+
+  if [[ -z "$fe_ver" && -z "$be_ver" && -z "$db_ver" ]]; then
+    log_tee " ${SYM_WARN} no eviFeVersion/eviBeVersion/eviDbVersion in package.json, skipping evi.env image update"
+    return
+  fi
+
+  log_tee "${CYAN}[evi]${NC} updating container image tags in evi.env from package.json..."
+
+  update_one_image_tag() {
+    local env_key="$1"
+    local new_tag="$2"
+    [[ -z "$new_tag" ]] && return
+    local current_line
+    current_line=$(grep "^${env_key}=" "$env_file" 2>/dev/null | head -1)
+    [[ -z "$current_line" ]] && return
+    local current_val="${current_line#*=}"
+    current_val=$(echo "$current_val" | tr -d '"' | tr -d "'")
+    local base_ref="${current_val%:*}"
+    local new_val="${base_ref}:${new_tag}"
+    sed -i "s|^${env_key}=.*|${env_key}=${new_val}|" "$env_file"
+    log_tee "   ${env_key}=${new_val}"
+  }
+
+  update_one_image_tag "EVI_FE_IMAGE" "$fe_ver"
+  update_one_image_tag "EVI_BE_IMAGE" "$be_ver"
+  update_one_image_tag "EVI_DB_IMAGE" "$db_ver"
+  log_tee " ${SYM_OK} evi.env image tags updated"
+}
+
+# --- Update Image= lines in quadlet container files so systemd uses new images ---
+regenerate_quadlet_images() {
+  local env_file="${CONFIG_DIR}/evi.env"
+  local quadlet_dir="${HOME}/.config/containers/systemd"
+  if [[ ! -f "$env_file" ]]; then
+    return
+  fi
+  if [[ ! -d "$quadlet_dir" ]]; then
+    log_tee " ${SYM_WARN} quadlet dir ${quadlet_dir} not found, skipping quadlet image update"
+    return
+  fi
+
+  set +u
+  source "$env_file"
+  set -u
+
+  log_tee "${CYAN}[evi]${NC} updating quadlet Image= lines..."
+  if [[ -n "${EVI_FE_IMAGE:-}" ]] && [[ -f "${quadlet_dir}/evi-fe.container" ]]; then
+    sed -i "s|^Image=.*|Image=${EVI_FE_IMAGE}|" "${quadlet_dir}/evi-fe.container"
+  fi
+  if [[ -n "${EVI_BE_IMAGE:-}" ]] && [[ -f "${quadlet_dir}/evi-be.container" ]]; then
+    sed -i "s|^Image=.*|Image=${EVI_BE_IMAGE}|" "${quadlet_dir}/evi-be.container"
+  fi
+  if [[ -n "${EVI_DB_IMAGE:-}" ]] && [[ -f "${quadlet_dir}/evi-db.container" ]]; then
+    sed -i "s|^Image=.*|Image=${EVI_DB_IMAGE}|" "${quadlet_dir}/evi-db.container"
+  fi
+  log_tee " ${SYM_OK} quadlet images updated"
 }
 
 # --- Re-install cockpit panels ---
@@ -319,16 +408,20 @@ main() {
   # Step 2: Replace deploy kit
   replace_deploy_kit
 
-  # Step 3: Re-install cockpit panels
+  # Step 3: Update evi.env image tags from package.json and quadlet Image= lines
+  update_evi_env_image_tags
+  regenerate_quadlet_images
+
+  # Step 4: Re-install cockpit panels
   reinstall_cockpit_panels
 
-  # Step 4: Pull updated images
+  # Step 5: Pull updated images
   pull_container_images
 
-  # Step 5: Restart services
+  # Step 6: Restart services
   restart_services
 
-  # Step 6: Finalize
+  # Step 7: Finalize
   finalize_updates_json
   write_journal_entry "SUCCESS"
 

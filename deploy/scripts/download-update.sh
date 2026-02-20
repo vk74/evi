@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.1
+# Version: 1.0.2
 # Purpose: Download the latest EVI update from GitHub as a tarball.
 # Extracts only the deploy/ directory into ~/evi/config/updates/<version>/.
 # Does NOT replace any files — that is handled by apply-update.sh from the new kit.
@@ -14,6 +14,9 @@
 #
 # Changes in v1.0.1:
 # - Extract package.json from tarball root to staging dir (version source of truth for apply-update)
+#
+# Changes in v1.0.2:
+# - Fix SIGPIPE (exit 141) when getting top_dir: tar | head -1 under pipefail; add || true
 #
 
 set -euo pipefail
@@ -159,7 +162,7 @@ main() {
 
   # Find the top-level directory name in the tarball
   local top_dir
-  top_dir=$(tar -tzf "$tmp_tarball" 2>/dev/null | head -1 | cut -d'/' -f1)
+  top_dir=$(tar -tzf "$tmp_tarball" 2>/dev/null | head -1 | cut -d'/' -f1 || true)
 
   if [[ -z "$top_dir" ]]; then
     err "could not determine tarball structure"
