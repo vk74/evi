@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# version: 1.12.0
+# version: 1.14.0
 # purpose: developer release automation script for evi application.
 # deployment file: release.sh
 # logic:
@@ -10,6 +10,12 @@
 # - Step-by-step (menu) and CLI commands only; end-user deploy tree is installed into directory evi in home directory (~/evi).
 # - Independent from install.sh and evictl (developer workflow only).
 # - Deploy directory contents (db migrations, demo-data) are produced by release scripts only; do not edit deploy manually.
+#
+# Changes in v1.14.0:
+# - cleanup_local_images: no longer prompts user; automatically removes local manifests and per-arch images after push to GHCR
+#
+# Changes in v1.13.0:
+# - Step 10 and release-record: prompt for release note, pass --note to create-github-release.sh and update-release-notes.sh
 #
 # Changes in v1.12.0:
 # - build_image_all: added build summary table (component, version, time, percentage, total, platforms)
@@ -1525,37 +1531,33 @@ cleanup_local_images() {
   fi
 
   echo ""
-  if confirm "Do you want to remove local images and manifests to start fresh next time?" "n"; then
-    log "Removing local manifests and images..."
-    local removed=0
-    for image in "${images[@]}"; do
-      if podman manifest exists "${image}" >/dev/null 2>&1; then
-        if podman manifest rm "${image}" >/dev/null 2>&1; then
-          info "Removed manifest ${image}"
+  log "Removing local manifests and images..."
+  local removed=0
+  for image in "${images[@]}"; do
+    if podman manifest exists "${image}" >/dev/null 2>&1; then
+      if podman manifest rm "${image}" >/dev/null 2>&1; then
+        info "Removed manifest ${image}"
+        removed=$((removed + 1))
+      fi
+    fi
+    for suffix in amd64 arm64 armv7; do
+      if podman image exists "${image}-${suffix}" >/dev/null 2>&1; then
+        if podman rmi "${image}-${suffix}" >/dev/null 2>&1; then
+          info "Removed ${image}-${suffix}"
           removed=$((removed + 1))
         fi
       fi
-      for suffix in amd64 arm64 armv7; do
-        if podman image exists "${image}-${suffix}" >/dev/null 2>&1; then
-          if podman rmi "${image}-${suffix}" >/dev/null 2>&1; then
-            info "Removed ${image}-${suffix}"
-            removed=$((removed + 1))
-          fi
-        fi
-      done
-      if podman image exists "${image}" >/dev/null 2>&1; then
-        podman rmi "${image}" >/dev/null 2>&1 && removed=$((removed + 1)) || true
-      fi
     done
-    if [[ ${removed} -gt 0 ]]; then
-      info "Removed ${removed} local image(s)/manifest(s)"
+    if podman image exists "${image}" >/dev/null 2>&1; then
+      podman rmi "${image}" >/dev/null 2>&1 && removed=$((removed + 1)) || true
     fi
-    log "Pruning dangling images..."
-    if podman image prune -f >/dev/null 2>&1; then
-      info "Dangling images pruned (podman image prune -f)"
-    fi
-  else
-    info "Keeping local images"
+  done
+  if [[ ${removed} -gt 0 ]]; then
+    info "Removed ${removed} local image(s)/manifest(s)"
+  fi
+  log "Pruning dangling images..."
+  if podman image prune -f >/dev/null 2>&1; then
+    info "Dangling images pruned (podman image prune -f)"
   fi
 }
 
@@ -1690,8 +1692,11 @@ main_menu() {
         read -r -p "press enter to continue..."
         ;;
       10)
-        if "${SCRIPT_DIR}/scripts/create-github-release.sh"; then
-          "${SCRIPT_DIR}/scripts/update-release-notes.sh"
+        local rel_version rel_note
+        rel_version=$(read_version_from_package_json 2>/dev/null || echo "")
+        read -r -p "  Enter release note for v${rel_version}: " rel_note </dev/tty
+        if "${SCRIPT_DIR}/scripts/create-github-release.sh" --note "${rel_note:-}"; then
+          "${SCRIPT_DIR}/scripts/update-release-notes.sh" --note "${rel_note:-}"
         fi
         echo ""
         read -r -p "press enter to continue..."
@@ -1789,8 +1794,11 @@ main() {
       publish_image_all
       ;;
     release-record)
-      if "${SCRIPT_DIR}/scripts/create-github-release.sh"; then
-        "${SCRIPT_DIR}/scripts/update-release-notes.sh"
+      local rel_version rel_note
+      rel_version=$(read_version_from_package_json 2>/dev/null || echo "")
+      read -r -p "  Enter release note for v${rel_version}: " rel_note </dev/tty
+      if "${SCRIPT_DIR}/scripts/create-github-release.sh" --note "${rel_note:-}"; then
+        "${SCRIPT_DIR}/scripts/update-release-notes.sh" --note "${rel_note:-}"
       fi
       ;;
     help|--help|-h)
