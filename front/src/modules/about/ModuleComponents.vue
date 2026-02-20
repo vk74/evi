@@ -52,8 +52,8 @@ import type { ComponentsData } from './types.about'
 const { t } = useI18n()
 
 // Carrier versions (align with deploy/env/evi.template.env when updating)
-const VERSION_FE = '0.11.9'
-const VERSION_BE = '0.11.8'
+const VERSION_FE = '0.11.10'
+const VERSION_BE = '0.11.10'
 const VERSION_DB = '0.11.8'
 const VERSION_PROXY = '2.8'
 const VERSION_PGADMIN = '8'
