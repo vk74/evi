@@ -5,8 +5,12 @@
  *          and displays the corresponding settings components in the workspace area
  * 
  * Uses a Pinia store to persist the selected category and expanded state between sessions
- * Version: 1.6.2
- * 
+ * Version: 1.7.0
+ *
+ * Changes in v1.7.0:
+ * - Work, Reports, KnowledgeBase sections moved under System -> Modules (Application.System.Modules)
+ * - Removed top-level Work, Reports, KnowledgeBase menu items
+ *
  * Changes in v1.6.2:
  * - Increased menu panel width by 7% (from 210px to 220px)
  * - Updated tablet responsive width accordingly (from 230px to 240px)
@@ -15,18 +19,16 @@
 import { ref, computed, onMounted, markRaw, watch, type Component } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAppSettingsStore } from './state.app.settings';
-import { PhList, PhCaretDown, PhCaretRight, PhGear, PhBriefcase, PhChartLineUp, PhBooks, PhShield, PhClockUser, PhPassword, PhShieldCheck, PhDesktopTower, PhShareNetwork, PhTextT, PhCheckCircle, PhMapPin, PhPalette } from '@phosphor-icons/vue';
+import { PhList, PhCaretDown, PhCaretRight, PhGear, PhShield, PhClockUser, PhPassword, PhShieldCheck, PhDesktopTower, PhShareNetwork, PhTextT, PhCheckCircle, PhMapPin, PhPalette, PhSquaresFour } from '@phosphor-icons/vue';
 import { useUiStore } from '@/core/state/uistate';
  
 // Import components from sections directory with hierarchical naming
 import Appearance from './sections/Application.Appearance.vue';
-import Work from './sections/Application.Work.vue';
-import Reports from './sections/Application.Reports.vue';
-import KnowledgeBase from './sections/Application.KnowledgeBase.vue';
 import RegionalSettings from './sections/Application.RegionalSettings.vue';
 import SystemEventBus from './sections/Application.System.EventBus.vue';
 import SystemLogging from './sections/Application.System.Logging.vue';
 import SystemDataValidation from './sections/Application.System.DataValidation.vue';
+import SystemModules from './sections/Application.System.Modules.vue';
 import SessionManagement from './sections/Application.Security.SessionManagement.vue';
 import PasswordPolicies from './sections/Application.Security.PasswordPolicies.vue';
 import AuthenticationSettings from './sections/Application.Security.AuthenticationSettings.vue';
@@ -53,21 +55,6 @@ const sections = computed<Section[]>(() => [
     id: 'Application.Appearance',
     name: t('admin.settings.sections.appearance'),
     icon: PhPalette,
-  },
-  {
-    id: 'Application.Work',
-    name: t('admin.settings.sections.work'),
-    icon: PhBriefcase,
-  },
-  {
-    id: 'Application.Reports',
-    name: t('admin.settings.sections.reports'),
-    icon: PhChartLineUp,
-  },
-  {
-    id: 'Application.KnowledgeBase',
-    name: t('admin.settings.sections.knowledgebase'),
-    icon: PhBooks,
   },
   {
     id: 'Application.RegionalSettings',
@@ -115,6 +102,11 @@ const sections = computed<Section[]>(() => [
         id: 'Application.System.DataValidation',
         name: t('admin.settings.sections.datavalidation'),
         icon: PhCheckCircle,
+      },
+      {
+        id: 'Application.System.Modules',
+        name: t('admin.settings.sections.modules'),
+        icon: PhSquaresFour,
       }
     ]
   }
@@ -123,13 +115,11 @@ const sections = computed<Section[]>(() => [
 // Map section IDs to components
 const sectionComponents = {
   'Application.Appearance': markRaw(Appearance),
-  'Application.Work': markRaw(Work),
-  'Application.Reports': markRaw(Reports),
-  'Application.KnowledgeBase': markRaw(KnowledgeBase),
   'Application.RegionalSettings': markRaw(RegionalSettings),
   'Application.System.EventBus': markRaw(SystemEventBus),
   'Application.System.Logging': markRaw(SystemLogging),
   'Application.System.DataValidation': markRaw(SystemDataValidation),
+  'Application.System.Modules': markRaw(SystemModules),
   'Application.Security.SessionManagement': markRaw(SessionManagement),
   'Application.Security.PasswordPolicies': markRaw(PasswordPolicies),
   'Application.Security.AuthenticationSettings': markRaw(AuthenticationSettings),

@@ -266,6 +266,9 @@
           }
         },
         "system": {
+          "modules": {
+            "title": "модули"
+          },
           "eventbus": {
             "title": "шина событий",
             "domains": {
@@ -472,6 +475,7 @@
         "passwordpolicies": "политика паролей",
         "authenticationpolicies": "политики аутентификации",
         "system": "система",
+        "modules": "модули",
         "eventbus": "шина событий",
         "logging": "журналирование",
         "datavalidation": "валидация данных",

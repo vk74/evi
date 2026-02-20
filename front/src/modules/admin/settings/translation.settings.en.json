@@ -266,6 +266,9 @@
           }
         },
         "system": {
+          "modules": {
+            "title": "modules"
+          },
           "eventbus": {
             "title": "event bus",
             "domains": {
@@ -472,6 +475,7 @@
         "passwordpolicies": "password policies",
         "authenticationpolicies": "authentication policies",
         "system": "system",
+        "modules": "modules",
         "eventbus": "event bus",
         "logging": "logging",
         "datavalidation": "data validation",

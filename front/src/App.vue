@@ -504,46 +504,20 @@ watch(
       }
       
       console.log('[App] Loading additional settings...');
-      
-      // Load Work module settings if not already cached
-      if (!appSettingsStore.hasValidCache('Application.Work')) {
+
+      // Load module visibility settings (Work, Reports, KnowledgeBase) from Application.System.Modules
+      if (!appSettingsStore.hasValidCache('Application.System.Modules')) {
         try {
           const { fetchSettings } = await import('./modules/admin/settings/service.fetch.settings');
-          const settings = await fetchSettings('Application.Work');
+          const settings = await fetchSettings('Application.System.Modules');
           if (settings) {
-            appSettingsStore.cacheSettings('Application.Work', settings);
+            appSettingsStore.cacheSettings('Application.System.Modules', settings);
           }
         } catch (error) {
-          console.warn('[App] Failed to load Work module settings:', error);
+          console.warn('[App] Failed to load module visibility settings:', error);
         }
       }
-      
-      // Load Reports module settings if not already cached
-      if (!appSettingsStore.hasValidCache('Application.Reports')) {
-        try {
-          const { fetchSettings } = await import('./modules/admin/settings/service.fetch.settings');
-          const settings = await fetchSettings('Application.Reports');
-          if (settings) {
-            appSettingsStore.cacheSettings('Application.Reports', settings);
-          }
-        } catch (error) {
-          console.warn('[App] Failed to load Reports module settings:', error);
-        }
-      }
-      
-      // Load KnowledgeBase module settings if not already cached
-      if (!appSettingsStore.hasValidCache('Application.KnowledgeBase')) {
-        try {
-          const { fetchSettings } = await import('./modules/admin/settings/service.fetch.settings');
-          const settings = await fetchSettings('Application.KnowledgeBase');
-          if (settings) {
-            appSettingsStore.cacheSettings('Application.KnowledgeBase', settings);
-          }
-        } catch (error) {
-          console.warn('[App] Failed to load KnowledgeBase module settings:', error);
-        }
-      }
-      
+
       // User country is now loaded in main.ts before app mount
       // No need to load it here to avoid race conditions
     } else {

@@ -1,6 +1,9 @@
--- Version: 1.6.0
+-- Version: 1.6.1
 -- Description: Seeds the database with default application settings.
 -- Backend file: 11_app_settings.sql
+--
+-- Changes in v1.6.1:
+-- - Module visibility settings (work, reports, knowledgebase) moved to section_path Application.System.Modules
 --
 -- Changes in v1.6.0 (MVP merge): section_path AdminProducts, AdminServices, AdminOrgMgmt from start; removed products.options setting
 --
@@ -20,9 +23,9 @@ INSERT INTO app.app_settings (
     section_path, setting_name, environment, value, validation_schema, default_value, description, is_public
 ) VALUES
 -- Public Settings for module visibility (available without authentication)
-('Application.Work', 'work.module.is.visible', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable Work module display in application', true),
-('Application.Reports', 'reports.module.is.visible', 'all', 'false', NULL, NULL, 'Enable Reports module display in application', true),
-('Application.KnowledgeBase', 'knowledgebase.module.is.visible', 'all', 'false', NULL, NULL, 'Enable Knowledge Base module display in application', true),
+('Application.System.Modules', 'work.module.is.visible', 'all', 'true', '{"type":"boolean"}', 'true', 'Enable Work module display in application', true),
+('Application.System.Modules', 'reports.module.is.visible', 'all', 'false', NULL, NULL, 'Enable Reports module display in application', true),
+('Application.System.Modules', 'knowledgebase.module.is.visible', 'all', 'false', NULL, NULL, 'Enable Knowledge Base module display in application', true),
 
 -- Security Settings
 ('Application.Security.PasswordPolicies', 'password.min.length', 'all', '4', '{"type":"integer","maximum":40,"minimum":4}', '8', 'Minimum password length (4-40 characters)', false),
