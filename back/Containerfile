@@ -1,7 +1,11 @@
-# Version: 1.4.0
+# Version: 1.5.0
 # Description: Multi-stage container build for the evi backend.
 # Creates a build stage to compile TypeScript and a lean runtime stage.
 # Backend file: Containerfile
+#
+# Changes in v1.5.0:
+# - Added --mount=type=cache,target=/root/.npm to both npm ci steps to persist npm download cache
+#   across builds; dramatically reduces install time when package.json version changes (no full re-download)
 #
 # Changes in v1.4.0:
 # - Updated base image from node:20-alpine to node:24-alpine (aligned with project Node.js 24 requirement)
@@ -18,7 +22,8 @@ WORKDIR /app
 
 # Copy package files and install all dependencies (including dev)
 COPY package*.json ./
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci
 
 # Copy the rest of the source code
 COPY tsconfig.json ./
@@ -40,7 +45,8 @@ WORKDIR /app
 
 # Copy only production dependencies
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --omit=dev
 
 # Copy the compiled code from the build stage
 COPY --from=build /app/dist ./dist
