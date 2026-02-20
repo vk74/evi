@@ -1,5 +1,5 @@
 /**
- * version: 1.4.0
+ * version: 1.5.0
  * Core routes for global backend services.
  * 
  * Functionality:
@@ -7,9 +7,6 @@
  * - Includes rate limiting, JWT validation and user status check middleware
  * - Routes requests to appropriate controllers for user management, group operations, password changes, and settings management
  * File: routes.core.ts
- * 
- * Changes in v1.0.04:
- * - Added countries list endpoint /api/core/countries/list
  * 
  * Changes in v1.0.05:
  * - Added active price list IDs endpoint /api/core/pricelists/active/ids
@@ -26,6 +23,9 @@
  * 
  * Changes in v1.4.0:
  * - Added checkSettingsPermissions guard to settings routes for granular RBAC
+ * 
+ * Changes in v1.5.0:
+ * - Removed countries list endpoint /api/core/countries/list (unused; regions from app.regions used instead)
  */
 
 import express, { Router } from 'express';
@@ -38,7 +38,6 @@ import checkSettingsPermissions from '../guards/guard.check.settings.permissions
 
 // Импорт контроллеров
 import getUsernameByUuidController from '../controllers/controller.get.username.by.uuid';
-import getAppCountriesListController from '../controllers/controller.get.app.countries.list';
 import getActivePriceListIdsController from '../controllers/controller.get.active.pricelist.ids';
 import searchUsers from '../services/item-selector/controller.search.users';
 import searchGroups from '../services/item-selector/controller.search.groups';
@@ -52,7 +51,6 @@ const router: Router = express.Router();
 
 // utility services
 router.get('/api/core/users/fetch-username-by-uuid/:userId', checkRateLimit, validateJWT, checkIsUserStatusActive, getUsernameByUuidController);
-router.get('/api/core/countries/list', checkRateLimit, validateJWT, checkIsUserStatusActive, getAppCountriesListController);
 router.get('/api/core/pricelists/active/ids', checkRateLimit, validateJWT, checkIsUserStatusActive, getActivePriceListIdsController);
 
 // item selector universal component services
