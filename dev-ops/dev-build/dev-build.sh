@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# Version: 1.5.6
+# Version: 1.5.7
 # Purpose: Interactive installer and manager for evi production deployment.
-# Deployment file: install.sh
+# Deployment file: dev-build.sh
 # Logic:
 # - Interactive Bash menu system with guided setup
 # - Prerequisites checks and installation (core + optional GUI tools)
@@ -1525,7 +1525,7 @@ deploy_up() {
   local up_stderr
   up_stderr=$(mktemp)
   # Redirect stdin to /dev/null to suppress interactive cleanup prompt in evictl
-  # Cleanup question should only appear when evictl is run directly, not from install.sh
+  # Cleanup question should only appear when evictl is run directly, not from dev-build.sh
   if "${SCRIPT_DIR}/evictl" up < /dev/null 2>"${up_stderr}"; then
     up_status="success"
     local up_end

@@ -1,9 +1,13 @@
 #!/usr/bin/env node
 
 // evi Local Podman Build & Management Script
-// Version: 1.3.1
+// Version: 1.4.0
 // Description: A streamlined Node.js script to manage the local Podman environment for evi.
 // Interactive menu system with submenus for container management operations.
+//
+// Changes in v1.4.0:
+// - Added evi-state (Valkey) container: delete (container only or container+volume) in menu 2, build and start in menu 3
+// - evi-state uses named volume evi_state_data (/data) for AOF/RDB persistence, mirroring evi-db pattern
 //
 // Changes in v1.3.0:
 // - Main menu now re-displayed after each command (1–4) instead of exiting
@@ -441,7 +445,7 @@ function cleanAll() {
   // Force remove known containers just in case
   try {
     const podmanCmd = getPodmanCommand();
-    const containers = ['evi-db', 'evi-backend-local', 'evi-frontend-local'];
+    const containers = ['evi-db', 'evi-backend-local', 'evi-frontend-local', 'evi-state'];
     runCommandSilent(`${podmanCmd} rm -f ${containers.join(' ')}`, true);
   } catch (e) {}
 
@@ -846,12 +850,126 @@ function runDBContainer() {
   return timings;
 }
 
+function deleteStateContainerAndVolume() {
+  const timings = {};
+  log('\n🗑️  Deleting evi-state container and volume...', colors.cyan, true);
+
+  const containerName = 'evi-state';
+  const volumeName = 'evi_state_data';
+  const podmanCmd = getPodmanCommand();
+
+  try {
+    const status = getContainerStatus(containerName);
+    if (status.exists) {
+      if (status.isRunning) {
+        timings['Stop Container'] = runCommand(
+          `${podmanCmd} stop ${containerName}`,
+          'Stop evi-state container',
+          true
+        );
+      }
+      timings['Remove Container'] = runCommand(
+        `${podmanCmd} rm ${containerName}`,
+        'Remove evi-state container',
+        true
+      );
+    }
+
+    if (volumeExists(volumeName)) {
+      timings['Remove Volume'] = runCommand(
+        `${podmanCmd} volume rm ${volumeName}`,
+        'Remove evi_state_data volume',
+        true
+      );
+    }
+
+    log('✅ evi-state container and volume deleted successfully.', colors.green);
+  } catch (error) {
+    log(`❌ Failed to delete container and volume: ${error.message}`, colors.red, true);
+    throw error;
+  }
+
+  return timings;
+}
+
+async function buildAndStartStateContainer() {
+  const timings = {};
+  const containerName = 'evi-state';
+  const valkeyImage = 'docker.io/valkey/valkey:8-alpine';
+  const valkeyCfgPath = path.join(__dirname, '../../state/valkey.conf');
+
+  log('\n🔨 Building and starting evi-state container...', colors.cyan, true);
+
+  if (!fs.existsSync(valkeyCfgPath)) {
+    log(`❌ Error: valkey config not found at "${valkeyCfgPath}"`, colors.red, true);
+    throw new Error('valkey.conf not found');
+  }
+
+  const status = getContainerStatus(containerName);
+  if (status.isRunning) {
+    log(`⚠️  Container ${containerName} is already running.`, colors.yellow, true);
+    return timings;
+  }
+
+  if (status.exists) {
+    const podmanCmd = getPodmanCommand();
+    runCommandSilent(`${podmanCmd} rm -f ${containerName}`, true);
+  }
+
+  try {
+    const podmanCmd = getPodmanCommand();
+
+    timings['Pull Valkey image'] = runCommand(
+      `${podmanCmd} pull ${valkeyImage}`,
+      'Pull Valkey image'
+    );
+
+    try {
+      runCommandSilent(`${podmanCmd} network inspect evi-network`, false);
+    } catch (e) {
+      timings['Create network'] = runCommand(
+        `${podmanCmd} network create evi-network`,
+        'Create evi-network',
+        true
+      );
+    }
+
+    const cfgVolumeArg = `-v "${valkeyCfgPath}:/etc/valkey/valkey.conf:ro"`;
+    const dataVolumeArg = `-v evi_state_data:/data`;
+    const runCmd = `${podmanCmd} run -d --name ${containerName} -p 127.0.0.1:6379:6379 --network evi-network ${cfgVolumeArg} ${dataVolumeArg} ${valkeyImage} valkey-server /etc/valkey/valkey.conf --requirepass dev_valkey_password`;
+
+    timings['Start evi-state'] = runCommand(runCmd, 'Start evi-state container', true);
+
+    log('✅ evi-state container built and started successfully.', colors.green);
+  } catch (error) {
+    log(`❌ Failed to build/start evi-state: ${error.message}`, colors.red, true);
+    throw error;
+  }
+
+  return timings;
+}
+
+async function showStateContainerBuildAction() {
+  let timings = {};
+  const scriptStartTime = Date.now();
+  try {
+    timings = await buildAndStartStateContainer();
+    const scriptEndTime = Date.now();
+    timings['Total Duration'] = parseFloat(((scriptEndTime - scriptStartTime) / 1000).toFixed(2));
+    showSummary(timings);
+    log('\n🎉 Done!', colors.green, true);
+  } catch (e) {
+    log(`\n❌ Script failed: ${e.message}`, colors.red, true);
+  }
+}
+
 // --- Menu Functions ---
 
 async function showDemoDataSubMenu(useCache, buildType) {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const menu = `
 ${colors.cyan}Demo Data Options:${colors.reset}
+${colors.yellow}[0]${colors.reset} Back to main menu
 ${colors.yellow}[1]${colors.reset} Deploy without demo data
 ${colors.yellow}[2]${colors.reset} Deploy and seed demo catalog data
 `;
@@ -859,6 +977,7 @@ ${colors.yellow}[2]${colors.reset} Deploy and seed demo catalog data
   return new Promise((resolve) => {
     rl.question('Select option: ', async (option) => {
       rl.close();
+      if (option.trim() === '0') { resolve(); return; }
       let timings = {};
       const scriptStartTime = Date.now();
       try {
@@ -888,6 +1007,7 @@ async function showBuildSubMenu(buildType) {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const menu = `
 ${colors.cyan}Build Options:${colors.reset}
+${colors.yellow}[0]${colors.reset} Back to main menu
 ${colors.yellow}[1]${colors.reset} Build container from cache (use previously downloaded code)
 ${colors.yellow}[2]${colors.reset} Pull latest container version
 `;
@@ -895,6 +1015,7 @@ ${colors.yellow}[2]${colors.reset} Pull latest container version
   return new Promise((resolve) => {
     rl.question('Select option: ', async (option) => {
       rl.close();
+      if (option.trim() === '0') { resolve(); return; }
       try {
         const useCache = option.trim() === '1';
         if (buildType === 'withVolume') await showDemoDataSubMenu(useCache, buildType);
@@ -924,26 +1045,33 @@ async function showSubMenu(menuType) {
   if (menuType === 'delete') {
     menu = `
 ${colors.cyan}Delete Options:${colors.reset}
+${colors.yellow}[0]${colors.reset} Back to main menu
 ${colors.yellow}[1]${colors.reset} Delete DB container only
 ${colors.yellow}[2]${colors.reset} Delete DB container and volume
+${colors.yellow}[3]${colors.reset} Delete evi-state container and volume
 `;
     options = {
       '1': () => deleteDBContainerOnly(),
-      '2': () => deleteDBContainerAndVolume()
+      '2': () => deleteDBContainerAndVolume(),
+      '3': () => deleteStateContainerAndVolume()
     };
   } else if (menuType === 'build') {
     menu = `
 ${colors.cyan}Build Options:${colors.reset}
+${colors.yellow}[0]${colors.reset} Back to main menu
 ${colors.yellow}[1]${colors.reset} Build DB container and volume (no current DB volume should exist)
 ${colors.yellow}[2]${colors.reset} Build DB container for existing DB volume
+${colors.yellow}[3]${colors.reset} Build and start evi-state container
 `;
     options = {
       '1': () => showBuildSubMenu('withVolume'),
-      '2': () => showBuildSubMenu('forExistingVolume')
+      '2': () => showBuildSubMenu('forExistingVolume'),
+      '3': () => showStateContainerBuildAction()
     };
   } else if (menuType === 'run') {
     menu = `
 ${colors.cyan}Run Options:${colors.reset}
+${colors.yellow}[0]${colors.reset} Back to main menu
 ${colors.yellow}[1]${colors.reset} Run DB container
 `;
     options = { '1': () => runDBContainer() };
@@ -956,6 +1084,7 @@ ${colors.yellow}[1]${colors.reset} Run DB container
   return new Promise((resolve) => {
     rl.question('Select option: ', async (option) => {
       rl.close();
+      if (option.trim() === '0') { resolve(); return; }
       let timings = {};
       const scriptStartTime = Date.now();
       try {
@@ -988,11 +1117,11 @@ async function mainMenu() {
 ${colors.cyan}=========================================${colors.reset}
 ${colors.cyan}  evi Local Podman Manager${colors.reset}
 ${colors.cyan}=========================================${colors.reset}
+${colors.yellow}[0]${colors.reset} Exit
 ${colors.yellow}[1]${colors.reset} 📋 Show current containers details
 ${colors.yellow}[2]${colors.reset} 🗑️  Delete container(s) / volume(s)
 ${colors.yellow}[3]${colors.reset} 🔨 Build container(s)
 ${colors.yellow}[4]${colors.reset} 🚀 Run container(s)
-${colors.yellow}[0]${colors.reset} Exit
 `;
   console.log(menu);
   rl.question('Select option: ', async (option) => {
