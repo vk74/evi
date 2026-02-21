@@ -63,6 +63,7 @@
       "backend": "backend",
       "database": "database",
       "hostServerComponents": "host server components",
+      "deploymentKit": "deployment kit",
       "reverseProxy": "reverse proxy"
     },
     "landing": {

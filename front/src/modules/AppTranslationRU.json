@@ -58,6 +58,7 @@
       "backend": "бэкэнд",
       "database": "база данных",
       "hostServerComponents": "компоненты хост-сервера",
+      "deploymentKit": "набор развёртывания",
       "reverseProxy": "обратный прокси"
     },
     "landing": {

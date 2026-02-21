@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 #
-# version: 1.14.0
+# version: 1.15.0
 # purpose: developer release automation script for evi application.
 # deployment file: release.sh
 # logic:
-# - Version sync: root package.json (eviDbVersion, eviFeVersion, eviBeVersion, version for product release), README.md (first line), dev-ops and deploy env templates, db/init/02_schema.sql (app.instance: schema_version, evi_fe, evi_be, evi_db), front/src/modules/about/ModuleComponents.vue (all container versions).
+# - Version sync: root package.json (eviDbVersion, eviFeVersion, eviBeVersion, version for product release), README.md (first line), dev-ops and deploy env templates, db/init/02_schema.sql (app.instance: schema_version, evi_fe, evi_be, evi_db), front/src/modules/about/ModuleComponents.vue (all container versions and VERSION_DEPLOY_KIT).
+#
+# Changes in v1.15.0:
+# - update_vue_component_versions: added 4th parameter version_release; updates VERSION_DEPLOY_KIT in ModuleComponents.vue (product release version)
 # - Builds multi-arch container images (linux/amd64, linux/arm64) for GHCR; publishes manifest lists.
 # - Single product release: step 10 creates GitHub Release (tag vX.Y.Z) via create-github-release.sh and writes release record to dev-ops/RELEASE_NOTES.md via update-release-notes.sh.
 # - Step-by-step (menu) and CLI commands only; end-user deploy tree is installed into directory evi in home directory (~/evi).
@@ -998,6 +1001,7 @@ update_vue_component_versions() {
   local version_fe="$1"
   local version_be="$2"
   local version_db="$3"
+  local version_release="${4:-}"
   local vue_file="${PROJECT_ROOT}/front/src/modules/about/ModuleComponents.vue"
   
   if [[ ! -f "${vue_file}" ]]; then
@@ -1042,18 +1046,23 @@ update_vue_component_versions() {
   local changes=0
   
   # Read current versions for logging
-  local old_fe old_be old_db old_proxy old_pgadmin
+  local old_fe old_be old_db old_proxy old_pgadmin old_deploy_kit
   old_fe=$(grep -E "^const VERSION_FE = " "${vue_file}" | sed "s/.*'\([^']*\)'.*/\1/" || echo "")
   old_be=$(grep -E "^const VERSION_BE = " "${vue_file}" | sed "s/.*'\([^']*\)'.*/\1/" || echo "")
   old_db=$(grep -E "^const VERSION_DB = " "${vue_file}" | sed "s/.*'\([^']*\)'.*/\1/" || echo "")
   old_proxy=$(grep -E "^const VERSION_PROXY = " "${vue_file}" | sed "s/.*'\([^']*\)'.*/\1/" || echo "")
   old_pgadmin=$(grep -E "^const VERSION_PGADMIN = " "${vue_file}" | sed "s/.*'\([^']*\)'.*/\1/" || echo "")
-  
+  old_deploy_kit=$(grep -E "^const VERSION_DEPLOY_KIT = " "${vue_file}" | sed "s/.*'\([^']*\)'.*/\1/" || echo "")
+
   # Update versions
   sed -e "s/^const VERSION_FE = '[^']*'/const VERSION_FE = '${version_fe}'/" \
       -e "s/^const VERSION_BE = '[^']*'/const VERSION_BE = '${version_be}'/" \
       -e "s/^const VERSION_DB = '[^']*'/const VERSION_DB = '${version_db}'/" \
       "${vue_file}" > "${temp_file}"
+  if [[ -n "${version_release}" ]]; then
+    sed -i.tmp "s/^const VERSION_DEPLOY_KIT = '[^']*'/const VERSION_DEPLOY_KIT = '${version_release}'/" "${temp_file}"
+    rm -f "${temp_file}.tmp"
+  fi
   
   if [[ -n "${caddy_version}" ]]; then
     sed -i.tmp "s/^const VERSION_PROXY = '[^']*'/const VERSION_PROXY = '${caddy_version}'/" "${temp_file}"
@@ -1089,7 +1098,11 @@ update_vue_component_versions() {
     info "Updated VERSION_PGADMIN: ${old_pgadmin} → ${pgadmin_version}"
     changes=$((changes + 1))
   fi
-  
+  if [[ -n "${version_release}" ]] && [[ "${old_deploy_kit}" != "${version_release}" ]]; then
+    info "Updated VERSION_DEPLOY_KIT: ${old_deploy_kit} → ${version_release}"
+    changes=$((changes + 1))
+  fi
+
   # Always remove backup (it's in git-tracked directory and should not be committed)
   rm -f "${backup_file}"
 
@@ -1253,8 +1266,8 @@ sync_versions() {
     warn "Schema file not found: ${SCHEMA_SQL}, skipping"
   fi
 
-  # Update front/src/modules/about/ModuleComponents.vue (all container versions)
-  update_vue_component_versions "${version_fe}" "${version_be}" "${version_db}"
+  # Update front/src/modules/about/ModuleComponents.vue (all container versions and deployment kit)
+  update_vue_component_versions "${version_fe}" "${version_be}" "${version_db}" "${version_release}"
 
   log "version synchronization completed"
   info "evi-db: ${version_db}, evi-fe: ${version_fe}, evi-be: ${version_be}, product release: ${version_release}"

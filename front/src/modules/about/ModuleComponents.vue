@@ -1,13 +1,19 @@
 <!--
   File: ModuleComponents.vue
-  Version: 1.4.3
+  Version: 1.4.5
   Description: Component for displaying system components information
   Purpose: Shows information about technologies used in evi software
   Features:
-  - Sections titled by carrier name + version (e.g. frontend container evi-fe v.0.10.2)
+  - Sections titled by domain label + version (e.g. frontend container evi-fe v.0.10.2)
   - Lists all major libraries and frameworks with source links per section
   - Host server components section last; pgAdmin has its own section; admin tools block removed
   Type: Frontend file - ModuleComponents.vue
+
+  Changes in v1.4.5:
+  - Added Deployment kit section (domainLabel, domainVersion, install link); VERSION_DEPLOY_KIT synced by release script
+
+  Changes in v1.4.4:
+  - Renamed carrierLabel/carrierVersion to domainLabel/domainVersion in ComponentSection usage and comments
 
   Changes in v1.4.3:
   - Updated backend library versions: cors 2.8.6, ajv 8.18.0, zod 4.3.6, dotenv 17.3.1
@@ -32,8 +38,8 @@
   - No manual version updates needed during release process
 
   Changes in v1.2.0:
-  - Section titles: carrier label + " v." + version (e.g. frontend container evi-fe v.0.10.2)
-  - Replaced flat arrays with ComponentSection (carrierLabel, carrierVersion, items)
+  - Section titles: domain label + " v." + version (e.g. frontend container evi-fe v.0.10.2)
+  - Replaced flat arrays with ComponentSection (domainLabel, domainVersion, items)
   - Cockpit moved to host OS; pgAdmin separate block with version and components; admin tools removed
 
   Changes in v1.1.0:
@@ -57,18 +63,19 @@ const VERSION_BE = '0.11.10'
 const VERSION_DB = '0.11.8'
 const VERSION_PROXY = '2.8'
 const VERSION_PGADMIN = '8'
+const VERSION_DEPLOY_KIT = '0.11.10'
 
-// Section title: carrierLabel + optional " v." + carrierVersion
-function sectionTitle(carrierLabel: string, carrierVersion: string): string {
-  return carrierVersion ? `${carrierLabel} v.${carrierVersion}` : carrierLabel
+// Section title: domainLabel + optional " v." + domainVersion
+function sectionTitle(domainLabel: string, domainVersion: string): string {
+  return domainVersion ? `${domainLabel} v.${domainVersion}` : domainLabel
 }
 
-// Components data: each section has carrier label, version, and items (versions from package-lock.json, env, Containerfiles)
+// Components data: each section has domain label, version, and items (versions from package-lock.json, env, Containerfiles)
 const componentsData = computed<ComponentsData>(() => ({
   title: t('about.components.title'),
   frontend: {
-    carrierLabel: 'frontend container evi-fe',
-    carrierVersion: VERSION_FE,
+    domainLabel: 'frontend container evi-fe',
+    domainVersion: VERSION_FE,
     items: [
       { name: 'Vue 3.5.28 - progressive javascript framework', url: 'https://vuejs.org' },
       { name: 'Vuetify 3.11.8 - Material Design component library', url: 'https://vuetifyjs.com' },
@@ -87,8 +94,8 @@ const componentsData = computed<ComponentsData>(() => ({
     ]
   },
   backend: {
-    carrierLabel: 'backend container evi-be',
-    carrierVersion: VERSION_BE,
+    domainLabel: 'backend container evi-be',
+    domainVersion: VERSION_BE,
     items: [
       { name: 'Node.js - javascript runtime', url: 'https://nodejs.org' },
       { name: 'Express 5.2.1 - web framework', url: 'https://expressjs.com' },
@@ -105,8 +112,8 @@ const componentsData = computed<ComponentsData>(() => ({
     ]
   },
   database: {
-    carrierLabel: 'database container evi-db',
-    carrierVersion: VERSION_DB,
+    domainLabel: 'database container evi-db',
+    domainVersion: VERSION_DB,
     items: [
       { name: 'PostgreSQL 18 - primary database', url: 'https://www.postgresql.org' },
       { name: 'pg_cron extension - scheduled tasks', url: 'https://github.com/citusdata/pg_cron' },
@@ -114,22 +121,29 @@ const componentsData = computed<ComponentsData>(() => ({
     ]
   },
   reverseProxy: {
-    carrierLabel: 'reverse proxy container evi-reverse-proxy (Caddy)',
-    carrierVersion: VERSION_PROXY,
+    domainLabel: 'reverse proxy container evi-reverse-proxy (Caddy)',
+    domainVersion: VERSION_PROXY,
     items: [
       { name: 'Caddy 2.8-alpine - reverse proxy and TLS termination', url: 'https://caddyserver.com' }
     ]
   },
   pgAdmin: {
-    carrierLabel: 'pgAdmin container evi-pgadmin',
-    carrierVersion: VERSION_PGADMIN,
+    domainLabel: 'pgAdmin container evi-pgadmin',
+    domainVersion: VERSION_PGADMIN,
     items: [
       { name: 'pgAdmin 4.8 - database admin GUI', url: 'https://www.pgadmin.org' }
     ]
   },
+  deployKit: {
+    domainLabel: t('about.components.deploymentKit'),
+    domainVersion: VERSION_DEPLOY_KIT,
+    items: [
+      { name: 'Install: clone repo (sparse checkout deploy), run install.sh', url: 'https://github.com/vk74/evi#-installation-instructions' }
+    ]
+  },
   hostOs: {
-    carrierLabel: t('about.components.hostServerComponents'),
-    carrierVersion: '',
+    domainLabel: t('about.components.hostServerComponents'),
+    domainVersion: '',
     items: [
       { name: 'Podman - container runtime', url: 'https://podman.io' },
       { name: 'curl - HTTP client for scripts', url: 'https://curl.se' },
@@ -149,7 +163,7 @@ const componentsData = computed<ComponentsData>(() => ({
     <div class="components-container">
       <!-- Frontend Section -->
       <div class="component-section">
-        <h3 class="section-title">{{ sectionTitle(componentsData.frontend.carrierLabel, componentsData.frontend.carrierVersion) }}</h3>
+        <h3 class="section-title">{{ sectionTitle(componentsData.frontend.domainLabel, componentsData.frontend.domainVersion) }}</h3>
         <div class="component-list">
           <div
             v-for="(item, index) in componentsData.frontend.items"
@@ -163,7 +177,7 @@ const componentsData = computed<ComponentsData>(() => ({
 
       <!-- Backend Section -->
       <div class="component-section">
-        <h3 class="section-title">{{ sectionTitle(componentsData.backend.carrierLabel, componentsData.backend.carrierVersion) }}</h3>
+        <h3 class="section-title">{{ sectionTitle(componentsData.backend.domainLabel, componentsData.backend.domainVersion) }}</h3>
         <div class="component-list">
           <div
             v-for="(item, index) in componentsData.backend.items"
@@ -177,7 +191,7 @@ const componentsData = computed<ComponentsData>(() => ({
 
       <!-- Database Section -->
       <div class="component-section">
-        <h3 class="section-title">{{ sectionTitle(componentsData.database.carrierLabel, componentsData.database.carrierVersion) }}</h3>
+        <h3 class="section-title">{{ sectionTitle(componentsData.database.domainLabel, componentsData.database.domainVersion) }}</h3>
         <div class="component-list">
           <div
             v-for="(item, index) in componentsData.database.items"
@@ -191,7 +205,7 @@ const componentsData = computed<ComponentsData>(() => ({
 
       <!-- Reverse Proxy Section -->
       <div class="component-section">
-        <h3 class="section-title">{{ sectionTitle(componentsData.reverseProxy.carrierLabel, componentsData.reverseProxy.carrierVersion) }}</h3>
+        <h3 class="section-title">{{ sectionTitle(componentsData.reverseProxy.domainLabel, componentsData.reverseProxy.domainVersion) }}</h3>
         <div class="component-list">
           <div
             v-for="(item, index) in componentsData.reverseProxy.items"
@@ -205,7 +219,7 @@ const componentsData = computed<ComponentsData>(() => ({
 
       <!-- pgAdmin Section -->
       <div class="component-section">
-        <h3 class="section-title">{{ sectionTitle(componentsData.pgAdmin.carrierLabel, componentsData.pgAdmin.carrierVersion) }}</h3>
+        <h3 class="section-title">{{ sectionTitle(componentsData.pgAdmin.domainLabel, componentsData.pgAdmin.domainVersion) }}</h3>
         <div class="component-list">
           <div
             v-for="(item, index) in componentsData.pgAdmin.items"
@@ -217,9 +231,23 @@ const componentsData = computed<ComponentsData>(() => ({
         </div>
       </div>
 
+      <!-- Deployment kit Section -->
+      <div class="component-section">
+        <h3 class="section-title">{{ sectionTitle(t('about.components.deploymentKit'), componentsData.deployKit.domainVersion) }}</h3>
+        <div class="component-list">
+          <div
+            v-for="(item, index) in componentsData.deployKit.items"
+            :key="`deployKit-${index}`"
+            class="component-item"
+          >
+            <a :href="item.url" target="_blank" rel="noopener" class="component-link">{{ item.name }}</a>
+          </div>
+        </div>
+      </div>
+
       <!-- Host server components Section -->
       <div class="component-section">
-        <h3 class="section-title">{{ sectionTitle(componentsData.hostOs.carrierLabel, componentsData.hostOs.carrierVersion) }}</h3>
+        <h3 class="section-title">{{ sectionTitle(componentsData.hostOs.domainLabel, componentsData.hostOs.domainVersion) }}</h3>
         <div class="component-list">
           <div
             v-for="(item, index) in componentsData.hostOs.items"
