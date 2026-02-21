@@ -1,0 +1,15 @@
+# Version: 1.0.0
+# Purpose: Podman Quadlet volume for Valkey data persistence (AOF/RDB).
+# Deployment file: evi-state.volume
+# Logic: Creates a named volume used by the evi-state container.
+#
+# Changes in v1.0.0:
+# - Initial evi-state volume definition
+#
+
+[Unit]
+Description=evi state store volume (Podman)
+
+[Volume]
+VolumeName=evi_state_data
+

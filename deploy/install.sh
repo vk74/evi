@@ -1983,6 +1983,10 @@ deploy_ensure_dirs() {
   mkdir -p "${CONFIG_DIR}/backup" "${CONFIG_DIR}/updates"
   mkdir -p "${EVI_STATE_DIR}/reverse-proxy" "${EVI_STATE_DIR}/secrets"
   mkdir -p "${EVI_STATE_DIR}/pgadmin" "${EVI_STATE_DIR}/pgadmin/data"
+  mkdir -p "${EVI_STATE_DIR}/valkey"
+  if [[ -f "${SCRIPT_DIR}/../state/valkey.conf" ]]; then
+    cp -f "${SCRIPT_DIR}/../state/valkey.conf" "${EVI_STATE_DIR}/valkey/valkey.conf"
+  fi
   mkdir -p "${EVI_QUADLET_DIR}"
   if [[ -d "${EVI_STATE_DIR}/pgadmin/data" ]]; then
     podman unshare chown -R 5050:5050 "${EVI_STATE_DIR}/pgadmin/data" 2>/dev/null || true
@@ -2012,11 +2016,11 @@ deploy_render_template_file() {
   local keys=(
     EVI_DOMAIN EVI_ACME_EMAIL EVI_TLS_MODE
     EVI_HTTP_PORT EVI_HTTPS_PORT
-    EVI_PROXY_IMAGE EVI_FE_IMAGE EVI_BE_IMAGE EVI_DB_IMAGE
-    EVI_NETWORK EVI_BE_PORT EVI_FE_PORT EVI_DB_PORT
+    EVI_PROXY_IMAGE EVI_FE_IMAGE EVI_BE_IMAGE EVI_DB_IMAGE EVI_STATE_IMAGE
+    EVI_NETWORK EVI_BE_PORT EVI_FE_PORT EVI_DB_PORT EVI_VALKEY_PORT EVI_VALKEY_SECRET_NAME
     EVI_NODE_ENV EVI_CORS_ORIGINS
     EVI_POSTGRES_DB EVI_POSTGRES_USER EVI_POSTGRES_PASSWORD EVI_APP_DB_PASSWORD EVI_ADMIN_DB_USERNAME EVI_ADMIN_DB_PASSWORD EVI_SEED_DEMO_DATA
-    EVI_STATE_DIR EVI_JWT_SECRET_NAME
+    EVI_STATE_DIR EVI_JWT_SECRET_NAME EVI_VALKEY_PASSWORD
     EVI_PGADMIN_IMAGE EVI_PGADMIN_HOST EVI_PGADMIN_PORT EVI_PGADMIN_EMAIL
   )
   for k in "${keys[@]}"; do
@@ -2027,6 +2031,7 @@ deploy_render_template_file() {
   content="${content//\{\{EVI_PODMANARGS_LIMITS_FE\}\}/${EVI_PODMANARGS_LIMITS_FE-}}"
   content="${content//\{\{EVI_PODMANARGS_LIMITS_BE\}\}/${EVI_PODMANARGS_LIMITS_BE-}}"
   content="${content//\{\{EVI_PODMANARGS_LIMITS_DB\}\}/${EVI_PODMANARGS_LIMITS_DB-}}"
+  content="${content//\{\{EVI_PODMANARGS_LIMITS_STATE\}\}/${EVI_PODMANARGS_LIMITS_STATE-}}"
   content="${content//\{\{EVI_PROXY_TLS_MOUNTS\}\}/${EVI_PROXY_TLS_MOUNTS-}}"
   content="${content//\{\{EVI_TLS_SITE_BLOCK\}\}/${EVI_TLS_SITE_BLOCK-}}"
   content="${content//\{\{EVI_CADDY_EMAIL_BLOCK\}\}/${EVI_CADDY_EMAIL_BLOCK-}}"
@@ -2096,6 +2101,15 @@ deploy_prepare_jwt_secret() {
   log "OK: created/updated podman secret ${EVI_JWT_SECRET_NAME}"
 }
 
+deploy_prepare_valkey_secret() {
+  require_cmd podman || die "Missing command: podman"
+  [[ -n "${EVI_VALKEY_PASSWORD}" ]] || die "EVI_VALKEY_PASSWORD is not set. Set it in evi.secrets.env (or leave blank for auto-generation when supported)."
+  local secret_name="${EVI_VALKEY_SECRET_NAME:-evi_valkey_password}"
+  podman secret inspect "${secret_name}" >/dev/null 2>&1 && podman secret rm "${secret_name}" >/dev/null || true
+  printf '%s' "${EVI_VALKEY_PASSWORD}" | podman secret create "${secret_name}" - >/dev/null
+  log "OK: created/updated podman secret ${secret_name}"
+}
+
 deploy_resolve_tls_path() {
   local path="$1"
   [[ -z "${path}" ]] && { echo ""; return; }
@@ -2129,13 +2143,17 @@ deploy_render_quadlets() {
   export EVI_PODMANARGS_LIMITS_FE
   export EVI_PODMANARGS_LIMITS_BE
   export EVI_PODMANARGS_LIMITS_DB
+  export EVI_PODMANARGS_LIMITS_STATE
   EVI_PODMANARGS_LIMITS_PROXY="$(deploy_compute_limits_block "${EVI_LIMIT_CPU_PROXY-}" "${EVI_LIMIT_MEM_PROXY-}")"
   EVI_PODMANARGS_LIMITS_FE="$(deploy_compute_limits_block "${EVI_LIMIT_CPU_FE-}" "${EVI_LIMIT_MEM_FE-}")"
   EVI_PODMANARGS_LIMITS_BE="$(deploy_compute_limits_block "${EVI_LIMIT_CPU_BE-}" "${EVI_LIMIT_MEM_BE-}")"
   EVI_PODMANARGS_LIMITS_DB="$(deploy_compute_limits_block "${EVI_LIMIT_CPU_DB-}" "${EVI_LIMIT_MEM_DB-}")"
+  EVI_PODMANARGS_LIMITS_STATE="$(deploy_compute_limits_block "${EVI_LIMIT_CPU_STATE-}" "${EVI_LIMIT_MEM_STATE-}")"
   deploy_prepare_proxy_tls_mounts
   deploy_render_template_file "${TPL_DIR}/evi.network" "${EVI_QUADLET_DIR}/evi.network"
   deploy_render_template_file "${TPL_DIR}/evi-db.volume" "${EVI_QUADLET_DIR}/evi-db.volume"
+  deploy_render_template_file "${TPL_DIR}/evi-state.volume" "${EVI_QUADLET_DIR}/evi-state.volume"
+  deploy_render_template_file "${TPL_DIR}/evi-state.container" "${EVI_QUADLET_DIR}/evi-state.container"
   deploy_render_template_file "${TPL_DIR}/evi-db.container" "${EVI_QUADLET_DIR}/evi-db.container"
   deploy_render_template_file "${TPL_DIR}/evi-be.container" "${EVI_QUADLET_DIR}/evi-be.container"
   deploy_render_template_file "${TPL_DIR}/evi-fe.container" "${EVI_QUADLET_DIR}/evi-fe.container"
@@ -2172,6 +2190,7 @@ run_deploy_init() {
   [[ -n "${EVI_DB_IMAGE:-}" ]] || die "EVI_DB_IMAGE is required"
   deploy_ensure_dirs
   deploy_prepare_jwt_secret
+  deploy_prepare_valkey_secret
   deploy_prepare_manual_tls_files
   deploy_render_caddyfile
   deploy_render_quadlets
@@ -2246,7 +2265,7 @@ do_apply_restart() {
   load_deploy_env
   log "restarting services..."
   systemctl --user daemon-reload
-  systemctl --user restart evi-db evi-be evi-fe evi-reverse-proxy 2>/dev/null || true
+  systemctl --user restart evi-db evi-state evi-be evi-fe evi-reverse-proxy 2>/dev/null || true
   if [[ "${EVI_PGADMIN_ENABLED:-false}" == "true" ]]; then
     systemctl --user restart evi-pgadmin 2>/dev/null || true
   fi
@@ -2342,6 +2361,7 @@ deploy_up() {
       systemctl --user daemon-reload
       systemctl --user start evi-network.service evi-db-volume.service 2>/dev/null || true
       systemctl --user start evi-db 2>/dev/null || true
+      systemctl --user start evi-state-volume.service evi-state 2>/dev/null || true
       # Wait for PostgreSQL to accept connections (up to 2s) before starting evi-be
       local db_name="${EVI_POSTGRES_DB:-maindb}"
       local wait_attempts=4
@@ -2361,7 +2381,7 @@ deploy_up() {
       fi
       # Per-unit start status
       log "Service start status:"
-      local units="evi-db evi-be evi-fe evi-reverse-proxy"
+      local units="evi-db evi-state evi-be evi-fe evi-reverse-proxy"
       [[ "${EVI_PGADMIN_ENABLED:-false}" == "true" ]] && units="${units} evi-pgadmin"
       local active_count=0
       local unit_count=0
@@ -2639,7 +2659,7 @@ execute_restore() {
 
   # Step 5: Stop current containers if running
   log "stopping current containers..."
-  systemctl --user stop evi-reverse-proxy evi-fe evi-be evi-db evi-pgadmin 2>/dev/null || true
+  systemctl --user stop evi-reverse-proxy evi-fe evi-be evi-state evi-db evi-pgadmin 2>/dev/null || true
   printf "  ${SYM_OK} stopped containers\n"
 
   # Step 6: Restore environment files (to config/)
@@ -2729,10 +2749,11 @@ execute_restore() {
   printf "  ${SYM_OK} systemd daemon reloaded\n"
   echo ""
 
-  # Step 14: Start evi-db and wait for ready
-  log "starting database..."
+  # Step 14: Start evi-db, evi-state, and wait for DB ready
+  log "starting database and state store..."
   systemctl --user start evi-network.service evi-db-volume.service 2>/dev/null || true
   systemctl --user start evi-db 2>/dev/null || true
+  systemctl --user start evi-state-volume.service evi-state 2>/dev/null || true
 
   local db_name="${EVI_POSTGRES_DB:-maindb}"
   local max_wait=60
@@ -2780,7 +2801,7 @@ execute_restore() {
   sleep 5
 
   # Show service status
-  local units="evi-db evi-be evi-fe evi-reverse-proxy"
+  local units="evi-db evi-state evi-be evi-fe evi-reverse-proxy"
   [[ "${EVI_PGADMIN_ENABLED:-false}" == "true" ]] && units="${units} evi-pgadmin"
   local active_count=0
   local unit_count=0

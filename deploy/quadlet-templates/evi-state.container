@@ -1,0 +1,43 @@
+# Version: 1.0.0
+# Purpose: Podman Quadlet container unit for evi-state (Valkey in-memory store).
+# Deployment file: evi-state.container
+# Logic: Runs Valkey on internal network only (no host port). Persistence via AOF+RDB volume.
+#       Password from Podman secret (mount), not in process args or env.
+#
+# Changes in v1.0.0:
+# - Initial evi-state container (task queues, settings cache)
+#
+
+[Unit]
+Description=evi state store Valkey (Podman)
+Wants=network-online.target
+After=network-online.target
+Requires=evi-network.service evi-state-volume.service
+After=evi-network.service evi-state-volume.service
+
+[Container]
+# Rendered by install.sh (deploy)
+Image={{EVI_STATE_IMAGE}}
+ContainerName=evi-state
+
+# Internal network only (no PublishPort)
+Network={{EVI_NETWORK}}
+
+# Config from state dir; data on named volume
+Volume={{EVI_STATE_DIR}}/valkey/valkey.conf:/etc/valkey/valkey.conf:ro,Z
+Volume=evi_state_data:/data:Z
+
+# Password from Podman secret (file mount); written to temp config and included so it never appears in ps/env
+PodmanArgs=--secret={{EVI_VALKEY_SECRET_NAME}},type=mount,target=/run/secrets/valkey_password
+Exec=/bin/sh -c "printf 'requirepass %%s\n' \"$(cat /run/secrets/valkey_password)\" > /tmp/valkey-auth.conf && exec valkey-server /etc/valkey/valkey.conf --include /tmp/valkey-auth.conf"
+
+# Resource limits (optional)
+{{EVI_PODMANARGS_LIMITS_STATE}}
+
+[Service]
+Restart=always
+TimeoutStartSec=120
+
+[Install]
+WantedBy=default.target
+

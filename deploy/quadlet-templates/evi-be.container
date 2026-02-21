@@ -1,7 +1,10 @@
-# Version: 1.1.0
+# Version: 1.2.0
 # Purpose: Podman Quadlet container unit for evi backend API.
 # Deployment file: evi-be.container
 # Logic: Runs backend only on internal network; exposed externally via evi-reverse-proxy (Caddy) as /api over HTTPS.
+#
+# Changes in v1.2.0:
+# - Added evi-state dependency (Wants/After) and VALKEY_URL for Valkey connectivity
 #
 # Changes in v1.1.0:
 # - Backend starts after DB (After=evi-db.service, Wants=evi-db.service) so container is created only when DB exists
@@ -18,6 +21,8 @@ Requires=evi-network.service
 After=evi-network.service
 Wants=evi-db.service
 After=evi-db.service
+Wants=evi-state.service
+After=evi-state.service
 
 [Container]
 # Rendered by install.sh (deploy)
@@ -38,6 +43,9 @@ Environment=PGPASSWORD={{EVI_APP_DB_PASSWORD}}
 
 # CORS (must include https://<domain>)
 Environment=EVI_CORS_ORIGINS={{EVI_CORS_ORIGINS}}
+
+# Valkey (evi-state) for task queues and settings cache
+Environment=VALKEY_URL=redis://:{{EVI_VALKEY_PASSWORD}}@evi-state:{{EVI_VALKEY_PORT}}
 
 # JWT private key from Podman secret mounted as file
 PodmanArgs=--secret={{EVI_JWT_SECRET_NAME}},type=mount,target=/run/secrets/{{EVI_JWT_SECRET_NAME}}
