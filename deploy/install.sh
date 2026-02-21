@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 #
-# Version: 1.18.5
+# Version: 1.19.0
 # Purpose: Interactive installer for evi production deployment (images-only; no build).
 # Deployment file: install.sh
 # Logic:
 # - Single entry point: main_menu() always. When evi.env and evi.secrets.env exist (CONFIG_EXISTS=1), main menu shows context-aware labels: section "manage deployment", option 1 "check & repair prerequisites", option 2 "reconfigure containers environment", option 3 "apply configuration and restart containers". Otherwise first-run labels: section "new deployment", option 1 "install prerequisites", option 2 "containers environment configuration", option 3 "deploy and start evi containers".
+#
+# Changes in v1.19.0:
+# - Added evi-assets (MinIO) support: EVI_ASSETS_* vars in deploy_render_template_file, EVI_PODMANARGS_LIMITS_ASSETS
+#   in deploy_render_quadlets, evi-assets.volume and evi-assets.container rendering, summary block in display_final_summary.
+# - UFW scripts updated to cover port 9080 (evi-assets console) alongside 9090/5445.
 #
 # Changes in v1.18.5:
 # - Prerequisites installation: deploy cockpit-evi-update panel (check, download, install updates via Cockpit sidebar).
@@ -1949,6 +1954,15 @@ display_final_summary() {
     echo ""
   fi
 
+  local assets_port="${EVI_ASSETS_CONSOLE_PORT:-9080}"
+  echo "evi-assets (object storage MinIO console):"
+  printf "  address:  ${GREEN}http://%s:%s${NC}\n" "${domain}" "${assets_port}"
+  printf "  connections allowed from:  ${GREEN}%s${NC}\n" "${cockpit_allowed}"
+  printf "  account:  ${GREEN}%s${NC}\n" "${EVI_ASSETS_ROOT_USER:-eviadmin}"
+  printf "  password:  ${GREEN}%s${NC}\n" "${EVI_ASSETS_ROOT_PASSWORD:-}"
+  echo "  notes: used for managing MinIO buckets and object storage. S3 API (port 9000) is internal only."
+  echo ""
+
   if [[ "${EVI_TLS_MODE:-}" == "manual" ]]; then
     printf "${YELLOW}${BOLD}IMPORTANT:${NC}${YELLOW} if you used self-signed certificates, the browser will show a security warning — this is expected.${NC}\n"
     echo ""
@@ -1974,6 +1988,10 @@ load_deploy_env() {
   export EVI_PGADMIN_HOST="${EVI_PGADMIN_HOST:-0.0.0.0}"
   export EVI_PGADMIN_PORT="${EVI_PGADMIN_PORT:-5445}"
   export EVI_PGADMIN_EMAIL="${EVI_PGADMIN_EMAIL:-${EVI_PGADMIN_EMAIL_DEFAULT}}"
+  export EVI_ASSETS_IMAGE="${EVI_ASSETS_IMAGE:-docker.io/minio/minio:latest}"
+  export EVI_ASSETS_PORT="${EVI_ASSETS_PORT:-9000}"
+  export EVI_ASSETS_CONSOLE_HOST="${EVI_ASSETS_CONSOLE_HOST:-0.0.0.0}"
+  export EVI_ASSETS_CONSOLE_PORT="${EVI_ASSETS_CONSOLE_PORT:-9080}"
 }
 
 # Deploy init: ensure dirs, JWT secret, TLS, Caddyfile, Quadlets. All logic in install.sh.
@@ -2016,12 +2034,14 @@ deploy_render_template_file() {
   local keys=(
     EVI_DOMAIN EVI_ACME_EMAIL EVI_TLS_MODE
     EVI_HTTP_PORT EVI_HTTPS_PORT
-    EVI_PROXY_IMAGE EVI_FE_IMAGE EVI_BE_IMAGE EVI_DB_IMAGE EVI_STATE_IMAGE
+    EVI_PROXY_IMAGE EVI_FE_IMAGE EVI_BE_IMAGE EVI_DB_IMAGE EVI_STATE_IMAGE EVI_ASSETS_IMAGE
     EVI_NETWORK EVI_BE_PORT EVI_FE_PORT EVI_DB_PORT EVI_VALKEY_PORT EVI_VALKEY_SECRET_NAME
     EVI_NODE_ENV EVI_CORS_ORIGINS
     EVI_POSTGRES_DB EVI_POSTGRES_USER EVI_POSTGRES_PASSWORD EVI_APP_DB_PASSWORD EVI_ADMIN_DB_USERNAME EVI_ADMIN_DB_PASSWORD EVI_SEED_DEMO_DATA
     EVI_STATE_DIR EVI_JWT_SECRET_NAME EVI_VALKEY_PASSWORD
     EVI_PGADMIN_IMAGE EVI_PGADMIN_HOST EVI_PGADMIN_PORT EVI_PGADMIN_EMAIL
+    EVI_ASSETS_PORT EVI_ASSETS_CONSOLE_HOST EVI_ASSETS_CONSOLE_PORT
+    EVI_ASSETS_ROOT_USER EVI_ASSETS_ROOT_PASSWORD
   )
   for k in "${keys[@]}"; do
     v="${!k-}"
@@ -2032,6 +2052,7 @@ deploy_render_template_file() {
   content="${content//\{\{EVI_PODMANARGS_LIMITS_BE\}\}/${EVI_PODMANARGS_LIMITS_BE-}}"
   content="${content//\{\{EVI_PODMANARGS_LIMITS_DB\}\}/${EVI_PODMANARGS_LIMITS_DB-}}"
   content="${content//\{\{EVI_PODMANARGS_LIMITS_STATE\}\}/${EVI_PODMANARGS_LIMITS_STATE-}}"
+  content="${content//\{\{EVI_PODMANARGS_LIMITS_ASSETS\}\}/${EVI_PODMANARGS_LIMITS_ASSETS-}}"
   content="${content//\{\{EVI_PROXY_TLS_MOUNTS\}\}/${EVI_PROXY_TLS_MOUNTS-}}"
   content="${content//\{\{EVI_TLS_SITE_BLOCK\}\}/${EVI_TLS_SITE_BLOCK-}}"
   content="${content//\{\{EVI_CADDY_EMAIL_BLOCK\}\}/${EVI_CADDY_EMAIL_BLOCK-}}"
@@ -2144,16 +2165,20 @@ deploy_render_quadlets() {
   export EVI_PODMANARGS_LIMITS_BE
   export EVI_PODMANARGS_LIMITS_DB
   export EVI_PODMANARGS_LIMITS_STATE
+  export EVI_PODMANARGS_LIMITS_ASSETS
   EVI_PODMANARGS_LIMITS_PROXY="$(deploy_compute_limits_block "${EVI_LIMIT_CPU_PROXY-}" "${EVI_LIMIT_MEM_PROXY-}")"
   EVI_PODMANARGS_LIMITS_FE="$(deploy_compute_limits_block "${EVI_LIMIT_CPU_FE-}" "${EVI_LIMIT_MEM_FE-}")"
   EVI_PODMANARGS_LIMITS_BE="$(deploy_compute_limits_block "${EVI_LIMIT_CPU_BE-}" "${EVI_LIMIT_MEM_BE-}")"
   EVI_PODMANARGS_LIMITS_DB="$(deploy_compute_limits_block "${EVI_LIMIT_CPU_DB-}" "${EVI_LIMIT_MEM_DB-}")"
   EVI_PODMANARGS_LIMITS_STATE="$(deploy_compute_limits_block "${EVI_LIMIT_CPU_STATE-}" "${EVI_LIMIT_MEM_STATE-}")"
+  EVI_PODMANARGS_LIMITS_ASSETS="$(deploy_compute_limits_block "${EVI_LIMIT_CPU_ASSETS-}" "${EVI_LIMIT_MEM_ASSETS-}")"
   deploy_prepare_proxy_tls_mounts
   deploy_render_template_file "${TPL_DIR}/evi.network" "${EVI_QUADLET_DIR}/evi.network"
   deploy_render_template_file "${TPL_DIR}/evi-db.volume" "${EVI_QUADLET_DIR}/evi-db.volume"
   deploy_render_template_file "${TPL_DIR}/evi-state.volume" "${EVI_QUADLET_DIR}/evi-state.volume"
+  deploy_render_template_file "${TPL_DIR}/evi-assets.volume" "${EVI_QUADLET_DIR}/evi-assets.volume"
   deploy_render_template_file "${TPL_DIR}/evi-state.container" "${EVI_QUADLET_DIR}/evi-state.container"
+  deploy_render_template_file "${TPL_DIR}/evi-assets.container" "${EVI_QUADLET_DIR}/evi-assets.container"
   deploy_render_template_file "${TPL_DIR}/evi-db.container" "${EVI_QUADLET_DIR}/evi-db.container"
   deploy_render_template_file "${TPL_DIR}/evi-be.container" "${EVI_QUADLET_DIR}/evi-be.container"
   deploy_render_template_file "${TPL_DIR}/evi-fe.container" "${EVI_QUADLET_DIR}/evi-fe.container"

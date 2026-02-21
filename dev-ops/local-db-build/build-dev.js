@@ -1,9 +1,15 @@
 #!/usr/bin/env node
 
 // evi Local Podman Build & Management Script
-// Version: 1.4.0
+// Version: 1.5.0
 // Description: A streamlined Node.js script to manage the local Podman environment for evi.
 // Interactive menu system with submenus for container management operations.
+//
+// Changes in v1.5.0:
+// - Added evi-assets (MinIO) container: delete (container+volume) in menu 2, build and start in menu 3
+// - evi-assets uses named volume evi_assets_data (/data), mirrors evi-state pattern
+// - Dev credentials: MINIO_ROOT_USER=eviadmin / MINIO_ROOT_PASSWORD=dev_assets_password
+// - Ports: 127.0.0.1:9000:9000 (S3 API), 127.0.0.1:9001:9001 (console)
 //
 // Changes in v1.4.0:
 // - Added evi-state (Valkey) container: delete (container only or container+volume) in menu 2, build and start in menu 3
@@ -445,7 +451,7 @@ function cleanAll() {
   // Force remove known containers just in case
   try {
     const podmanCmd = getPodmanCommand();
-    const containers = ['evi-db', 'evi-backend-local', 'evi-frontend-local', 'evi-state'];
+    const containers = ['evi-db', 'evi-backend-local', 'evi-frontend-local', 'evi-state', 'evi-assets'];
     runCommandSilent(`${podmanCmd} rm -f ${containers.join(' ')}`, true);
   } catch (e) {}
 
@@ -963,6 +969,136 @@ async function showStateContainerBuildAction() {
   }
 }
 
+/**
+ * Deletes the evi-assets container and its named volume.
+ */
+function deleteAssetsContainerAndVolume() {
+  const timings = {};
+  log('\n🗑️  Deleting evi-assets container and volume...', colors.cyan, true);
+
+  const containerName = 'evi-assets';
+  const volumeName = 'evi_assets_data';
+  const podmanCmd = getPodmanCommand();
+
+  try {
+    const status = getContainerStatus(containerName);
+    if (status.exists) {
+      if (status.isRunning) {
+        timings['Stop Container'] = runCommand(
+          `${podmanCmd} stop ${containerName}`,
+          'Stop evi-assets container',
+          true
+        );
+      }
+      timings['Remove Container'] = runCommand(
+        `${podmanCmd} rm ${containerName}`,
+        'Remove evi-assets container',
+        true
+      );
+    }
+
+    if (volumeExists(volumeName)) {
+      timings['Remove Volume'] = runCommand(
+        `${podmanCmd} volume rm ${volumeName}`,
+        'Remove evi_assets_data volume',
+        true
+      );
+    }
+
+    log('✅ evi-assets container and volume deleted successfully.', colors.green);
+  } catch (error) {
+    log(`❌ Failed to delete container and volume: ${error.message}`, colors.red, true);
+    throw error;
+  }
+
+  return timings;
+}
+
+/**
+ * Pulls the MinIO image, ensures evi-network exists, and starts the evi-assets container.
+ * Dev credentials: MINIO_ROOT_USER=eviadmin / MINIO_ROOT_PASSWORD=dev_assets_password.
+ * S3 API exposed on 127.0.0.1:9000, console on 127.0.0.1:9001.
+ */
+async function buildAndStartAssetsContainer() {
+  const timings = {};
+  const containerName = 'evi-assets';
+  const minioImage = 'docker.io/minio/minio:latest';
+
+  log('\n🔨 Building and starting evi-assets container...', colors.cyan, true);
+
+  const status = getContainerStatus(containerName);
+  if (status.isRunning) {
+    log(`⚠️  Container ${containerName} is already running.`, colors.yellow, true);
+    return timings;
+  }
+
+  if (status.exists) {
+    const podmanCmd = getPodmanCommand();
+    runCommandSilent(`${podmanCmd} rm -f ${containerName}`, true);
+  }
+
+  try {
+    const podmanCmd = getPodmanCommand();
+
+    timings['Pull MinIO image'] = runCommand(
+      `${podmanCmd} pull ${minioImage}`,
+      'Pull MinIO image'
+    );
+
+    try {
+      runCommandSilent(`${podmanCmd} network inspect evi-network`, false);
+    } catch (e) {
+      timings['Create network'] = runCommand(
+        `${podmanCmd} network create evi-network`,
+        'Create evi-network',
+        true
+      );
+    }
+
+    const dataVolumeArg = `-v evi_assets_data:/data`;
+    const runCmd = [
+      `${podmanCmd} run -d`,
+      `--name ${containerName}`,
+      `-p 127.0.0.1:9000:9000`,
+      `-p 127.0.0.1:9001:9001`,
+      `--network evi-network`,
+      `-e MINIO_ROOT_USER=eviadmin`,
+      `-e MINIO_ROOT_PASSWORD=dev_assets_password`,
+      dataVolumeArg,
+      minioImage,
+      `minio server /data --console-address :9001`
+    ].join(' ');
+
+    timings['Start evi-assets'] = runCommand(runCmd, 'Start evi-assets container', true);
+
+    log('✅ evi-assets container started successfully.', colors.green);
+    log('   S3 API:  http://127.0.0.1:9000', colors.cyan);
+    log('   Console: http://127.0.0.1:9001  (eviadmin / dev_assets_password)', colors.cyan);
+  } catch (error) {
+    log(`❌ Failed to build/start evi-assets: ${error.message}`, colors.red, true);
+    throw error;
+  }
+
+  return timings;
+}
+
+/**
+ * Timing wrapper for buildAndStartAssetsContainer.
+ */
+async function showAssetsContainerBuildAction() {
+  let timings = {};
+  const scriptStartTime = Date.now();
+  try {
+    timings = await buildAndStartAssetsContainer();
+    const scriptEndTime = Date.now();
+    timings['Total Duration'] = parseFloat(((scriptEndTime - scriptStartTime) / 1000).toFixed(2));
+    showSummary(timings);
+    log('\n🎉 Done!', colors.green, true);
+  } catch (e) {
+    log(`\n❌ Script failed: ${e.message}`, colors.red, true);
+  }
+}
+
 // --- Menu Functions ---
 
 async function showDemoDataSubMenu(useCache, buildType) {
@@ -1049,11 +1185,13 @@ ${colors.yellow}[0]${colors.reset} Back to main menu
 ${colors.yellow}[1]${colors.reset} Delete DB container only
 ${colors.yellow}[2]${colors.reset} Delete DB container and volume
 ${colors.yellow}[3]${colors.reset} Delete evi-state container and volume
+${colors.yellow}[4]${colors.reset} Delete evi-assets container and volume
 `;
     options = {
       '1': () => deleteDBContainerOnly(),
       '2': () => deleteDBContainerAndVolume(),
-      '3': () => deleteStateContainerAndVolume()
+      '3': () => deleteStateContainerAndVolume(),
+      '4': () => deleteAssetsContainerAndVolume()
     };
   } else if (menuType === 'build') {
     menu = `
@@ -1062,11 +1200,13 @@ ${colors.yellow}[0]${colors.reset} Back to main menu
 ${colors.yellow}[1]${colors.reset} Build DB container and volume (no current DB volume should exist)
 ${colors.yellow}[2]${colors.reset} Build DB container for existing DB volume
 ${colors.yellow}[3]${colors.reset} Build and start evi-state container
+${colors.yellow}[4]${colors.reset} Build and start evi-assets container (MinIO)
 `;
     options = {
       '1': () => showBuildSubMenu('withVolume'),
       '2': () => showBuildSubMenu('forExistingVolume'),
-      '3': () => showStateContainerBuildAction()
+      '3': () => showStateContainerBuildAction(),
+      '4': () => showAssetsContainerBuildAction()
     };
   } else if (menuType === 'run') {
     menu = `

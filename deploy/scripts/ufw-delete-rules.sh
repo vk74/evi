@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.1
-# Purpose: Remove all existing UFW rules for cockpit (9090) and pgadmin (5445). Does not add any rules.
+# Version: 1.1.0
+# Purpose: Remove all existing UFW rules for cockpit (9090), pgadmin (5445), and evi-assets console (9080). Does not add any rules.
 # Backend script, called from install.sh before ufw-add-rules.sh (guided setup or restore). Same workflow for first run and reconfigure.
-# Logic: Repeatedly find highest rule number for 9090/5445, delete it (print each removal), re-query until none left. Parse with line-start sed pattern.
+# Logic: Repeatedly find highest rule number for 9090/5445/9080, delete it (print each removal), re-query until none left. Parse with line-start sed pattern.
+#
+# Changes in v1.1.0:
+# - Added port 9080 (evi-assets MinIO console) to the grep pattern alongside 9090/5445
 #
 # Changes in v1.0.1:
 # - Fixed pipeline: wrap "grep ... || true" in subshell so output is piped to sed; rules are now correctly found and removed on reconfigure.
@@ -27,17 +30,17 @@ delete_evi_admin_rules() {
   if ! sudo ufw status 2>/dev/null | grep -q "Status: active"; then
     return 0
   fi
-  log "removing existing UFW rules for cockpit (9090) and pgadmin (5445)..."
+  log "removing existing UFW rules for cockpit (9090), pgadmin (5445), and evi-assets console (9080)..."
   local max_n iter=0
   while [[ "${iter}" -lt 20 ]]; do
-    max_n=$(sudo ufw status numbered 2>/dev/null | (grep -E '(9090|5445)/' || true) | sed -n 's/^[[:space:]]*\[[[:space:]]*\([0-9][0-9]*\)\].*/\1/p' | sort -rn | head -1)
+    max_n=$(sudo ufw status numbered 2>/dev/null | (grep -E '(9090|5445|9080)/' || true) | sed -n 's/^[[:space:]]*\[[[:space:]]*\([0-9][0-9]*\)\].*/\1/p' | sort -rn | head -1)
     [[ -z "${max_n}" ]] || [[ ! "${max_n}" =~ ^[0-9]+$ ]] && break
     info "removing rule ${max_n}"
     sudo ufw --force delete "${max_n}" 2>/dev/null || true
     iter=$((iter + 1))
   done
   if [[ "${iter}" -eq 0 ]]; then
-    info "no existing rules for 9090/5445 to remove."
+    info "no existing rules for 9090/5445/9080 to remove."
   fi
 }
 

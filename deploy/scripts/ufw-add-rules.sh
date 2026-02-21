@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 #
-# Version: 1.0.0
-# Purpose: Add UFW allow rules for cockpit (9090) and pgadmin (5445) from evi.env. Does not remove any rules.
+# Version: 1.1.0
+# Purpose: Add UFW allow rules for cockpit (9090), pgadmin (5445), and evi-assets console (9080) from evi.env. Does not remove any rules.
 # Backend script, called from install.sh after ufw-delete-rules.sh (guided setup or restore).
 # Logic: Read EVI_FIREWALL_ADMIN_ACCESS and EVI_FIREWALL_ADMIN_ALLOWED from evi.env; if skip or ufw missing/inactive, exit; otherwise add allow rules only.
+#
+# Changes in v1.1.0:
+# - Added port 9080 (evi-assets MinIO console) to all firewall rule branches alongside 9090/5445
 #
 
 set -euo pipefail
@@ -58,7 +61,8 @@ add_rules() {
     localhost)
       sudo ufw allow from 127.0.0.1 to any port 9090 proto tcp 2>/dev/null || true
       sudo ufw allow from 127.0.0.1 to any port 5445 proto tcp 2>/dev/null || true
-      info "firewall: cockpit allowed from this server only (127.0.0.1)."
+      sudo ufw allow from 127.0.0.1 to any port 9080 proto tcp 2>/dev/null || true
+      info "firewall: cockpit/pgadmin/evi-assets allowed from this server only (127.0.0.1)."
       ;;
     allowed_ips)
       if [[ -z "${allowed}" ]]; then
@@ -71,9 +75,10 @@ add_rules() {
         if validate_ip "${ip}"; then
           sudo ufw allow from "${ip}" to any port 9090 proto tcp 2>/dev/null || true
           sudo ufw allow from "${ip}" to any port 5445 proto tcp 2>/dev/null || true
+          sudo ufw allow from "${ip}" to any port 9080 proto tcp 2>/dev/null || true
         fi
       done <<< "${allowed}"
-      info "firewall: cockpit allowed from ${allowed}."
+      info "firewall: cockpit/pgadmin/evi-assets allowed from ${allowed}."
       ;;
     allowed_cidr)
       if [[ -z "${allowed}" ]]; then
@@ -83,7 +88,8 @@ add_rules() {
       if validate_cidr "${allowed}"; then
         sudo ufw allow from "${allowed}" to any port 9090 proto tcp 2>/dev/null || true
         sudo ufw allow from "${allowed}" to any port 5445 proto tcp 2>/dev/null || true
-        info "firewall: cockpit allowed from ${allowed}."
+        sudo ufw allow from "${allowed}" to any port 9080 proto tcp 2>/dev/null || true
+        info "firewall: cockpit/pgadmin/evi-assets allowed from ${allowed}."
       else
         warn "firewall: invalid CIDR ${allowed}; skipping."
       fi
@@ -91,7 +97,8 @@ add_rules() {
     any)
       sudo ufw allow 9090/tcp 2>/dev/null || true
       sudo ufw allow 5445/tcp 2>/dev/null || true
-      info "firewall: cockpit allowed from any computer (not recommended)."
+      sudo ufw allow 9080/tcp 2>/dev/null || true
+      info "firewall: cockpit/pgadmin/evi-assets allowed from any computer (not recommended)."
       ;;
     *)
       warn "firewall: unknown EVI_FIREWALL_ADMIN_ACCESS=${access}; no rules applied."

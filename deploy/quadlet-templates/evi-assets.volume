@@ -1,0 +1,14 @@
+# Version: 1.0.0
+# Purpose: Podman Quadlet volume for MinIO (evi-assets) object storage data persistence.
+# Deployment file: evi-assets.volume
+# Logic: Creates a named volume used by the evi-assets container to persist uploaded files.
+#
+# Changes in v1.0.0:
+# - Initial evi-assets volume definition
+#
+
+[Unit]
+Description=evi assets volume (Podman)
+
+[Volume]
+VolumeName=evi_assets_data

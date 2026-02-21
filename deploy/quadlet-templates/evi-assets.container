@@ -1,0 +1,49 @@
+# Version: 1.0.0
+# Purpose: Podman Quadlet container unit for evi-assets (MinIO S3-compatible object storage).
+# Deployment file: evi-assets.container
+# Logic: Runs MinIO on internal evi-network only. S3 API (9000) is accessible only to evi-be
+#        inside the network. Management console (9001) is published on the host at
+#        EVI_ASSETS_CONSOLE_PORT (default 9080) and protected by UFW (same mechanism as
+#        cockpit/pgadmin). Credentials are rendered from evi.secrets.env at deploy time.
+#
+# Changes in v1.0.0:
+# - Initial evi-assets container (MinIO object storage for product media, branding, KB documents)
+#
+
+[Unit]
+Description=evi assets object storage MinIO (Podman)
+Wants=network-online.target
+After=network-online.target
+Requires=evi-network.service evi-assets-volume.service
+After=evi-network.service evi-assets-volume.service
+
+[Container]
+# Rendered by install.sh (deploy)
+Image={{EVI_ASSETS_IMAGE}}
+ContainerName=evi-assets
+
+# Internal network only for S3 API (no host port for port 9000)
+Network={{EVI_NETWORK}}
+
+# MinIO credentials (rendered from evi.secrets.env — same pattern as evi-be)
+Environment=MINIO_ROOT_USER={{EVI_ASSETS_ROOT_USER}}
+Environment=MINIO_ROOT_PASSWORD={{EVI_ASSETS_ROOT_PASSWORD}}
+
+# Persistent object storage data
+Volume=evi_assets_data:/data:Z
+
+# Management console published on host (protected by UFW — same as cockpit/pgadmin)
+PublishPort={{EVI_ASSETS_CONSOLE_HOST}}:{{EVI_ASSETS_CONSOLE_PORT}}:9001
+
+# Start MinIO server; console on internal port 9001
+Exec=minio server /data --console-address :9001
+
+# Resource limits (optional)
+{{EVI_PODMANARGS_LIMITS_ASSETS}}
+
+[Service]
+Restart=always
+TimeoutStartSec=120
+
+[Install]
+WantedBy=default.target
